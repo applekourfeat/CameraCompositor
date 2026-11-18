@@ -1,0 +1,15 @@
+{
+  "build": "0.4.1-spatial",
+  "apkBytes": 76017575,
+  "apkSha256": "915a6b60ff1a4de73dda72bf627094dcbb6e11e6e042d2b292e62dcc3effe942",
+  "unitTests": 55,
+  "unitFailures": 0,
+  "lintErrors": 0,
+  "lintWarnings": 90,
+  "modelSha256": "0853d7468f78f391730ee39c07daf41e0f600caba3bc2731ee086e63fab766ee",
+  "releaseResearchAssets": "absent",
+  "credentialPatternCheck": "pass",
+  "physicalVivoTests": "owner v0.4 export confirms ARCore pose/points/depth on Vivo V30; v0.4.1 capture alignment, photographic selection, provider inference and performance remain pending",
+  "humanPreferenceGate": "pending",
+  "liveProviderDiagnostic": "v0.3.0 owner report: WAIT_RESPONSE timeout after client upload; cause unresolved"
+}

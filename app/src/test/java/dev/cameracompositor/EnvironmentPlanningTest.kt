@@ -75,10 +75,10 @@ class EnvironmentPlanningTest {
         assertTrue(map.plannerViews().size<=4)
         assertEquals(0,map.plannerViews().first().id); assertEquals(7,map.plannerViews().last().id)
     }
-    @Test fun `static repeated views cannot inflate scene coverage`() {
+    @Test fun `static repeated views retain temporal endpoints for accurate current view assessment`() {
         val map=EnvironmentMap(1)
         repeat(6) { map.add(views[0].copy(id=it,timeMs=1000L+it*600,registration=if(it==0)null else link.copy(centerMotion=0f))) }
-        assertEquals(1,map.plannerViews().size)
+        assertEquals(listOf(0,5),map.plannerViews().map { it.id })
         assertFalse(link.copy(inliers=4).reliable); assertFalse(link.copy(centerMotion=Float.NaN).reliable)
         assertFalse(link.copy(spatialCoverage=.02f).reliable)
     }

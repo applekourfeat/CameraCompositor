@@ -67,7 +67,7 @@ class ResearchSweepRecorder(
                     check(frame.image.compress(Bitmap.CompressFormat.JPEG, 92, archive!!))
                     archive!!.closeEntry()
                     val matrix = FloatArray(9); frame.bufferToView.getValues(matrix)
-                    val sensorMatrix = FloatArray(9); frame.sensorToBuffer.getValues(sensorMatrix)
+                    val sensorMatrix = frame.sensorToBuffer?.let { matrix -> FloatArray(9).also { matrix.getValues(it) } }
                     frames.put(JSONObject().put("id", index).put("sampleRequestedMs", timestamp).put("zoom", zoomValue)
                         .put("maxRelativeZoom", maxRelativeZoom)
                         .put("width", frame.image.width).put("height", frame.image.height)
@@ -76,7 +76,7 @@ class ResearchSweepRecorder(
                         .put("cameraTimestampNs", frame.cameraTimestampNs)
                         .put("rawBufferSize", JSONArray(listOf(frame.width, frame.height)))
                         .put("viewSize", JSONArray(listOf(frame.viewSize.width, frame.viewSize.height)))
-                        .put("sensorToBuffer", JSONArray(sensorMatrix.toList()))
+                        .put("sensorToBuffer", sensorMatrix?.let { JSONArray(it.toList()) } ?: JSONObject.NULL)
                         .put("cameraPose", JSONObject.NULL).put("depth", JSONObject.NULL)
                         .put("bufferToView", JSONArray(matrix.toList())))
                 }

@@ -1,6 +1,7 @@
 package dev.cameracompositor
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.opengl.GLES11Ext
 import android.opengl.GLES20 as GL
@@ -8,6 +9,7 @@ import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.Surface
+import android.view.Gravity
 import android.view.WindowManager
 import android.widget.*
 import androidx.activity.ComponentActivity
@@ -45,6 +47,12 @@ class SpatialProbeActivity: ComponentActivity(), GLSurfaceView.Renderer {
     private var samples=JSONArray()
     private var lastReport: String? = null
     private val sessionId=java.util.UUID.randomUUID().toString()
+    private val sceneMode by lazy { intent.getBooleanExtra("sceneSweep",false) }
+    private val requestId by lazy { intent.getStringExtra("requestId").orEmpty() }
+    private val sceneFrames=mutableListOf<EnvironmentFrame>()
+    private var sceneLastCapture=0L
+    private var sceneStarted=0L
+    private var sceneTransferred=false
     private val vertices=buffer(floatArrayOf(-1f,-1f,1f,-1f,-1f,1f,1f,1f))
     private val uv=buffer(FloatArray(8))
     private val export=registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -66,14 +74,22 @@ class SpatialProbeActivity: ComponentActivity(), GLSurfaceView.Renderer {
         status=TextView(this).apply { text="Checking spatial tracking support…"; setPadding(20,28,20,16) }
         root.addView(status)
         surface=GLSurfaceView(this).apply { setEGLContextClientVersion(2); preserveEGLContextOnPause=true; setRenderer(this@SpatialProbeActivity) }
-        root.addView(surface,LinearLayout.LayoutParams(-1,0,1f))
-        root.addView(TextView(this).apply { text="Move the phone gently near textured objects. Spatial observations stay in memory until export.\nGoogle Play Services for AR is governed by Google's Terms of Service and Privacy Policy."; setPadding(20,8,20,8) })
+        val holder=FrameLayout(this)
+        holder.addView(surface,FrameLayout.LayoutParams(-1,-1,Gravity.CENTER))
+        if(sceneMode) holder.addOnLayoutChangeListener { view,_,_,_,_,_,_,_,_ ->
+            val w=minOf(view.width,(view.height*.75f).toInt()); val h=w*4/3
+            val current=surface.layoutParams
+            if(current.width!=w || current.height!=h) surface.layoutParams=FrameLayout.LayoutParams(w,h,Gravity.CENTER)
+        }
+        root.addView(holder,LinearLayout.LayoutParams(-1,0,1f))
+        root.addView(TextView(this).apply { text=if(sceneMode) "Turn slowly across a small scene. Six views include estimated camera pose and available depth. Hold the last view when finished.\nGoogle Play Services for AR is governed by Google's Terms of Service and Privacy Policy."
+            else "Move the phone gently near textured objects. Spatial observations stay in memory until export.\nGoogle Play Services for AR is governed by Google's Terms of Service and Privacy Policy."; setPadding(20,8,20,8) })
         record=Button(this).apply { text="Record five seconds"; isEnabled=false; setOnClickListener { recordingRequested=true; isEnabled=false } }
-        root.addView(record)
-        root.addView(Button(this).apply { text="Export spatial observations"; setOnClickListener {
+        if(!sceneMode) root.addView(record)
+        if(!sceneMode) root.addView(Button(this).apply { text="Export spatial observations"; setOnClickListener {
             if(lastReport!=null) export.launch("CameraCompositor-spatial-observations.json") else status.text="Record a spatial observation first."
         } })
-        root.addView(Button(this).apply { text="Return to camera"; setOnClickListener { finish() } })
+        root.addView(Button(this).apply { text=if(sceneMode) "Cancel observation" else "Return to camera"; setOnClickListener { finish() } })
         setContentView(root)
     }
     override fun onResume() { super.onResume(); prepareSession() }
@@ -85,7 +101,10 @@ class SpatialProbeActivity: ComponentActivity(), GLSurfaceView.Renderer {
         try {
             val availability=ArCoreApk.getInstance().checkAvailability(this)
             if (availability.isTransient && checks++<8) { status.postDelayed({ if(lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) prepareSession() },500); return }
-            if (!availability.isSupported) { surface.onPause(); status.text="ARCore support: $availability. The normal camera remains available."; return }
+            if (!availability.isSupported) {
+                surface.onPause(); status.text="ARCore support: $availability. The normal camera remains available."
+                if(sceneMode) { setResult(RESULT_CANCELED,Intent().putExtra("fallback",true)); finish() }; return
+            }
             if (ArCoreApk.getInstance().requestInstall(this,!installationRequested)==ArCoreApk.InstallStatus.INSTALL_REQUESTED) {
                 installationRequested=true; status.text="Complete Google Play Services for AR setup, then return."; return
             }
@@ -105,6 +124,7 @@ class SpatialProbeActivity: ComponentActivity(), GLSurfaceView.Renderer {
     }
     override fun onPause() {
         surface.onPause(); session?.pause(); recordingRequested=false; recordingSince=0
+        if(!sceneTransferred) { sceneFrames.forEach { it.frame.image.recycle() }; sceneFrames.clear(); sceneStarted=0; sceneLastCapture=0 }
         super.onPause()
     }
     override fun onDestroy() { session?.close(); session=null; super.onDestroy() }
@@ -138,11 +158,40 @@ class SpatialProbeActivity: ComponentActivity(), GLSurfaceView.Renderer {
             GL.glVertexAttribPointer(positionSlot,2,GL.GL_FLOAT,false,0,vertices); GL.glVertexAttribPointer(uvSlot,2,GL.GL_FLOAT,false,0,uv)
             GL.glDrawArrays(GL.GL_TRIANGLE_STRIP,0,4)
             GL.glDisableVertexAttribArray(positionSlot); GL.glDisableVertexAttribArray(uvSlot)
-            sample(frame)
+            if(sceneMode) captureScene(frame,ar) else sample(frame)
         } catch (_: Exception) {
             val now=SystemClock.elapsedRealtime()
             if(now-lastStatus>1000) { lastStatus=now; runOnUiThread { status.text="Spatial tracking is temporarily unavailable." } }
         }
+    }
+    private fun captureScene(frame: Frame,ar: Session) {
+        if(sceneTransferred) return
+        val now=SystemClock.elapsedRealtime()
+        if(sceneStarted==0L) sceneStarted=now
+        if(now-sceneStarted>12_000) {
+            sceneTransferred=true
+            sceneFrames.forEach { it.frame.image.recycle() }; sceneFrames.clear()
+            runOnUiThread { setResult(RESULT_CANCELED); finish() }; return
+        }
+        if(frame.camera.trackingState!=TrackingState.TRACKING || width<64 || height<64 || kotlin.math.abs(width.toFloat()/height-.75f)>.01f) {
+            if(sceneFrames.isNotEmpty()) { sceneFrames.forEach { it.frame.image.recycle() }; sceneFrames.clear(); sceneLastCapture=0 }
+            if(now-lastStatus>500) { lastStatus=now; runOnUiThread { status.text="Finding stable spatial tracking. Move gently near textured objects." } }
+            return
+        }
+        if(now-sceneLastCapture<600) return
+        try {
+            val entry=ArSceneCapture.capture(frame,ar,sessionId,sceneFrames.size,width,height,intent.getFloatExtra("maxZoom",3.2f).coerceIn(1f,3.2f))
+            sceneFrames.add(entry); sceneLastCapture=now
+            val count=sceneFrames.size
+            runOnUiThread { status.text="Observing the surroundings in 3D: $count of 6 views" }
+            if(count==6) {
+                val map=EnvironmentMap(SystemClock.elapsedRealtimeNanos())
+                sceneFrames.forEach { map.add(it.view) }
+                val batch=EnvironmentBatch(map,sceneFrames.toList(),ar.cameraConfig.cameraId)
+                sceneTransferred=true; SpatialSweepTransfer.offer(requestId,batch); sceneFrames.clear()
+                runOnUiThread { setResult(RESULT_OK,Intent().putExtra("requestId",requestId)); finish() }
+            }
+        } catch (_: NotYetAvailableException) { /* Await a synchronized CPU image/depth observation. */ }
     }
     private fun sample(frame: Frame) {
         val now=SystemClock.elapsedRealtime(); val camera=frame.camera

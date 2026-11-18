@@ -12,6 +12,8 @@
 
 ## Current result
 
+Version [0.4.1-spatial](V041_SPATIAL_PLANNING.md) uses the owner's confirmed ARCore/depth capability for spatial scene capture. Recorded SDK pose, intrinsics and available view-aligned depth now reach the multi-view planning request. The photo camera is visually registered, including field of view, before planning. Runtime integrated behavior, photographic quality and the earlier service timeout remain open. Live world-pose guidance during CameraX photography and the public keyless planner are still unfinished.
+
 Version [0.4.0-environment](V040_ENVIRONMENT_PROTOTYPE.md) now implements the first short-sweep observation graph and multi-view scene/subject planning request. A recorded-view route can guide back through measured overlap. The separate optional ARCore test can collect actual camera pose, sparse points and depth on supported devices; those measurements are not yet fused into the CameraX planner. The old online timeout, real provider results, 70% preference and physical speed remain open. The primary environment planner still needs the personal test key; a public keyless gateway is not deployed.
 
 Version 0.1 aligned a generic detected object to a chosen target. Owner feedback reported intermittent detection and poor directional-text UX. Version 0.2 added one-image cloud crop selection and feature tracking. The owner reported a timeout and correctly distinguished manual crop tracking from smart composition.

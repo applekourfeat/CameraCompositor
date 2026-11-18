@@ -2,6 +2,8 @@
 
 ## Current environment prototype
 
+Current version **0.4.1-spatial** passes the build, 55 Android tests, 20 Python research tests and lint with zero errors/90 warnings. Signature and artifact checks pass; see `research/results/delivery-verification-v041_spatial.json`. The owner's 0.4 export confirms the standard Vivo's pose/point/depth capability. Physical validation of the new spatial image/depth projection, photo-camera match and complete AI flow remains pending. [Current implementation and limits](V041_SPATIAL_PLANNING.md).
+
 Version **0.4.0-environment** passes Android build, 48 unit tests and lint with zero errors/78 warnings, plus 20 Python research tests. The private APK signature matches earlier builds. `scripts/check_delivery.py` verifies the tested APK, credential-pattern checks, expected debug-only GAIC asset, included optional ARCore notices/libraries and absent release research weights. See `research/results/delivery-verification-v040_environment.json` and [the implementation report](V040_ENVIRONMENT_PROTOTYPE.md). Actual native camera/OpenCV/GL/ARCore behavior, provider inference, photographic quality and Vivo performance remain pending. Mock-server success is separate from the unresolved live service timeout.
 
 ## Earlier research verification

@@ -15,7 +15,7 @@ KEY_PATTERN = re.compile(rb"AIza[0-9A-Za-z_-]{35}|gh[pousr]_[0-9A-Za-z]{30,}|sk-
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument("--version",default="0.4.0-environment")
+    parser.add_argument("--version",default="0.4.1-spatial")
     args=parser.parse_args()
     version=args.version
     assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z]+)?",version), "Invalid delivery version"
@@ -26,7 +26,7 @@ def main():
         suite = ET.parse(path).getroot()
         count += int(suite.get("tests", "0"))
         failures += int(suite.get("failures", "0")) + int(suite.get("errors", "0"))
-    assert count >= (47 if version=="0.4.0-environment" else 35) and failures == 0, "Unit checks are missing or failed"
+    assert count >= (55 if version=="0.4.1-spatial" else 47 if version=="0.4.0-environment" else 35) and failures == 0, "Unit checks are missing or failed"
     metadata = json.loads((ROOT / "app/build/outputs/apk/debug/output-metadata.json").read_text())
     assert metadata["elements"][0]["versionName"] == version, "Build metadata is stale"
     assert APK.read_bytes() == (ROOT / "app/build/outputs/apk/debug/app-debug.apk").read_bytes(), "Delivery does not match tested build"
@@ -41,7 +41,7 @@ def main():
         assert not any(n.endswith((".tflite", ".litertlm", ".hdf5", ".pth")) for n in names)
         assert all("arm64-v8a" in n for n in names if n.startswith("lib/"))
         assert any("ONNX-Runtime-1.23.2-LICENSE" in n for n in names)
-        if version=="0.4.0-environment":
+        if version in {"0.4.0-environment","0.4.1-spatial"}:
             assert "assets/third-party/ARCore-NOTICE.txt" in names
             assert "lib/arm64-v8a/libarcore_sdk_jni.so" in names
         assert not any(KEY_PATTERN.search(source.read(n)) for n in names if not n.endswith("/")), "Credential-like content in APK"
@@ -58,7 +58,7 @@ def main():
         "apkSha256": hashlib.sha256(APK.read_bytes()).hexdigest(), "unitTests": count, "unitFailures": failures,
         "lintErrors": errors, "lintWarnings": sum(i.get("severity") == "Warning" for i in issues),
         "modelSha256": MODEL_SHA, "releaseResearchAssets": "absent", "credentialPatternCheck": "pass",
-        "physicalVivoTests": "prior owner observations recorded; environment sweep, native flow, ARCore and provider inference remain pending on Vivo",
+        "physicalVivoTests": "owner v0.4 export confirms ARCore pose/points/depth on Vivo V30; v0.4.1 capture alignment, photographic selection, provider inference and performance remain pending",
         "humanPreferenceGate": "pending",
         "liveProviderDiagnostic": "v0.3.0 owner report: WAIT_RESPONSE timeout after client upload; cause unresolved"}
     tag=version.replace(".","").replace("-","_")

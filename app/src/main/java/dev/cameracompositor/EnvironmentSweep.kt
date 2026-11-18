@@ -5,8 +5,9 @@ import android.os.Looper
 import android.os.SystemClock
 
 data class EnvironmentFrame(val view: EnvironmentView, val frame: ScanFrame)
-class EnvironmentBatch(val map: EnvironmentMap, val frames: List<EnvironmentFrame>) : AutoCloseable {
-    override fun close() { frames.forEach { it.frame.image.recycle() } }
+class EnvironmentBatch(val map: EnvironmentMap, val frames: List<EnvironmentFrame>,val cameraId: String?=null) : AutoCloseable {
+    private val closed=java.util.concurrent.atomic.AtomicBoolean(false)
+    override fun close() { if(closed.compareAndSet(false,true)) frames.forEach { it.frame.image.recycle() } }
 }
 
 /** Main-thread acquisition; a bounded in-memory scene observation, with no disk writes/uploads. */

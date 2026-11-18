@@ -10,6 +10,8 @@ After version 0.3.1 delivery, the owner supplied clear city screenshots with the
 
 Version 0.4.0-environment implements a primary six-view scene observation/planning flow and a separate optional ARCore spatial test. It includes the new image timestamps/transforms and camera-calibration/depth inventory. No new recording, environment-guidance session or spatial test has been measured on the Vivo. Standard V30 ARCore compatibility and the old provider timeout remain unconfirmed/unresolved respectively. Desktop ETH3D temporal motion estimates are separate development evidence, not phone measurements. [Build scope and remaining work](V040_ENVIRONMENT_PROTOTYPE.md).
 
+New owner evidence supersedes that earlier ARCore uncertainty: the 0.4 export reports `outcome: recorded`, `depthEnabled: true`, camera pose, sparse points and nonempty depth samples. The first visible sample has CPU image size 640x480 and depth size 160x90. The supplied export is truncated, so its total sample count and full-session quality are unknown. This confirms SDK output on the standard Vivo V30, not physical accuracy. Version [0.4.1-spatial](V041_SPATIAL_PLANNING.md) now attaches corresponding spatial evidence to the primary planner; that integrated camera handoff, registration, AI response and photo guidance remain untested on the phone.
+
 | Item | Result / notes |
 | --- | --- |
 | Phone / Android / Funtouch OS version | Vivo V30 / pending / pending |
@@ -33,6 +35,7 @@ Version 0.4.0-environment implements a primary six-view scene observation/planni
 | Human preference / old heuristic comparison | Pending |
 | Six-view planning / measured return route | Pending |
 | Native temporal tracker and observation throughput | Pending |
-| ARCore availability / camera handoff / actual pose and depth | Pending |
+| ARCore availability / actual pose and depth | Owner 0.4 export confirms session pose, sparse points and available depth; accuracy pending |
+| 0.4.1 spatial capture, CameraX framing match and integrated planning | Pending |
 
 Automated compilation and unit tests validate code and geometric rules. They do not establish camera quality, runtime model availability, coordinate alignment, or performance on the physical phone.

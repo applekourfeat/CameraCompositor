@@ -49,7 +49,7 @@ class CloudShotPlanner(private val settings: PlannerSettings, private val saveDi
 
     fun testService(chart: Bitmap, requestId: Long): ModelChoice = chooseCore(chart, requestId, 1.8f, false) {}
 
-    fun chooseEnvironment(batch: EnvironmentBatch, requestId: Long): EnvironmentAssessment {
+    fun chooseEnvironment(batch: EnvironmentBatch, requestId: Long, maxRelativeZoom: Float=3.2f): EnvironmentAssessment {
         val trace=ScanDiagnostics()
         fun active()=sequence.get()==requestId
         try {
@@ -57,7 +57,8 @@ class CloudShotPlanner(private val settings: PlannerSettings, private val saveDi
             val credential=settings.key() ?: error("Configure the personal research service first.")
             if (!active()) throw SceneServiceException("cancelled","Scan cancelled.")
             settings.reserveScan()
-            val chosen=batch.map.plannerViews()
+            val chosen=batch.map.plannerViews().map { it.copy(maxRelativeZoom=minOf(it.maxRelativeZoom,maxRelativeZoom)) }
+            val guideable=chosen.filter { batch.map.routeTo(it.id)!=null }.map { it.id }.toSet()
             val encoded=chosen.map { view ->
                 if (!active()) throw SceneServiceException("cancelled","Scan cancelled.")
                 val frame=batch.frames.single { it.view.id==view.id }.frame
@@ -67,10 +68,10 @@ class CloudShotPlanner(private val settings: PlannerSettings, private val saveDi
                 EncodedEnvironmentView(view,Base64.encodeToString(bytes,Base64.NO_WRAP))
             }
             val current=batch.frames.last().view.id
-            val body=transport.execute(EnvironmentProtocol.request(encoded,current),credential,settings.model,trace,::active)
+            val body=transport.execute(EnvironmentProtocol.request(encoded,current,guideable),credential,settings.model,trace,::active)
             if (!active()) throw SceneServiceException("cancelled","Scan cancelled.")
             trace.mark(ScanDiagnostics.Stage.PARSE)
-            val decision=try { EnvironmentProtocol.assessment(body,chosen,current) } catch (_: RuntimeException) {
+            val decision=try { EnvironmentProtocol.assessment(body,chosen,current,guideable) } catch (_: RuntimeException) {
                 throw SceneServiceException("format","The service returned an invalid environment plan.")
             }
             trace.outcome="success"; trace.mark(ScanDiagnostics.Stage.COMPLETE); return decision

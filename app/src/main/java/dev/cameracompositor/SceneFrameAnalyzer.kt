@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 data class ScanFrame(val image: Bitmap, val gray: ByteArray, val width: Int, val height: Int,
     val bufferToView: Matrix, val viewSize: Size, val cameraTimestampNs: Long,
-    val sensorToBuffer: Matrix, val registration: ViewRegistration? = null)
+    val sensorToBuffer: Matrix?, val registration: ViewRegistration? = null)
 
 /** Shared analysis frames feed both the one-shot scan and scene tracking. */
 class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack: (TrackingEvent) -> Unit) : ImageAnalysis.Analyzer {

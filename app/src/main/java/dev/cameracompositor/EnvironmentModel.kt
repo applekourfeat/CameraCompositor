@@ -11,7 +11,7 @@ data class ViewRegistration(val inliers: Int, val tracks: Int, val centerMotion:
 }
 
 data class EnvironmentView(val id: Int, val timeMs: Long, val zoom: Float, val maxRelativeZoom: Float,
-                           val registration: ViewRegistration?,val previousViewId: Int?=null)
+                           val registration: ViewRegistration?,val previousViewId: Int?=null,val spatial: SpatialEvidence?=null)
 
 /** Bounded temporal scene graph. It records uncertainty instead of inventing camera translation. */
 class EnvironmentMap(val sceneId: Long) {
@@ -22,6 +22,8 @@ class EnvironmentMap(val sceneId: Long) {
         require(view.zoom.isFinite() && view.zoom > 0 && view.maxRelativeZoom.isFinite() && view.maxRelativeZoom in 1f..3.2f)
         require(entries.lastOrNull()?.let { view.timeMs > it.timeMs && abs(view.zoom/it.zoom-1) < .02f } != false)
         require(view.previousViewId==null || view.previousViewId==entries.lastOrNull()?.id)
+        require(view.spatial==null || entries.lastOrNull()?.spatial?.let { it.sessionId==view.spatial.sessionId && view.spatial.timestampNs>it.timestampNs } != false)
+        require(view.spatial==null || entries.mapNotNull { it.spatial }.all { it.sessionId==view.spatial.sessionId && it.cameraId==view.spatial.cameraId })
         entries.add(view)
     }
     /** Keep the temporal endpoints and distinct intervening views, never fabricated views. */
@@ -30,6 +32,11 @@ class EnvironmentMap(val sceneId: Long) {
         val selected = mutableListOf(entries.first())
         var movement = 0f
         for (view in entries.drop(1)) {
+            val selectedPose=selected.last().spatial
+            if(view.spatial!=null && selectedPose!=null) {
+                if(selectedPose.rotationDegreesTo(view.spatial)>=6f || selectedPose.distanceTo(view.spatial)>=.03f) selected.add(view)
+                continue
+            }
             val link = view.registration
             if (link?.reliable == true) movement += link.centerMotion
             if (link?.reliable == false || link == null || movement >= .12f) {
@@ -37,7 +44,7 @@ class EnvironmentMap(val sceneId: Long) {
             }
         }
         val last = entries.last()
-        if (selected.last().id != last.id && selected.size > 1) selected.add(last)
+        if (selected.last().id != last.id) selected.add(last)
         if (selected.size <= 4) return selected
         return listOf(selected.first(), selected[selected.size/3], selected[2*selected.size/3], selected.last()).distinctBy { it.id }
     }
@@ -47,7 +54,10 @@ class EnvironmentMap(val sceneId: Long) {
     fun routeTo(viewId: Int): List<Int>? {
         val target=entries.indexOfFirst { it.id==viewId }
         if(target<0) return null
-        if(entries.drop(target+1).any { it.registration?.reliable!=true }) return null
+        for(i in target+1 until entries.size) {
+            val previous=entries[i-1]; val next=entries[i]
+            if(next.registration?.reliable!=true && previous.spatial?.let { a -> next.spatial?.let { a.supportsRotationLink(it) } }!=true) return null
+        }
         return entries.subList(target,entries.size).asReversed().map { it.id }
     }
 }

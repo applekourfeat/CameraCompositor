@@ -4,9 +4,9 @@ Use the standard Vivo V30. A cable or mirroring session is optional. Transfer th
 
 ## Short first session
 
-Install `artifacts/CameraCompositor-0.4.0-environment-debug.apk`. This is an experimental implementation, with no physical photographic-quality approval.
+Install `artifacts/CameraCompositor-0.4.1-spatial-debug.apk`. This is an experimental implementation, with no physical photographic-quality approval. The owner's 0.4 export already confirms ARCore pose/point/depth output on the standard Vivo; the integrated spatial-photo flow remains to test.
 
-1. Tap **Find a composition**, allow multi-image upload only if desired, and turn slowly across a small overlapping scene for about four seconds with fixed zoom. Hold the last view during assessment. The saved personal research key is reused. Record whether the service returns keep, observe-more, a selected view, timeout or another failure.
+1. Tap **Find a composition**, allow the revised image/pose/depth upload only if desired, and turn gently across a small overlapping scene. Supported rear cameras collect six spatial observations in a separate ARCore view. Hold the final view while CameraX reopens, matches its field of view and requests assessment. The saved personal research key is reused. Record keep, observe-more, a selected view, alignment failure, timeout or another failure.
 2. For a selected view, test **Use this view** and **Dismiss**. A target outside the current field of view should guide through the recorded intermediate views. Pinching cancels the environment route. Cancel, photo capture, gallery/background and camera switching must restore controls. Tracking loss should clear a guide after three seconds.
 3. Open **Options > Developer tools > Test spatial tracking (ARCore)**. Report the actual support state for the standard Vivo V30. If supported, try a five-second recording near textured nearby objects. Pose/point/depth export is optional and contains no camera images. Returning must restore the normal camera. This isolated spatial test is not yet fused into the photographic planner.
 4. **Options > Developer tools > Camera capability report** inventories exposed cameras, JPEG sizes, calibration, depth formats and vendor processing. Record Android/Funtouch version too. Optional legacy local crop ranking and the manual guide remain under Developer tools.

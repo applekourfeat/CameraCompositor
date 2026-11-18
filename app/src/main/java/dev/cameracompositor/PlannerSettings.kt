@@ -16,8 +16,8 @@ class PlannerSettings(context: Context) {
     private val prefs = context.getSharedPreferences("scene_planner", Context.MODE_PRIVATE)
     val model get() = prefs.getString("model", "gemini-3.8-flash")!!
     val consent get() = prefs.getBoolean("consent_v1", false)
-    val environmentConsent get() = prefs.getBoolean("environment_consent_v1", false)
-    fun consentToEnvironmentUpload() { prefs.edit().putBoolean("environment_consent_v1",true).apply() }
+    val environmentConsent get() = prefs.getBoolean("environment_consent_v2", false)
+    fun consentToEnvironmentUpload() { prefs.edit().putBoolean("environment_consent_v2",true).apply() }
     fun consentToUpload() { prefs.edit().putBoolean("consent_v1", true).apply() }
     fun key(): String? = runCatching {
         val encrypted = prefs.getString("credential", null) ?: return null
@@ -36,7 +36,7 @@ class PlannerSettings(context: Context) {
         prefs.edit().putString("credential", Base64.encodeToString(cipher.doFinal(credential.toByteArray()), Base64.NO_WRAP))
             .putString("iv", Base64.encodeToString(cipher.iv, Base64.NO_WRAP)).putString("model", model).apply()
     }
-    fun forget() { prefs.edit().remove("credential").remove("iv").remove("consent_v1").remove("environment_consent_v1").apply() }
+    fun forget() { prefs.edit().remove("credential").remove("iv").remove("consent_v1").remove("environment_consent_v1").remove("environment_consent_v2").apply() }
 
     @Synchronized fun reserveScan() {
         val today = LocalDate.now().toString()

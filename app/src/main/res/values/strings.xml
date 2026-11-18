@@ -35,5 +35,5 @@
     <string name="photo_processing">Photo processing</string>
     <string name="about_build">About this build</string>
     <string name="developer_tools">Developer tools</string>
-    <string name="about_framing">Environment prototype. A short sweep supplies observed viewpoints and measured image overlap to an experimental online planner. This camera path has no verified translation or depth. Photographic quality and Vivo performance remain under evaluation.</string>
+    <string name="about_framing">Spatial environment prototype. Supported rear cameras supply observed views, SDK camera poses and available depth to an experimental online planner. The photo camera is visually matched before planning. Other cameras use image overlap with unknown pose/depth. Photographic quality and physical accuracy remain under evaluation.</string>
 </resources>

@@ -1,5 +1,7 @@
 # Version 0.4.0 environment prototype
 
+Superseded by [0.4.1 spatial planning](V041_SPATIAL_PLANNING.md), following the owner's successful Vivo pose/point/depth export. This page describes the earlier implementation. Its first delivered APK had 78 lint warnings; its final local checkpoint has 81. Both had zero lint errors and 48 passing Android tests.
+
 18 November 2026. This version implements the first multi-observation camera flow. It remains an engineering prototype, with photographic preference, Vivo performance and live provider inference pending.
 
 ## Implemented

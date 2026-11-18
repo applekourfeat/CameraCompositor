@@ -1,6 +1,6 @@
 # Camera Compositor
 
-Native Android camera research for useful composition guidance. Version **0.4.0-environment** implements a short scene-observation sweep, multi-view photographic planning and an optional real spatial-tracking test. The owner leads final UI/UX. [Implementation, evidence and limits](docs/V040_ENVIRONMENT_PROTOTYPE.md).
+Native Android camera research for useful composition guidance. Version **0.4.1-spatial** connects SDK camera poses, intrinsics and available depth to multi-view planning, with visual registration back to the full-resolution photo camera. The owner's Vivo V30 export confirms ARCore pose/point/depth output. The owner leads final UI/UX. [Implementation, evidence and limits](docs/V041_SPATIAL_PLANNING.md).
 
 The owner's city-scene feedback requires understanding the environment, viewpoints and perspective. [The preceding investigation](docs/ENVIRONMENT_COMPOSITION_RESEARCH.md) explains the crop-only failure. The new flow observes several views and requests a subject/relationship graph before choosing a shot. Photographic quality and Vivo performance remain unqualified.
 
@@ -8,11 +8,11 @@ Camera capture, the manual guide, legacy local ranking and supported-device spat
 
 ## Try the research build
 
-Install `artifacts/CameraCompositor-0.4.0-environment-debug.apk` on the Vivo V30. Android 10+, ARM64. It uses this computer's existing debug signing key and can update the earlier prototype.
+Install `artifacts/CameraCompositor-0.4.1-spatial-debug.apk` on the Vivo V30. Android 10+, ARM64. It uses this computer's existing debug signing key and can update the earlier prototype.
 
-1. Tap **Find a composition**. After personal research setup and multi-view consent, turn slowly across a small scene with overlapping views and fixed zoom. Six views are collected; up to four are sent for assessment. Hold the final view while it responds.
+1. Tap **Find a composition**. After personal research setup and image/pose/depth consent, supported rear cameras collect six spatial views through ARCore; other paths use image overlap. Turn gently across a small scene, then hold the last view while the photo camera matches it. Up to four observations are sent for assessment.
 2. A suggestion references an actually observed viewpoint and subject. Review **Use this view** or **Dismiss**. A return guide follows measured intermediate views; missing overlap or stale tracking causes abstention. Pinching cancels an environment route and returns zoom control. Taking a photo cancels a scan.
-3. **Options > Developer tools > Test spatial tracking (ARCore)** checks actual support, then can record camera poses, sparse points and supported depth without an AI key. CameraX pauses for this separate test. Its data is not yet fused into the photographic planner.
+3. **Options > Developer tools > Test spatial tracking (ARCore)** retains the separate local pose/point/depth export without an AI key. The primary sweep now has its own spatial capture path feeding the photographic planner. Continuous world-pose guidance during CameraX capture remains unfinished.
 4. **Camera capability report**, the explicit eight-view research recorder and **Legacy local crop research** remain under Developer tools. These diagnostics are separate from proof of photographic quality.
 
 The framing guide expires after three seconds of lost tracking. Saved photographs use quality-priority full-resolution capture, with manufacturer processing when exposed. Photo quality compared with Vivo's stock camera remains unmeasured.

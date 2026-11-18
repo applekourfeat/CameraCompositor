@@ -49,6 +49,19 @@ class MainActivity : ComponentActivity() {
     private var environmentSweep: EnvironmentSweep? = null
     private var environmentDialog: AlertDialog? = null
     private var activeEnvironmentBatch: EnvironmentBatch? = null
+    private var pendingSpatialRequest: String? = null
+    private var pendingSpatialBatch: EnvironmentBatch? = null
+    private var spatialBridgePlanId=0L
+    private var spatialBridgeSeenAt=0L
+    private var spatialBridgeFrame: TrackedFrame?=null
+    private var spatialBridgeWaiting=false
+    private var spatialBridgeZoomBusy=false
+    private val spatialSweepResult=registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val expected=pendingSpatialRequest; pendingSpatialRequest=null
+        val batch=expected?.let { SpatialSweepTransfer.take(it) }
+        if(result.resultCode==RESULT_OK && result.data?.getStringExtra("requestId")==expected && batch!=null) adoptSpatialBatch(batch)
+        else { batch?.close(); guidance.text="Spatial observation stopped. The normal camera is ready." }
+    }
     private val environmentRoute=ArrayDeque<Pair<ScanFrame,ModelChoice>>()
     private var planZoomLimit = 1.8f
     private var pendingSweep: java.io.File? = null
@@ -130,6 +143,29 @@ class MainActivity : ComponentActivity() {
             runCatching { java.io.File(filesDir, "last-scan-diagnostic.json").writeText(report) }
         }
         analyzer = SceneFrameAnalyzer(tracker) { event -> handler.post {
+            if(!isDestroyed && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && spatialBridgePlanId!=0L &&
+                event.planId==spatialBridgePlanId && event.frame!=null && SystemClock.elapsedRealtime()-event.frame.timeMs<350) {
+                spatialBridgeSeenAt=event.frame.timeMs; spatialBridgeFrame=event.frame
+                if(spatialBridgeWaiting) {
+                    overlay.frame=event.frame.corners; overlay.fresh=true; overlay.invalidate()
+                    val camera=controller; val z=camera?.zoomState?.value
+                    if(z!=null && ShotGeometry.aimReady(event.frame.corners) && !spatialBridgeZoomBusy) {
+                        val scale=ShotGeometry.width(event.frame.corners)
+                        val desired=(z.zoomRatio/scale).coerceIn(z.minZoomRatio,z.maxZoomRatio)
+                        if(abs(desired-z.zoomRatio)>.015f) {
+                            spatialBridgeZoomBusy=true; val token=generation
+                            val future=camera.setZoomRatio(desired)
+                            future.addListener({ if(token==generation) spatialBridgeZoomBusy=false },main)
+                        }
+                    }
+                    if(hold.update(ShotGeometry.framingReady(event.frame.corners) && !spatialBridgeZoomBusy,event.frame.timeMs)) {
+                        baselineZoom=z?.zoomRatio ?: 1f
+                        spatialBridgeWaiting=false; overlay.frame=null; overlay.fresh=false; overlay.invalidate()
+                        val batch=pendingSpatialBatch; pendingSpatialBatch=null
+                        if(batch!=null) runEnvironmentPlanner(batch,generation,planner.beginRequest())
+                    }
+                }
+            }
             if (!isDestroyed && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && activePlan && !saving && event.planId == activePlanId) {
                 if (event.frame == null) trackingLost() else showTrack(event.frame)
             }
@@ -186,6 +222,8 @@ class MainActivity : ComponentActivity() {
                 .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
                 .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY).build()
             camera.imageAnalysisBackpressureStrategy = ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
+            camera.imageAnalysisResolutionSelector=ResolutionSelector.Builder().setResolutionStrategy(
+                ResolutionStrategy(Size(640,480),ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)).build()
             camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.IMAGE_ANALYSIS)
             camera.setImageAnalysisAnalyzer(analysisExecutor, ThrottledAnalyzer(analyzer) { if (analyzer.observingEnvironment) 33L else 100L })
             preview.controller = camera; camera.cameraSelector = baseSelector; camera.bindToLifecycle(this)
@@ -195,25 +233,78 @@ class MainActivity : ComponentActivity() {
                     camera.initializationFuture.get(); cameraReady = true; access.visibility = View.GONE
                     guidance.setText(R.string.ready_to_frame)
                     refreshButtons(); updateCameraStatus()
+                    if(pendingSpatialBatch!=null) prepareSpatialBridge()
                 } catch (_: Exception) { cameraFailed(camera) }
             }, main)
         } catch (_: Exception) { cameraFailed(camera) }
     }
     private fun cameraFailed(camera: LifecycleCameraController) {
+        val spatialSelection=pendingSpatialBatch!=null
+        pendingSpatialBatch?.close(); pendingSpatialBatch=null
+        if(spatialSelection) { baseSelector=CameraSelector.DEFAULT_BACK_CAMERA; scanning=false; endSceneEvidence() }
         camera.clearImageAnalysisAnalyzer(); camera.unbind(); if (controller === camera) controller = null
         cameraReady = false; refreshButtons(); guidance.setText(R.string.camera_error); access.visibility = View.VISIBLE
+        if(spatialSelection) handler.post { if(controller==null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) startCamera() }
     }
 
     private fun requestEnvironmentScan() {
         if (!cameraReady || scanning || saving) return
         if (plannerSettings.key()==null) { showAiSetup(); return }
-        if (plannerSettings.environmentConsent) { scanEnvironment(); return }
+        if (plannerSettings.environmentConsent) { startPreferredEnvironmentScan(); return }
         AlertDialog.Builder(this).setTitle("Observe the scene for AI planning?")
             .setMessage("A short sweep collects six reduced views locally. Up to four views are sent to Google for scene and viewpoint assessment using your saved research key. " +
                 "Google's free tier may use submitted images to improve its products. Your project's quota applies. " +
-                "This is an experimental environment planner; translation and depth remain unmeasured on this camera path.")
-            .setPositiveButton("Allow and scan") { _, _ -> plannerSettings.consentToEnvironmentUpload(); scanEnvironment() }
+                "On supported devices, Google Play Services for AR supplies estimated camera poses and depth samples, which are included with the selected views. Google's Terms of Service and Privacy Policy apply. " +
+                "Physical accuracy and photographic quality remain experimental.")
+            .setPositiveButton("Allow and scan") { _, _ -> plannerSettings.consentToEnvironmentUpload(); startPreferredEnvironmentScan() }
             .setNegativeButton("Cancel",null).show()
+    }
+    private fun startPreferredEnvironmentScan() {
+        val supported=runCatching { com.google.ar.core.ArCoreApk.getInstance().checkAvailability(this).isSupported }.getOrDefault(false)
+        if(!supported || baseSelector==CameraSelector.DEFAULT_FRONT_CAMERA) { scanEnvironment(); return }
+        cancelGuide(false)
+        val request=java.util.UUID.randomUUID().toString(); pendingSpatialRequest=request
+        val maximum=(controller?.zoomState?.value?.maxZoomRatio ?: 1f).coerceIn(1f,3.2f)
+        handoffCamera {
+            spatialSweepResult.launch(Intent(this,SpatialProbeActivity::class.java).putExtra("sceneSweep",true)
+                .putExtra("requestId",request).putExtra("maxZoom",maximum))
+        }
+    }
+    @androidx.annotation.OptIn(markerClass=[androidx.camera.camera2.interop.ExperimentalCamera2Interop::class])
+    private fun adoptSpatialBatch(batch: EnvironmentBatch) {
+        pendingSpatialBatch?.close(); pendingSpatialBatch=batch
+        batch.cameraId?.let { id -> baseSelector=CameraSelector.Builder().addCameraFilter { cameras ->
+            cameras.filter { androidx.camera.camera2.interop.Camera2CameraInfo.from(it).cameraId==id }
+        }.build() }
+        generation++; scanning=true; baselineZoom=1f
+        controller?.let { it.clearImageAnalysisAnalyzer(); it.unbind() }
+        controller=null; preview.controller=null; cameraReady=false; startCamera()
+    }
+    private fun prepareSpatialBridge() {
+        val batch=pendingSpatialBatch ?: return
+        val camera=controller ?: return
+        val token=generation
+        guidance.text="Matching the photo camera to the spatial scan. Hold this view."
+        val zoom=camera.setZoomRatio(1f)
+        zoom.addListener({
+            if(token!=generation || isDestroyed || pendingSpatialBatch!==batch) return@addListener
+            if(runCatching { zoom.get() }.isFailure) { cancelGuide(false); return@addListener }
+            spatialBridgeSeenAt=0; spatialBridgeWaiting=true; spatialBridgeZoomBusy=false; hold.reset()
+            spatialBridgePlanId=tracker.select(batch.frames.last().frame,CropOption(-1,SubjectBox(0f,0f,1f,1f)))
+            handler.postDelayed({
+                if(token==generation && spatialBridgeWaiting) {
+                    cancelGuide(false); guidance.text="The photo camera could not match the spatial scan. Hold the last view and try again."
+                }
+            },5000)
+        },main)
+    }
+    private fun environmentEvidenceFresh(): Boolean = if(spatialBridgePlanId!=0L)
+        spatialBridgeSeenAt>0 && SystemClock.elapsedRealtime()-spatialBridgeSeenAt<750 else analyzer.environmentFresh(SystemClock.elapsedRealtime())
+    private fun atLastEnvironmentView() = if(spatialBridgePlanId!=0L) spatialBridgeFrame?.let { ShotGeometry.framingReady(it.corners) }==true else analyzer.atEnvironmentCheckpoint()
+    private fun endSceneEvidence() {
+        spatialBridgePlanId=0; spatialBridgeSeenAt=0; spatialBridgeFrame=null; spatialBridgeWaiting=false; spatialBridgeZoomBusy=false
+        analyzer.endEnvironment()
+        if(!activePlan) tracker.reset()
     }
     private fun scanEnvironment() {
         if (!cameraReady || scanning || saving) return
@@ -228,51 +319,56 @@ class MainActivity : ComponentActivity() {
             { batch ->
                 environmentSweep=null
                 if (generation!=token || isDestroyed) { batch?.close() }
-                else if (batch==null) { analyzer.endEnvironment(); scanning=false; guidance.text="Observation stopped. Keep the camera visible and zoom fixed." }
+                else if (batch==null) { endSceneEvidence(); scanning=false; guidance.text="Observation stopped. Keep the camera visible and zoom fixed." }
                 else {
-                    guidance.text="Assessing the observed scene. Hold this view."
-                    val started=SystemClock.elapsedRealtime()
-                    modelExecutor.execute {
-                        val result=runCatching { planner.chooseEnvironment(batch,requestId) }
-                        handler.post {
-                            if (generation!=token || isDestroyed) { batch.close(); return@post }
-                            scanning=false; lastScanMs=SystemClock.elapsedRealtime()-started
-                            modelReason="Environment: ${batch.frames.size} views; ${batch.map.registeredLinks} measured overlap links"
-                            result.onSuccess { assessment ->
-                                val decision=assessment.decision
-                                modelReason+="; ${assessment.subjects.size} subject hypotheses; ${assessment.relationships.size} inferred relationships"
-                                if (!analyzer.environmentFresh(SystemClock.elapsedRealtime())) {
-                                    analyzer.endEnvironment(); batch.close(); guidance.text="Scene tracking changed during assessment. Observe the scene again."
-                                } else when(decision) {
-                                    is EnvironmentDecision.Keep -> {
-                                        if (analyzer.atEnvironmentCheckpoint()) {
-                                            analyzer.endEnvironment(); batch.close(); guidance.text="Keep this view. ${decision.reason}"
-                                        } else showEnvironmentChoice(batch,EnvironmentDecision.Guide(batch.frames.last().view.id,
-                                            SubjectBox(0f,0f,1f,1f),"Observed view",decision.reason),token)
-                                    }
-                                    is EnvironmentDecision.ObserveMore -> {
-                                        analyzer.endEnvironment(); batch.close(); guidance.text="More observations needed. ${decision.reason}"
-                                    }
-                                    is EnvironmentDecision.Guide -> showEnvironmentChoice(batch,decision,token)
-                                }
-                            }.onFailure { error ->
-                                analyzer.endEnvironment(); batch.close()
-                                guidance.text=when((error as? SceneServiceException)?.category) {
-                                    "timeout" -> "The scene service timed out. Camera controls are ready."
-                                    "http_429" -> "Online quota is exhausted. You can still take photos and use the manual guide."
-                                    else -> "Scene planning is unavailable. Camera controls are ready."
-                                }
-                            }
-                        }
-                    }
+                    runEnvironmentPlanner(batch,token,requestId)
                 }
             })
         environmentSweep!!.start()
     }
+    private fun runEnvironmentPlanner(batch: EnvironmentBatch,token: Int,requestId: Long) {
+        guidance.text="Assessing the observed scene. Hold this view."
+        val started=SystemClock.elapsedRealtime()
+        val availableZoom=((controller?.zoomState?.value?.maxZoomRatio ?: baselineZoom)/baselineZoom).coerceIn(1f,3.2f)
+        modelExecutor.execute {
+            val result=runCatching { planner.chooseEnvironment(batch,requestId,availableZoom) }
+            handler.post {
+                if (generation!=token || isDestroyed) { batch.close(); return@post }
+                scanning=false; lastScanMs=SystemClock.elapsedRealtime()-started
+                modelReason="Environment: ${batch.frames.size} views; ${batch.map.registeredLinks} measured overlap links; " +
+                    "${batch.frames.count { it.view.spatial!=null }} SDK pose views; ${batch.frames.count { it.view.spatial?.depthGridViewAligned!=null }} depth grids"
+                result.onSuccess { assessment ->
+                    val decision=assessment.decision
+                    modelReason+="; ${assessment.subjects.size} subject hypotheses; ${assessment.relationships.size} inferred relationships"
+                    if (!environmentEvidenceFresh()) {
+                        endSceneEvidence(); batch.close(); guidance.text="Scene tracking changed during assessment. Observe the scene again."
+                    } else when(decision) {
+                        is EnvironmentDecision.Keep -> {
+                            if (atLastEnvironmentView()) {
+                                endSceneEvidence(); batch.close(); guidance.text="Keep this view. ${decision.reason}"
+                            } else showEnvironmentChoice(batch,EnvironmentDecision.Guide(batch.frames.last().view.id,
+                                SubjectBox(0f,0f,1f,1f),"Observed view",decision.reason),token)
+                        }
+                        is EnvironmentDecision.ObserveMore -> {
+                            endSceneEvidence(); batch.close(); guidance.text="More observations needed. ${decision.reason}"
+                        }
+                        is EnvironmentDecision.Guide -> showEnvironmentChoice(batch,decision,token)
+                    }
+                }.onFailure { error ->
+                    endSceneEvidence(); batch.close()
+                    guidance.text=when((error as? SceneServiceException)?.category) {
+                        "timeout" -> "The scene service timed out. Camera controls are ready."
+                        "http_429" -> "Online quota is exhausted. You can still take photos and use the manual guide."
+                        else -> "Scene planning is unavailable. Camera controls are ready."
+                    }
+                }
+            }
+        }
+    }
     private fun showEnvironmentChoice(batch: EnvironmentBatch, decision: EnvironmentDecision.Guide, token: Int) {
         val route=batch.map.routeTo(decision.viewId)
         if(route==null) {
-            analyzer.endEnvironment(); batch.close(); guidance.text="The views have insufficient overlap for a reliable return guide. Use a shorter sweep."
+            endSceneEvidence(); batch.close(); guidance.text="The views have insufficient overlap for a reliable return guide. Use a shorter sweep."
             return
         }
         val selected=batch.frames.single { it.view.id==decision.viewId }.frame
@@ -294,8 +390,8 @@ class MainActivity : ComponentActivity() {
         var stale=false
         val dialog=AlertDialog.Builder(this).setTitle("Suggested observed view").setView(panel)
             .setPositiveButton("Use this view") { _, _ ->
-                if (token==generation && SystemClock.elapsedRealtime()-shownAt<15_000 && analyzer.environmentFresh(SystemClock.elapsedRealtime())) {
-                    applied=true; analyzer.endEnvironment()
+                if (token==generation && SystemClock.elapsedRealtime()-shownAt<15_000 && environmentEvidenceFresh()) {
+                    applied=true; endSceneEvidence()
                     activeEnvironmentBatch=batch
                     for(id in route) {
                         val entry=batch.frames.single { it.view.id==id }
@@ -308,7 +404,7 @@ class MainActivity : ComponentActivity() {
         dialog.setOnDismissListener {
             before.recycle(); after.recycle(); if(!applied) batch.close()
             if (environmentDialog===dialog) environmentDialog=null
-            if (token==generation) { analyzer.endEnvironment(); if (!applied && !stale) guidance.setText(R.string.ready_to_frame) }
+            if (token==generation) { endSceneEvidence(); if (!applied && !stale) guidance.setText(R.string.ready_to_frame) }
         }
         environmentDialog=dialog; dialog.show()
         handler.postDelayed({
@@ -478,7 +574,8 @@ class MainActivity : ComponentActivity() {
         generation++
         environmentDialog?.dismiss(); environmentDialog=null
         environmentRoute.clear(); activeEnvironmentBatch?.close(); activeEnvironmentBatch=null
-        environmentSweep?.cancel(); environmentSweep=null; analyzer.endEnvironment()
+        pendingSpatialBatch?.close(); pendingSpatialBatch=null
+        environmentSweep?.cancel(); environmentSweep=null; endSceneEvidence()
         sweepRecorder?.cancel(); sweepRecorder = null
         planner.cancel(); analyzer.cancelSnapshot(); tracker.reset()
         scanning = false; activePlan = false; lastGood = null; hold.reset()
@@ -540,7 +637,7 @@ class MainActivity : ComponentActivity() {
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 runCatching { plannerSettings.save(keyInput.text.toString().ifBlank { plannerSettings.key().orEmpty() }, modelInput.text.toString().trim()) }
-                    .onSuccess { keyInput.text.clear(); dialog.dismiss(); guidance.text = "Setup saved. Online scan is in Developer tools." }
+                    .onSuccess { keyInput.text.clear(); dialog.dismiss(); guidance.text = "Setup saved. Tap Find a composition." }
                     .onFailure { keyInput.error = it.message }
             }
         }
@@ -593,6 +690,30 @@ class MainActivity : ComponentActivity() {
             }
         }.show()
     }
+    private fun handoffCamera(open: () -> Unit) {
+        val camera=controller ?: return
+        val info=camera.cameraInfo ?: return
+        val token=++generation
+        camera.clearImageAnalysisAnalyzer(); camera.unbind(); controller=null
+        preview.controller=null; cameraReady=false; guidance.text="Releasing the camera for spatial tracking…"
+        var launched=false
+        val observer=object: androidx.lifecycle.Observer<CameraState> {
+            override fun onChanged(value: CameraState) {
+                if(token!=generation || isDestroyed) { info.cameraState.removeObserver(this); return }
+                if(value.type==CameraState.Type.CLOSED) {
+                    info.cameraState.removeObserver(this); launched=true
+                    runCatching { open() }.onFailure { startCamera() }
+                }
+            }
+        }
+        info.cameraState.observe(this,observer)
+        handler.postDelayed({
+            if(!launched && token==generation && !isDestroyed) {
+                info.cameraState.removeObserver(observer); startCamera()
+                guidance.text="Camera handoff did not finish. The normal camera is restarting."
+            }
+        },3000)
+    }
     private fun launchSpatialProbe() {
         if (!cameraReady || saving) return
         cancelGuide(false)
@@ -600,28 +721,7 @@ class MainActivity : ComponentActivity() {
             .setMessage("This tests camera pose, sparse 3D points and depth where supported. Google Play Services for AR (ARCore) provides this functionality under Google's Terms of Service and Privacy Policy. " +
                 "Google may require installing or updating its AR service. CameraX pauses during this separate test. No camera images are exported by this test.")
             .setPositiveButton("Continue") { _, _ ->
-                val camera=controller ?: return@setPositiveButton
-                val info=camera.cameraInfo ?: return@setPositiveButton
-                val token=++generation
-                camera.clearImageAnalysisAnalyzer(); camera.unbind(); controller=null
-                preview.controller=null; cameraReady=false; guidance.text="Releasing the camera for spatial tracking…"
-                var launched=false
-                val observer=object: androidx.lifecycle.Observer<CameraState> {
-                    override fun onChanged(value: CameraState) {
-                        if(token!=generation || isDestroyed) { info.cameraState.removeObserver(this); return }
-                        if(value.type==CameraState.Type.CLOSED) {
-                            info.cameraState.removeObserver(this); launched=true
-                            runCatching { startActivity(Intent(this@MainActivity,SpatialProbeActivity::class.java)) }.onFailure { startCamera() }
-                        }
-                    }
-                }
-                info.cameraState.observe(this,observer)
-                handler.postDelayed({
-                    if(!launched && token==generation && !isDestroyed) {
-                        info.cameraState.removeObserver(observer); startCamera()
-                        guidance.text="Camera handoff did not finish. The normal camera is restarting."
-                    }
-                },3000)
+                handoffCamera { startActivity(Intent(this,SpatialProbeActivity::class.java)) }
             }.setNeutralButton("Terms and privacy") { _, _ -> startActivity(Intent(Intent.ACTION_VIEW,
                 Uri.parse("https://developers.google.com/ar/develop/terms"))) }
             .setNegativeButton("Cancel",null).show()
@@ -706,7 +806,7 @@ class MainActivity : ComponentActivity() {
     private fun flipCamera() {
         val camera = controller ?: return
         if (!cameraReady || saving || scanning) return
-        val next = if (baseSelector == CameraSelector.DEFAULT_BACK_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+        val next = if (baseSelector != CameraSelector.DEFAULT_FRONT_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
         if (!camera.hasCamera(next)) { toast(R.string.no_other_camera); return }
         cancelGuide(false)
         val previous = baseSelector
@@ -806,8 +906,9 @@ class MainActivity : ComponentActivity() {
     private fun toast(resource: Int) = Toast.makeText(this, resource, Toast.LENGTH_SHORT).show()
     override fun onSaveInstanceState(outState: Bundle) { outState.putString("lastPhoto", lastPhoto?.toString()); super.onSaveInstanceState(outState) }
     override fun onDestroy() {
+        pendingSpatialRequest?.let { SpatialSweepTransfer.discard(it) }; pendingSpatialBatch?.close(); pendingSpatialBatch=null
         environmentRoute.clear(); activeEnvironmentBatch?.close(); activeEnvironmentBatch=null
-        environmentSweep?.cancel(); environmentDialog?.dismiss(); analyzer.endEnvironment()
+        environmentSweep?.cancel(); environmentDialog?.dismiss(); endSceneEvidence()
         generation++; handler.removeCallbacksAndMessages(null); analyzer.cancelSnapshot()
         controller?.clearImageAnalysisAnalyzer(); controller?.unbind(); planner.cancel()
         analysisExecutor.execute { tracker.close(); analyzer.closeEnvironment() }; analysisExecutor.shutdown()
