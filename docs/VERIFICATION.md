@@ -1,5 +1,7 @@
 # Version 0.3 research verification
 
+Version 0.3.1 corrects the reported usability/state failures. See [V031_USABILITY_FIX.md](V031_USABILITY_FIX.md) and `research/results/delivery-verification-v031.json` for the update. The version 0.3.0 measurements below are historical.
+
 Date: 18 November 2026. The [research report](COMPOSITION_RESEARCH.md) and `research/results/` separate measured desktop behavior from pending human/device evidence.
 
 ## Android software checks

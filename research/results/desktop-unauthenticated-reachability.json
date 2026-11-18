@@ -1,0 +1,48 @@
+[
+  {
+    "method": "GET",
+    "path": "/v1beta/models",
+    "authentication": "none",
+    "device": "Windows desktop, not Vivo",
+    "events": [
+      {
+        "stage": "connected",
+        "atMs": 130
+      },
+      {
+        "stage": "request_sent",
+        "atMs": 130
+      },
+      {
+        "stage": "response_headers",
+        "atMs": 230
+      }
+    ],
+    "httpCode": 403,
+    "status": "response_received",
+    "elapsedMs": 230
+  },
+  {
+    "method": "POST",
+    "path": "/v1beta/models/gemini-3.8-flash:generateContent",
+    "authentication": "none",
+    "device": "Windows desktop, not Vivo",
+    "events": [
+      {
+        "stage": "connected",
+        "atMs": 133
+      },
+      {
+        "stage": "request_sent",
+        "atMs": 133
+      },
+      {
+        "stage": "response_headers",
+        "atMs": 172
+      }
+    ],
+    "httpCode": 403,
+    "status": "response_received",
+    "elapsedMs": 172
+  }
+]

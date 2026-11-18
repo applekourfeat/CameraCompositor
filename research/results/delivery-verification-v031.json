@@ -1,0 +1,15 @@
+{
+  "build": "0.3.1",
+  "apkBytes": 75023617,
+  "apkSha256": "3c18aada6d9c43de66c656ce9acc578114a37d45b52026a8410fd81a1541aa26",
+  "unitTests": 35,
+  "unitFailures": 0,
+  "lintErrors": 0,
+  "lintWarnings": 45,
+  "modelSha256": "0853d7468f78f391730ee39c07daf41e0f600caba3bc2731ee086e63fab766ee",
+  "releaseResearchAssets": "absent",
+  "credentialPatternCheck": "pass",
+  "physicalVivoTests": "v0.3.0 owner observations recorded; v0.3.1 usability checks pending",
+  "humanPreferenceGate": "pending",
+  "liveProviderDiagnostic": "v0.3.0 owner report: WAIT_RESPONSE timeout after client upload; cause unresolved"
+}

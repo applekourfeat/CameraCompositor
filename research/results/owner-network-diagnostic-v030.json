@@ -1,0 +1,20 @@
+{
+  "source": "Owner-provided Vivo V30 generated-image diagnostic",
+  "appVersion": "0.3.0-research",
+  "diagnostic": {
+    "schema": 1,
+    "outcome": "timeout",
+    "stage": "WAIT_RESPONSE",
+    "elapsedMs": 30189,
+    "httpCode": null,
+    "events": [
+      {"stage": "CONNECT", "atMs": 20},
+      {"stage": "DNS", "atMs": 22},
+      {"stage": "CONNECT", "atMs": 104},
+      {"stage": "TLS", "atMs": 144},
+      {"stage": "UPLOAD", "atMs": 186},
+      {"stage": "WAIT_RESPONSE", "atMs": 187}
+    ]
+  },
+  "interpretation": "Client upload completed; no response headers arrived before the read timeout. Provider acceptance, credential validity, model access and the underlying cause remain unverified."
+}

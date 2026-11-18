@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Camera Compositor</string>
-    <string name="prototype">Camera · research 0.3</string>
+    <string name="prototype">Camera</string>
     <string name="options">Options</string>
     <string name="viewfinder">Camera viewfinder</string>
-    <string name="find_shot">Test local composition</string>
+    <string name="find_shot">Find a frame</string>
     <string name="cancel">Cancel guide</string>
+    <string name="cancel_scan">Cancel</string>
     <string name="flip">Flip</string>
     <string name="capture">Take photo</string>
     <string name="gallery">Last photo</string>
@@ -18,4 +19,21 @@
     <string name="photo_saved">Saved to Pictures/CameraCompositor</string>
     <string name="no_gallery">No photo viewer is available.</string>
     <string name="no_other_camera">The other camera is unavailable.</string>
+    <string name="ready_to_frame">Point at a scene. Tap Find a frame.</string>
+    <string name="finding_frame">Finding a frame…</string>
+    <string name="finding_online_frame">Waiting for an online suggestion…</string>
+    <string name="no_framing_suggestion">No framing suggestion. Try another angle.</string>
+    <string name="framing_unavailable">Framing suggestions are unavailable right now.</string>
+    <string name="online_timeout">The online scan took too long.</string>
+    <string name="online_unavailable">The online scan is unavailable right now.</string>
+    <string name="suggested_framing">Suggested framing</string>
+    <string name="compare_framing">Current view on the left. Suggested frame on the right.</string>
+    <string name="use_frame">Use frame</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="close">Close</string>
+    <string name="guide_controls">Pinch to adjust zoom.</string>
+    <string name="photo_processing">Photo processing</string>
+    <string name="about_build">About this build</string>
+    <string name="developer_tools">Developer tools</string>
+    <string name="about_framing">Early prototype. Suggestions compare crops of the current view. Finding subjects and better camera angles is still in development.</string>
 </resources>

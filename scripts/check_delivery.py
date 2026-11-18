@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-APK = ROOT / "artifacts" / "CameraCompositor-0.3-research-debug.apk"
+APK = ROOT / "artifacts" / "CameraCompositor-0.3.1-debug.apk"
 MODEL_SHA = "0853d7468f78f391730ee39c07daf41e0f600caba3bc2731ee086e63fab766ee"
 KEY_PATTERN = re.compile(rb"AIza[0-9A-Za-z_-]{35}|gh[pousr]_[0-9A-Za-z]{30,}|sk-proj-[0-9A-Za-z_-]{40,}")
 
@@ -20,7 +20,10 @@ def main():
         suite = ET.parse(path).getroot()
         count += int(suite.get("tests", "0"))
         failures += int(suite.get("failures", "0")) + int(suite.get("errors", "0"))
-    assert count >= 29 and failures == 0, "Unit checks are missing or failed"
+    assert count >= 35 and failures == 0, "Unit checks are missing or failed"
+    metadata = json.loads((ROOT / "app/build/outputs/apk/debug/output-metadata.json").read_text())
+    assert metadata["elements"][0]["versionName"] == "0.3.1", "Build metadata is stale"
+    assert APK.read_bytes() == (ROOT / "app/build/outputs/apk/debug/app-debug.apk").read_bytes(), "Delivery does not match tested build"
     lint = ET.parse(ROOT / "app/build/reports/lint-results-debug.xml").getroot()
     issues = list(lint.iter("issue"))
     errors = sum(i.get("severity") in {"Error", "Fatal"} for i in issues)
@@ -42,12 +45,14 @@ def main():
     release = ROOT / "app/build/intermediates/assets/release/mergeReleaseAssets"
     assert release.is_dir(), "Run mergeReleaseAssets first"
     assert not any(p.suffix in {".onnx", ".tflite", ".litertlm"} for p in release.rglob("*")), "Research weights leaked into release assets"
-    result = {"build": "0.3.0-research", "apkBytes": APK.stat().st_size,
+    result = {"build": "0.3.1", "apkBytes": APK.stat().st_size,
         "apkSha256": hashlib.sha256(APK.read_bytes()).hexdigest(), "unitTests": count, "unitFailures": failures,
         "lintErrors": errors, "lintWarnings": sum(i.get("severity") == "Warning" for i in issues),
         "modelSha256": MODEL_SHA, "releaseResearchAssets": "absent", "credentialPatternCheck": "pass",
-        "physicalVivoTests": "pending", "humanPreferenceGate": "pending", "liveProviderDiagnostic": "pending"}
-    path = ROOT / "research/results/delivery-verification.json"
+        "physicalVivoTests": "v0.3.0 owner observations recorded; v0.3.1 usability checks pending",
+        "humanPreferenceGate": "pending",
+        "liveProviderDiagnostic": "v0.3.0 owner report: WAIT_RESPONSE timeout after client upload; cause unresolved"}
+    path = ROOT / "research/results/delivery-verification-v031.json"
     path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
 

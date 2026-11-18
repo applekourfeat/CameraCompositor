@@ -1,17 +1,17 @@
 # Camera Compositor
 
-Native Android camera research for useful composition guidance. Version **0.3.0-research** evaluates a small local crop-ranking model, retains a separate live framing guide, and adds diagnostics and local observed-view recording. The owner leads final UI/UX.
+Native Android camera research for useful composition guidance. Version **0.3.1** corrects the blocking reports and stale control state reported by the owner. The owner leads final UI/UX. [Usability correction and new Vivo evidence](docs/V031_USABILITY_FIX.md).
 
 The local model requires **no API key or internet connection**. It is a research candidate whose photographic quality and Vivo performance still need acceptance testing. Read [the measured research results](docs/COMPOSITION_RESEARCH.md).
 
 ## Try the research build
 
-Install `artifacts/CameraCompositor-0.3-research-debug.apk` on the Vivo V30. Android 10+, ARM64. It uses this computer's existing debug signing key and can update the earlier prototype.
+Install `artifacts/CameraCompositor-0.3.1-debug.apk` on the Vivo V30. Android 10+, ARM64. It uses this computer's existing debug signing key and can update the earlier prototype.
 
-1. Tap **Test local composition**. The model compares the current view with eight crop options. If it selects the full view, the app keeps your framing.
-2. For a crop suggestion, compare the two images. Choose **Use guide** only if you prefer the proposal. Pinching takes manual zoom control; the shutter remains yours.
-3. **Options > Record a local evaluation sweep** records eight reduced views and relative rotation samples in about four seconds. Nothing is uploaded. Export it through the file picker when convenient.
-4. **Options > Camera capability report** queries camera access on this actual phone. Copy its report to support camera-quality investigation.
+1. Tap **Find a frame**. The model compares the current view with eight crops. If it selects the full view, a short status reports that no suggestion was found. This is abstention, not a rating of the photograph.
+2. For a crop suggestion, compare the two images. Choose **Use frame** or **Dismiss**. You can take a photo while a scan runs; that cancels the scan. Pinching takes manual zoom control during a guide.
+3. **Options > Developer tools > Record a local evaluation sweep** records eight reduced views and relative rotation samples in about four seconds. Nothing is uploaded. Export it through the file picker when convenient.
+4. **Options > Developer tools > Camera capability report** queries camera access on this actual phone.
 
 The framing guide expires after three seconds of lost tracking. Saved photographs use quality-priority full-resolution capture, with manufacturer processing when exposed. Photo quality compared with Vivo's stock camera remains unmeasured.
 
@@ -23,7 +23,7 @@ Open `artifacts/composition-research/review.html` in your desktop browser to com
 
 ## Optional cloud diagnostics
 
-The old Gemini path is now **Options > Cloud research scan (personal key)**. It retains encrypted phone-only key storage and explicit upload consent. It is separate from the default local feature. **Test service with a generated image** uploads a synthetic chart through the same composition request format without uploading the viewfinder or granting future camera-upload consent.
+The old Gemini path is under **Options > Developer tools > Cloud research scan (personal key)**. It retains encrypted phone-only key storage and explicit upload consent. It is separate from the default local feature. **Test service with a generated image** uploads a synthetic chart through the same composition request format without uploading the viewfinder or granting future camera-upload consent.
 
 **Scan diagnostics** reports sanitized connection, upload, response and parsing events. A 35-second total deadline and cancellation bound each scene request. No request images, keys or provider error bodies are written to diagnostics. Quota errors do not trigger automatic retries.
 

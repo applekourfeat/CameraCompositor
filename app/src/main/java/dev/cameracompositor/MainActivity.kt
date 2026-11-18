@@ -68,10 +68,19 @@ class MainActivity : ComponentActivity() {
     @Volatile private var lastDiagnostic = "No scene request recorded in this build."
     private var controller: LifecycleCameraController? = null
     private var baseSelector = CameraSelector.DEFAULT_BACK_CAMERA
-    private var cameraReady = false
-    private var saving = false
-    private var scanning = false
-    private var activePlan = false
+    private val interaction = CameraInteractionState { renderControls(it) }
+    private var cameraReady: Boolean
+        get() = interaction.ready
+        set(value) { interaction.ready = value }
+    private var saving: Boolean
+        get() = interaction.saving
+        set(value) { interaction.saving = value }
+    private var scanning: Boolean
+        get() = interaction.scanning
+        set(value) { interaction.scanning = value }
+    private var activePlan: Boolean
+        get() = interaction.guiding
+        set(value) { interaction.guiding = value }
     private var activePlanId = 0L
     @Volatile private var generation = 0
     private var autoZoom = true
@@ -133,8 +142,7 @@ class MainActivity : ComponentActivity() {
         capture.setOnClickListener { takePhoto() }; gallery.setOnClickListener { openLastPhoto() }
         find.setOnClickListener {
             if (localScorer.available) scan(manual = false, local = true)
-            else showReport("Local research model", "This build has no local research model asset. The framing guide remains available in Options. " +
-                "Export the research assets before building to enable this experiment. No composition model has passed the release gates yet.")
+            else guidance.setText(R.string.framing_unavailable)
         }
         cancel.setOnClickListener { cancelGuide(true) }
         flip.setOnClickListener { flipCamera() }
@@ -177,7 +185,7 @@ class MainActivity : ComponentActivity() {
                 if (controller !== camera || isDestroyed) return@addListener
                 try {
                     camera.initializationFuture.get(); cameraReady = true; access.visibility = View.GONE
-                    guidance.text = "Point at a scene, then test a local composition."
+                    guidance.setText(R.string.ready_to_frame)
                     refreshButtons(); updateCameraStatus()
                 } catch (_: Exception) { cameraFailed(camera) }
             }, main)
@@ -195,7 +203,7 @@ class MainActivity : ComponentActivity() {
         val cloudRequest = planner.beginRequest()
         scanning = true; baselineZoom = controller?.zoomState?.value?.zoomRatio ?: 1f
         val maxRelativeZoom = ((controller?.zoomState?.value?.maxZoomRatio ?: baselineZoom) / baselineZoom).coerceIn(1f, 1.8f)
-        guidance.text = "Hold this view while the shot is selected…"; refreshButtons()
+        guidance.setText(if (local) R.string.finding_frame else R.string.finding_online_frame)
         handler.postDelayed({ if (token == generation && scanning) { cancelGuide(false); guidance.text = "No camera frame arrived. Try again." } }, 5000)
         analyzer.requestSnapshot { frame -> handler.post {
             if (token != generation || isDestroyed) { frame?.image?.recycle(); return@post }
@@ -209,7 +217,7 @@ class MainActivity : ComponentActivity() {
                 val result = runCatching {
                     if (local) {
                         val ranked = localScorer.evaluate(frame.image, maxRelativeZoom) { inferenceToken == generation }
-                        ModelChoice(ranked.crop.id, "Experimental local ranking · ${ranked.elapsedMs} ms")
+                        ModelChoice(ranked.crop.id, "Local crop ranking · ${ranked.elapsedMs} ms")
                     } else planner.choose(frame.image, cloudRequest, maxRelativeZoom) { stage -> handler.post {
                         if (inferenceToken == generation && !isDestroyed) guidance.text = stage
                     } }
@@ -217,28 +225,28 @@ class MainActivity : ComponentActivity() {
                 handler.post {
                     if (inferenceToken != generation || isDestroyed) { frame.image.recycle(); return@post }
                     scanning = false; lastScanMs = SystemClock.elapsedRealtime() - started
-                    result.onSuccess { if (local) showLocalChoice(frame, it, inferenceToken) else applyChoice(frame, it) }.onFailure { error ->
-                        guidance.text = "Scene scan failed. Camera still works."; refreshButtons()
-                        AlertDialog.Builder(this).setTitle("Scene scan could not finish")
-                            .setMessage(error.message?.take(350) ?: "Unknown model error")
-                            .setPositiveButton("Choose a framing yourself") { _, _ -> showManualChoices(frame, generation) }
-                            .setNegativeButton("Close") { _, _ -> frame.image.recycle() }.setOnCancelListener { frame.image.recycle() }.show()
+                    result.onSuccess { showFramingChoice(frame, it, inferenceToken) }.onFailure { error ->
+                        frame.image.recycle()
+                        modelReason = if (local) "Local scorer failed: ${error.javaClass.simpleName}" else "Online scan failed; see scan diagnostics."
+                        guidance.setText(when {
+                            local -> R.string.framing_unavailable
+                            (error as? SceneServiceException)?.category == "timeout" -> R.string.online_timeout
+                            else -> R.string.online_unavailable
+                        })
                     }
                 }
             }
         } }
     }
 
-    private fun showLocalChoice(frame: ScanFrame, choice: ModelChoice, token: Int) {
+    private fun showFramingChoice(frame: ScanFrame, choice: ModelChoice, token: Int) {
         modelReason = choice.explanation
-        if (choice.cropId == 0) {
+        if (!FramingFeedback.hasSuggestion(choice)) {
             frame.image.recycle()
-            guidance.text = "The research model kept this view. Take a photo when ready."
-            showReport("Local research result", "The model selected the full current view.\n${choice.explanation}\n\n" +
-                "This is an experimental aesthetic ranking. Human comparison and phone performance checks are pending.")
+            guidance.setText(R.string.no_framing_suggestion)
             return
         }
-        val box = ShotGeometry.options[choice.cropId].box
+        val box = choice.customCrop ?: ShotGeometry.options[choice.cropId].box
         val selected = Bitmap.createBitmap(frame.image, (box.left * frame.image.width).toInt(),
             (box.top * frame.image.height).toInt(), ((box.right-box.left)*frame.image.width).toInt(),
             ((box.bottom-box.top)*frame.image.height).toInt())
@@ -246,19 +254,17 @@ class MainActivity : ComponentActivity() {
         val after = Bitmap.createScaledBitmap(selected, 180, 240, true)
         if (selected !== after && selected !== frame.image) selected.recycle()
         val panel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16, 8, 16, 8) }
-        panel.addView(TextView(this).apply { text = "Current view on the left, local suggestion on the right. Judge the framing before using the guide. " +
-            "Composition quality is still under evaluation." })
+        panel.addView(TextView(this).apply { setText(R.string.compare_framing) })
         panel.addView(LinearLayout(this).apply {
             addView(ImageView(this@MainActivity).apply { setImageBitmap(before); adjustViewBounds = true }, LinearLayout.LayoutParams(0, -2, 1f))
             addView(ImageView(this@MainActivity).apply { setImageBitmap(after); adjustViewBounds = true }, LinearLayout.LayoutParams(0, -2, 1f))
         })
-        panel.addView(TextView(this).apply { text = choice.explanation })
-        AlertDialog.Builder(this).setTitle("Research comparison").setView(panel)
-            .setPositiveButton("Use guide") { _, _ ->
+        AlertDialog.Builder(this).setTitle(R.string.suggested_framing).setView(panel)
+            .setPositiveButton(R.string.use_frame) { _, _ ->
                 if (generation == token) applyChoice(frame, choice) else frame.image.recycle()
-            }.setNegativeButton("Keep current view") { _, _ ->
-                frame.image.recycle(); guidance.text = "Keep framing freely."
-            }.setOnCancelListener { frame.image.recycle() }
+            }.setNegativeButton(R.string.dismiss) { _, _ ->
+                frame.image.recycle(); guidance.setText(R.string.ready_to_frame)
+            }.setOnCancelListener { frame.image.recycle(); guidance.setText(R.string.ready_to_frame) }
             .setOnDismissListener { before.recycle(); after.recycle() }.show()
     }
 
@@ -295,7 +301,7 @@ class MainActivity : ComponentActivity() {
         modelReason = choice.explanation; activePlan = true; autoZoom = true; lastGood = null
         guideLifetime.start(SystemClock.elapsedRealtime())
         guidance.text = "Move toward the outlined frame."
-        telemetry.text = choice.explanation
+        telemetry.setText(R.string.guide_controls)
         frame.image.recycle(); refreshButtons()
     }
 
@@ -342,7 +348,7 @@ class MainActivity : ComponentActivity() {
         scanning = false; activePlan = false; lastGood = null; hold.reset()
         overlay.frame = null; overlay.aligned = false; overlay.fresh = false
         overlay.targetPreview?.recycle(); overlay.targetPreview = null; overlay.invalidate()
-        if (resetZoom) { controller?.setZoomRatio(baselineZoom); guidance.text = "Point at a scene, then test a local composition." }
+        if (resetZoom) { controller?.setZoomRatio(baselineZoom); guidance.setText(R.string.ready_to_frame) }
         refreshButtons()
     }
 
@@ -398,13 +404,26 @@ class MainActivity : ComponentActivity() {
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 runCatching { plannerSettings.save(keyInput.text.toString().ifBlank { plannerSettings.key().orEmpty() }, modelInput.text.toString().trim()) }
-                    .onSuccess { keyInput.text.clear(); dialog.dismiss(); guidance.text = "Research setup saved. Use Cloud research scan in Options." }
+                    .onSuccess { keyInput.text.clear(); dialog.dismiss(); guidance.text = "Setup saved. Online scan is in Developer tools." }
                     .onFailure { keyInput.error = it.message }
             }
         }
         dialog.show()
     }
     private fun showOptions() {
+        if (saving) return
+        if (scanning) { cancelGuide(false); guidance.setText(R.string.ready_to_frame) }
+        AlertDialog.Builder(this).setTitle(R.string.options)
+            .setItems(arrayOf(getString(R.string.photo_processing), getString(R.string.about_build), getString(R.string.developer_tools))) { _, index ->
+                when (index) {
+                    0 -> chooseProcessing()
+                    1 -> AlertDialog.Builder(this).setTitle(R.string.about_build).setMessage(R.string.about_framing)
+                        .setPositiveButton(R.string.close, null).show()
+                    2 -> showDeveloperTools()
+                }
+            }.show()
+    }
+    private fun showDeveloperTools() {
         AlertDialog.Builder(this).setTitle("Camera options").setItems(arrayOf("AI setup", "Try the framing guide without AI",
             "Photo processing", "Camera and scan details", "Google privacy and pricing", "Forget saved API key",
             "Scan diagnostics", "Test service with a generated image", "Camera capability report",
@@ -526,7 +545,9 @@ class MainActivity : ComponentActivity() {
 
     private fun takePhoto() {
         val camera = controller ?: return
-        if (!cameraReady || saving || scanning) return
+        if (!cameraReady || saving) return
+        // A photograph takes priority over any background scan, even an online timeout.
+        if (scanning) cancelGuide(false)
         saving = true; refreshButtons()
         val zoom = camera.zoomState.value?.zoomRatio ?: 1f
         val extension = captureExtension()
@@ -601,11 +622,15 @@ class MainActivity : ComponentActivity() {
         }.onFailure { toast(R.string.no_gallery) } }
     }
     private fun refreshButtons() {
+        renderControls(interaction.controls)
+    }
+    private fun renderControls(controls: CameraControls) {
         if (!::find.isInitialized) return
-        capture.isEnabled = cameraReady && !saving && !scanning
-        find.isEnabled = cameraReady && !saving && !scanning
-        flip.isEnabled = cameraReady && !saving && !scanning
-        cancel.visibility = if (activePlan || scanning) View.VISIBLE else View.GONE
+        capture.isEnabled = controls.captureEnabled
+        find.isEnabled = controls.findEnabled
+        flip.isEnabled = controls.flipEnabled
+        cancel.setText(if (interaction.scanning) R.string.cancel_scan else R.string.cancel)
+        cancel.visibility = if (controls.cancelVisible) View.VISIBLE else View.GONE
     }
     private fun toast(resource: Int) = Toast.makeText(this, resource, Toast.LENGTH_SHORT).show()
     override fun onSaveInstanceState(outState: Bundle) { outState.putString("lastPhoto", lastPhoto?.toString()); super.onSaveInstanceState(outState) }
