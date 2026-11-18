@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Camera Compositor</string>
+    <string name="prototype">Camera prototype · 0.1</string>
+    <string name="assist_on">Guide on</string>
+    <string name="assist_off">Guide off</string>
+    <string name="flip">Flip</string>
+    <string name="capture">Take photo</string>
+    <string name="gallery">Last photo</string>
+    <string name="retry">Camera access</string>
+    <string name="waiting">Starting camera…</string>
+    <string name="telemetry">On-device subject detection · tap to focus · pinch to zoom</string>
+    <string name="tracking_telemetry">Subject tracking · up to 10 checks/s · tap to focus · pinch to zoom</string>
+    <string name="target_left">Left third</string>
+    <string name="target_center">Center</string>
+    <string name="target_right">Right third</string>
+    <string name="camera_permission">Allow camera access to see the viewfinder.</string>
+    <string name="camera_settings">Camera access is off. Tap Camera access to open app settings.</string>
+    <string name="camera_error">Camera could not start. Tap Camera access to retry.</string>
+    <string name="photo_failed">Photo could not be saved. Try again.</string>
+    <string name="photo_saved">Saved to Pictures/CameraCompositor</string>
+    <string name="no_gallery">No photo viewer is available.</string>
+    <string name="no_other_camera">The other camera is unavailable.</string>
+    <string name="model_wait">Preparing subject detector. Connect to the internet on first use.</string>
+    <string name="detector_error">Subject detector unavailable. Toggle Guide to retry; camera still works.</string>
+    <string name="searching">Point at a clear subject. Detection may take a few seconds.</string>
+    <string name="guide_disabled">Tap to focus · pinch to zoom</string>
+    <string name="aligned">Aligned. Hold steady.</string>
+    <string name="settling">Hold this framing…</string>
+    <string name="pan_left">Pan your phone left</string>
+    <string name="pan_right">Pan your phone right</string>
+    <string name="pan_up">Pan your phone up</string>
+    <string name="pan_down">Pan your phone down</string>
+    <string name="step_back">Give the subject more space at the edges</string>
+</resources>
