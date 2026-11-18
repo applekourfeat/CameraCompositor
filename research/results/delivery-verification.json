@@ -1,0 +1,15 @@
+{
+  "build": "0.3.0-research",
+  "apkBytes": 75180791,
+  "apkSha256": "2499790516fa2877c31a280af520525c596f6ff7ccd796ad35e01bacb6c5e60b",
+  "unitTests": 29,
+  "unitFailures": 0,
+  "lintErrors": 0,
+  "lintWarnings": 51,
+  "modelSha256": "0853d7468f78f391730ee39c07daf41e0f600caba3bc2731ee086e63fab766ee",
+  "releaseResearchAssets": "absent",
+  "credentialPatternCheck": "pass",
+  "physicalVivoTests": "pending",
+  "humanPreferenceGate": "pending",
+  "liveProviderDiagnostic": "pending"
+}

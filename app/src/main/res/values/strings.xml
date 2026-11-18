@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Camera Compositor</string>
-    <string name="prototype">Camera · 0.2</string>
+    <string name="prototype">Camera · research 0.3</string>
     <string name="options">Options</string>
     <string name="viewfinder">Camera viewfinder</string>
-    <string name="find_shot">Find a composition</string>
+    <string name="find_shot">Test local composition</string>
     <string name="cancel">Cancel guide</string>
     <string name="flip">Flip</string>
     <string name="capture">Take photo</string>

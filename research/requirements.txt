@@ -1,0 +1,11 @@
+tensorflow-cpu==2.20.0
+numpy==2.2.6
+Pillow==12.0.0
+scipy==1.16.3
+gdown==5.2.0
+opencv-python-headless==4.12.0.88
+# Install these from https://download.pytorch.org/whl/cpu in the isolated environment.
+torch==2.9.1
+torchvision==0.24.1
+onnx==1.19.1
+onnxruntime==1.23.2

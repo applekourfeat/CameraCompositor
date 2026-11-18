@@ -43,7 +43,20 @@ class MainActivity : ComponentActivity() {
     private lateinit var flip: Button
     private lateinit var plannerSettings: PlannerSettings
     private lateinit var planner: CloudShotPlanner
+    private lateinit var localScorer: LocalResearchScorer
     private lateinit var quality: CameraQuality
+    private var sweepRecorder: ResearchSweepRecorder? = null
+    private var pendingSweep: java.io.File? = null
+    private val exportSweep = registerForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        val file = pendingSweep
+        if (uri != null && file != null) modelExecutor.execute {
+            val success = runCatching {
+                contentResolver.openOutputStream(uri)?.use { output -> file.inputStream().use { it.copyTo(output) } }
+                    ?: error("Export destination unavailable")
+            }.isSuccess
+            handler.post { if (!isDestroyed) guidance.text = if (success) "Research sweep exported." else "The research sweep could not be exported." }
+        }
+    }
     private val tracker = SceneTracker()
     private lateinit var analyzer: SceneFrameAnalyzer
     private val analysisExecutor = Executors.newSingleThreadExecutor()
@@ -51,6 +64,8 @@ class MainActivity : ComponentActivity() {
     private val main by lazy { ContextCompat.getMainExecutor(this) }
     private val handler = Handler(Looper.getMainLooper())
     private val hold = AlignmentHold()
+    private val guideLifetime = GuideLifetime()
+    @Volatile private var lastDiagnostic = "No scene request recorded in this build."
     private var controller: LifecycleCameraController? = null
     private var baseSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private var cameraReady = false
@@ -93,7 +108,13 @@ class MainActivity : ComponentActivity() {
         guidance = findViewById(R.id.guidance); telemetry = findViewById(R.id.telemetry)
         capture = findViewById(R.id.capture); access = findViewById(R.id.access); gallery = findViewById(R.id.gallery)
         find = findViewById(R.id.find_shot); cancel = findViewById(R.id.cancel); flip = findViewById(R.id.flip)
-        plannerSettings = PlannerSettings(this); planner = CloudShotPlanner(plannerSettings)
+        plannerSettings = PlannerSettings(this)
+        localScorer = LocalResearchScorer(this)
+        lastDiagnostic = runCatching { java.io.File(filesDir, "last-scan-diagnostic.json").readText() }.getOrDefault(lastDiagnostic)
+        planner = CloudShotPlanner(plannerSettings) { report ->
+            lastDiagnostic = report
+            runCatching { java.io.File(filesDir, "last-scan-diagnostic.json").writeText(report) }
+        }
         analyzer = SceneFrameAnalyzer(tracker) { event -> handler.post {
             if (!isDestroyed && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && activePlan && !saving && event.planId == activePlanId) {
                 if (event.frame == null) trackingLost() else showTrack(event.frame)
@@ -110,7 +131,11 @@ class MainActivity : ComponentActivity() {
         gallery.isEnabled = lastPhoto != null
         access.setOnClickListener { requestCameraAccess() }
         capture.setOnClickListener { takePhoto() }; gallery.setOnClickListener { openLastPhoto() }
-        find.setOnClickListener { requestComposition() }
+        find.setOnClickListener {
+            if (localScorer.available) scan(manual = false, local = true)
+            else showReport("Local research model", "This build has no local research model asset. The framing guide remains available in Options. " +
+                "Export the research assets before building to enable this experiment. No composition model has passed the release gates yet.")
+        }
         cancel.setOnClickListener { cancelGuide(true) }
         flip.setOnClickListener { flipCamera() }
         findViewById<Button>(R.id.settings).setOnClickListener { showOptions() }
@@ -124,7 +149,6 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         handler.removeCallbacks(tick)
         if (::analyzer.isInitialized) cancelGuide(false)
-        if (::planner.isInitialized) { planner.cancel(); modelExecutor.execute { planner.close() } }
         super.onPause()
     }
     private fun hasPermission() = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
@@ -153,7 +177,7 @@ class MainActivity : ComponentActivity() {
                 if (controller !== camera || isDestroyed) return@addListener
                 try {
                     camera.initializationFuture.get(); cameraReady = true; access.visibility = View.GONE
-                    guidance.text = "Point at a scene, then find a composition."
+                    guidance.text = "Point at a scene, then test a local composition."
                     refreshButtons(); updateCameraStatus()
                 } catch (_: Exception) { cameraFailed(camera) }
             }, main)
@@ -164,7 +188,7 @@ class MainActivity : ComponentActivity() {
         cameraReady = false; refreshButtons(); guidance.setText(R.string.camera_error); access.visibility = View.VISIBLE
     }
 
-    private fun scan(manual: Boolean) {
+    private fun scan(manual: Boolean, local: Boolean = false) {
         if (!cameraReady || scanning || saving) return
         cancelGuide(false)
         val token = ++generation
@@ -182,13 +206,18 @@ class MainActivity : ComponentActivity() {
             val started = SystemClock.elapsedRealtime()
             modelExecutor.execute {
                 if (inferenceToken != generation) { frame.image.recycle(); return@execute }
-                val result = runCatching { planner.choose(frame.image, cloudRequest, maxRelativeZoom) { stage -> handler.post {
-                    if (inferenceToken == generation && !isDestroyed) guidance.text = stage
-                } } }
+                val result = runCatching {
+                    if (local) {
+                        val ranked = localScorer.evaluate(frame.image, maxRelativeZoom) { inferenceToken == generation }
+                        ModelChoice(ranked.crop.id, "Experimental local ranking · ${ranked.elapsedMs} ms")
+                    } else planner.choose(frame.image, cloudRequest, maxRelativeZoom) { stage -> handler.post {
+                        if (inferenceToken == generation && !isDestroyed) guidance.text = stage
+                    } }
+                }
                 handler.post {
                     if (inferenceToken != generation || isDestroyed) { frame.image.recycle(); return@post }
                     scanning = false; lastScanMs = SystemClock.elapsedRealtime() - started
-                    result.onSuccess { applyChoice(frame, it) }.onFailure { error ->
+                    result.onSuccess { if (local) showLocalChoice(frame, it, inferenceToken) else applyChoice(frame, it) }.onFailure { error ->
                         guidance.text = "Scene scan failed. Camera still works."; refreshButtons()
                         AlertDialog.Builder(this).setTitle("Scene scan could not finish")
                             .setMessage(error.message?.take(350) ?: "Unknown model error")
@@ -198,6 +227,39 @@ class MainActivity : ComponentActivity() {
                 }
             }
         } }
+    }
+
+    private fun showLocalChoice(frame: ScanFrame, choice: ModelChoice, token: Int) {
+        modelReason = choice.explanation
+        if (choice.cropId == 0) {
+            frame.image.recycle()
+            guidance.text = "The research model kept this view. Take a photo when ready."
+            showReport("Local research result", "The model selected the full current view.\n${choice.explanation}\n\n" +
+                "This is an experimental aesthetic ranking. Human comparison and phone performance checks are pending.")
+            return
+        }
+        val box = ShotGeometry.options[choice.cropId].box
+        val selected = Bitmap.createBitmap(frame.image, (box.left * frame.image.width).toInt(),
+            (box.top * frame.image.height).toInt(), ((box.right-box.left)*frame.image.width).toInt(),
+            ((box.bottom-box.top)*frame.image.height).toInt())
+        val before = Bitmap.createScaledBitmap(frame.image, 180, 240, true)
+        val after = Bitmap.createScaledBitmap(selected, 180, 240, true)
+        if (selected !== after && selected !== frame.image) selected.recycle()
+        val panel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16, 8, 16, 8) }
+        panel.addView(TextView(this).apply { text = "Current view on the left, local suggestion on the right. Judge the framing before using the guide. " +
+            "Composition quality is still under evaluation." })
+        panel.addView(LinearLayout(this).apply {
+            addView(ImageView(this@MainActivity).apply { setImageBitmap(before); adjustViewBounds = true }, LinearLayout.LayoutParams(0, -2, 1f))
+            addView(ImageView(this@MainActivity).apply { setImageBitmap(after); adjustViewBounds = true }, LinearLayout.LayoutParams(0, -2, 1f))
+        })
+        panel.addView(TextView(this).apply { text = choice.explanation })
+        AlertDialog.Builder(this).setTitle("Research comparison").setView(panel)
+            .setPositiveButton("Use guide") { _, _ ->
+                if (generation == token) applyChoice(frame, choice) else frame.image.recycle()
+            }.setNegativeButton("Keep current view") { _, _ ->
+                frame.image.recycle(); guidance.text = "Keep framing freely."
+            }.setOnCancelListener { frame.image.recycle() }
+            .setOnDismissListener { before.recycle(); after.recycle() }.show()
     }
 
     private fun showManualChoices(frame: ScanFrame, token: Int) {
@@ -231,6 +293,7 @@ class MainActivity : ComponentActivity() {
         if (selected !== frame.image && selected !== overlay.targetPreview) selected.recycle()
         activePlanId = tracker.select(frame, crop)
         modelReason = choice.explanation; activePlan = true; autoZoom = true; lastGood = null
+        guideLifetime.start(SystemClock.elapsedRealtime())
         guidance.text = "Move toward the outlined frame."
         telemetry.text = choice.explanation
         frame.image.recycle(); refreshButtons()
@@ -238,7 +301,8 @@ class MainActivity : ComponentActivity() {
 
     private fun showTrack(tracked: TrackedFrame) {
         if (SystemClock.elapsedRealtime() - tracked.timeMs > 350) { trackingLost(); return }
-        lastGood = tracked; overlay.frame = tracked.corners; overlay.fresh = true
+        lastGood = tracked; guideLifetime.observed(tracked.timeMs)
+        overlay.frame = tracked.corners; overlay.fresh = true
         val aligned = hold.update(ShotGeometry.framingReady(tracked.corners), tracked.timeMs)
         if (aligned && !overlay.aligned) overlay.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         overlay.aligned = aligned; overlay.invalidate()
@@ -261,6 +325,11 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun trackingLost() {
+        if (guideLifetime.expired(SystemClock.elapsedRealtime())) {
+            cancelGuide(false)
+            guidance.text = "The scene changed or tracking was lost. Find a new composition."
+            return
+        }
         hold.reset(); overlay.aligned = false; overlay.fresh = false
         val age = lastGood?.let { SystemClock.elapsedRealtime() - it.timeMs } ?: Long.MAX_VALUE
         if (age > 600) overlay.frame = null
@@ -268,11 +337,12 @@ class MainActivity : ComponentActivity() {
         guidance.text = if (age < 600) "Holding your shot plan…" else "Return to the scanned scene, or find another shot."
     }
     private fun cancelGuide(resetZoom: Boolean) {
+        sweepRecorder?.cancel(); sweepRecorder = null
         generation++; planner.cancel(); analyzer.cancelSnapshot(); tracker.reset()
         scanning = false; activePlan = false; lastGood = null; hold.reset()
         overlay.frame = null; overlay.aligned = false; overlay.fresh = false
         overlay.targetPreview?.recycle(); overlay.targetPreview = null; overlay.invalidate()
-        if (resetZoom) { controller?.setZoomRatio(baselineZoom); guidance.text = "Point at a scene, then find a composition." }
+        if (resetZoom) { controller?.setZoomRatio(baselineZoom); guidance.text = "Point at a scene, then test a local composition." }
         refreshButtons()
     }
 
@@ -280,7 +350,7 @@ class MainActivity : ComponentActivity() {
         if (plannerSettings.key() == null) { showAiSetup(); return }
         if (plannerSettings.consent) { scan(false); return }
         AlertDialog.Builder(this).setTitle("Send one scene image to Google?")
-            .setMessage("Each tap of Find a composition sends one reduced camera image to Google's Gemini API. " +
+            .setMessage("Each Cloud research scan sends one reduced camera image to Google's Gemini API. " +
                 "Live tracking and your full-resolution saved photo stay on the phone. " +
                 "Google's free tier may use submitted images to improve its products. " +
                 "Your API project's pricing and quota apply. This test build limits scans to 20 attempts per day.")
@@ -328,7 +398,7 @@ class MainActivity : ComponentActivity() {
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 runCatching { plannerSettings.save(keyInput.text.toString().ifBlank { plannerSettings.key().orEmpty() }, modelInput.text.toString().trim()) }
-                    .onSuccess { keyInput.text.clear(); dialog.dismiss(); guidance.text = "AI setup saved. Tap Find a composition." }
+                    .onSuccess { keyInput.text.clear(); dialog.dismiss(); guidance.text = "Research setup saved. Use Cloud research scan in Options." }
                     .onFailure { keyInput.error = it.message }
             }
         }
@@ -336,7 +406,9 @@ class MainActivity : ComponentActivity() {
     }
     private fun showOptions() {
         AlertDialog.Builder(this).setTitle("Camera options").setItems(arrayOf("AI setup", "Try the framing guide without AI",
-            "Photo processing", "Camera and scan details", "Google privacy and pricing", "Forget saved API key")) { _, index ->
+            "Photo processing", "Camera and scan details", "Google privacy and pricing", "Forget saved API key",
+            "Scan diagnostics", "Test service with a generated image", "Camera capability report",
+            "Cloud research scan (personal key)", "Record a local evaluation sweep", "Export last evaluation sweep")) { _, index ->
             when (index) {
                 0 -> showAiSetup()
                 1 -> scan(true)
@@ -349,8 +421,80 @@ class MainActivity : ComponentActivity() {
                     .setPositiveButton("Close", null).show()
                 4 -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://ai.google.dev/gemini-api/docs/pricing")))
                 5 -> { plannerSettings.forget(); guidance.text = "Saved API key removed." }
+                6 -> showReport("Scan diagnostics", "$lastDiagnostic\n\n${analyzer.stats.report()}\n" +
+                    "Camera Compositor ${BuildConfig.VERSION_NAME}; Android ${Build.VERSION.SDK_INT}\n" +
+                    "Event times are milliseconds from the start of the request. The report contains no key or scene image.")
+                7 -> confirmDiagnostic()
+                8 -> showReport("Camera capabilities", runCatching { CameraCapabilityReport.collect(this) }.getOrDefault(
+                    "Camera capabilities could not be read. Allow camera access and try again.") +
+                    "\n${quality.status}\nRear extensions: ${quality.supported(CameraSelector.DEFAULT_BACK_CAMERA).joinToString { it.second }}\n" +
+                    "Front extensions: ${quality.supported(CameraSelector.DEFAULT_FRONT_CAMERA).joinToString { it.second }}\n$lastPhotoDetails")
+                9 -> requestComposition()
+                10 -> confirmSweep()
+                11 -> if (pendingSweep?.exists() == true) exportSweep.launch("CameraCompositor-observed-views.zip")
+                    else showReport("Evaluation sweep", "Record a local evaluation sweep first.")
             }
         }.show()
+    }
+    private fun confirmSweep() {
+        if (!cameraReady || saving || scanning) return
+        AlertDialog.Builder(this).setTitle("Record observed views locally?")
+            .setMessage("Slowly turn across a small area for about four seconds. Eight reduced views and relative rotation readings are saved for research. " +
+                "Keep the zoom fixed. Nothing is uploaded. This recording helps evaluate actual angle selection separately from cropping.")
+            .setPositiveButton("Record sweep") { _, _ ->
+                cancelGuide(false)
+                val token = ++generation
+                scanning = true; refreshButtons()
+                sweepRecorder = ResearchSweepRecorder(this, analyzer, modelExecutor,
+                    { controller?.zoomState?.value?.zoomRatio ?: 1f }, { controller?.zoomState?.value?.maxZoomRatio ?: 1f },
+                    baseSelector == CameraSelector.DEFAULT_FRONT_CAMERA,
+                    { count -> if (!isDestroyed && generation == token) guidance.text = "Recording observed views: $count of 8" },
+                    { file -> if (!isDestroyed && generation == token) {
+                        scanning = false; sweepRecorder = null; refreshButtons()
+                        pendingSweep = file
+                        guidance.text = if (file == null) "Recording stopped. Try again with the camera visible." else "Research sweep ready. Export it in Options when convenient."
+                    } })
+                guidance.text = "Turn slowly across the scene. Keep the zoom fixed."
+                sweepRecorder?.start()
+            }.setNegativeButton("Cancel", null).show()
+    }
+    private fun showReport(title: String, report: String) {
+        val text = TextView(this).apply { this.text = report; setTextIsSelectable(true); setPadding(24, 12, 24, 12) }
+        AlertDialog.Builder(this).setTitle(title).setView(ScrollView(this).apply { addView(text) })
+            .setPositiveButton("Close", null).setNeutralButton("Copy report") { _, _ ->
+                getSystemService(android.content.ClipboardManager::class.java)
+                    .setPrimaryClip(android.content.ClipData.newPlainText(title, report))
+            }.show()
+    }
+    private fun confirmDiagnostic() {
+        if (scanning || saving) return
+        if (plannerSettings.key() == null) { showAiSetup(); return }
+        AlertDialog.Builder(this).setTitle("Test the scene service?")
+            .setMessage("This sends a generated test chart to Google using the same request format as a scene scan. " +
+                "Your camera image stays local. It uses one scan attempt from your research allowance. " +
+                "The result checks connectivity and response parsing. Composition quality needs separate evaluation.")
+            .setPositiveButton("Send test chart") { _, _ -> runDiagnostic() }.setNegativeButton("Cancel", null).show()
+    }
+    private fun runDiagnostic() {
+        cancelGuide(false)
+        val token = ++generation; val requestId = planner.beginRequest()
+        scanning = true; refreshButtons(); guidance.text = "Testing the scene service…"
+        modelExecutor.execute {
+            val chart = Bitmap.createBitmap(480, 640, Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(chart); val paint = android.graphics.Paint()
+            canvas.drawColor(android.graphics.Color.rgb(120, 180, 230))
+            paint.color = android.graphics.Color.rgb(70, 110, 70); canvas.drawRect(0f, 430f, 480f, 640f, paint)
+            paint.color = android.graphics.Color.rgb(90, 70, 50); canvas.drawRect(300f, 200f, 325f, 500f, paint)
+            paint.color = android.graphics.Color.rgb(40, 100, 50); canvas.drawCircle(310f, 170f, 90f, paint)
+            val result = try { runCatching { planner.testService(chart, requestId) } } finally { chart.recycle() }
+            handler.post {
+                if (!isDestroyed && generation == token) {
+                    scanning = false; refreshButtons()
+                    guidance.text = if (result.isSuccess) "Test-image request succeeded. Review the scan diagnostics." else "Test-image request failed. Review the scan diagnostics."
+                    showReport("Test-image result", (result.exceptionOrNull()?.message ?: "Connectivity and composition-response parsing succeeded.") + "\n\n$lastDiagnostic")
+                }
+            }
+        }
     }
     private fun chooseProcessing() {
         val modes = listOf(null to "Automatic manufacturer processing", ExtensionMode.NONE to "Standard quality capture") + quality.supported(baseSelector)
@@ -397,6 +541,7 @@ class MainActivity : ComponentActivity() {
             } catch (_: Exception) {
                 camera.cameraSelector = baseSelector
                 camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.IMAGE_ANALYSIS)
+                zoomRequest = camera.setZoomRatio(zoom)
                 used = "Standard quality (manufacturer processing failed)"
             }
         }
@@ -468,7 +613,7 @@ class MainActivity : ComponentActivity() {
         generation++; handler.removeCallbacksAndMessages(null); analyzer.cancelSnapshot()
         controller?.clearImageAnalysisAnalyzer(); controller?.unbind(); planner.cancel()
         analysisExecutor.execute { tracker.close() }; analysisExecutor.shutdown()
-        modelExecutor.execute { planner.close() }; modelExecutor.shutdown()
+        modelExecutor.execute { planner.close(); localScorer.close() }; modelExecutor.shutdown()
         super.onDestroy()
     }
 }

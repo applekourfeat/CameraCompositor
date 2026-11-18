@@ -14,6 +14,7 @@ data class ScanFrame(val image: Bitmap, val gray: ByteArray, val width: Int, val
 
 /** Shared analysis frames feed both the one-shot scan and scene tracking. */
 class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack: (TrackingEvent) -> Unit) : ImageAnalysis.Analyzer {
+    val stats = AnalysisStats()
     @Volatile private var sensorToView: Matrix? = null
     @Volatile var viewSize = Size(0, 0)
     private val snapshotRequest = AtomicReference<((ScanFrame?) -> Unit)?>(null)
@@ -24,6 +25,8 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
     override fun updateTransform(matrix: Matrix?) { sensorToView = matrix?.let(::Matrix) }
 
     override fun analyze(image: ImageProxy) {
+        val started = SystemClock.elapsedRealtime()
+        var failed = false
         try {
             val transform = sensorToView ?: return
             val size = viewSize
@@ -58,7 +61,7 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
             }
             val tracked = tracker.update(gray, image.width, image.height, bufferToView, size, SystemClock.elapsedRealtime())
             onTrack(TrackingEvent(tracker.activePlanId, tracked))
-        } catch (_: Exception) { onTrack(TrackingEvent(tracker.activePlanId, null)) }
-        finally { image.close() }
+        } catch (_: Exception) { failed = true; onTrack(TrackingEvent(tracker.activePlanId, null)) }
+        finally { stats.record(SystemClock.elapsedRealtime() - started, failed); image.close() }
     }
 }

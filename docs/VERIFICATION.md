@@ -1,15 +1,40 @@
-# Version 0.2 verification
+# Version 0.3 research verification
 
-Date: 18 November 2026.
+Date: 18 November 2026. The [research report](COMPOSITION_RESEARCH.md) and `research/results/` separate measured desktop behavior from pending human/device evidence.
 
-`scripts/build.ps1` passed: Android debug compilation, 17 unit tests with 0 failures/errors, and Android lint with 0 errors and 42 warnings. Unit coverage includes crop bounds, alignment hold/reset, zoom limits, malformed geometry, structured request fields, and invalid/truncated provider responses. The delivered APK signature was verified with Android SDK apksigner. A credential-pattern scan passed for source and APK DEX files, and the removed offline runtime is absent from the APK.
+## Android software checks
 
-Delivered file: `artifacts/CameraCompositor-0.2-debug.apk`, 36,269,430 bytes. SHA-256: `5a404579e81a3bd9e9ccaae964d4aa2018dd52785f61c08aba482a65f1e403d9`.
+`scripts/build.ps1` completed `assembleDebug`, `testDebugUnitTest` and `lintDebug` successfully. The final build passed **29 unit tests**, with zero failures/errors. Android lint completed with **0 errors and 51 warnings**. The warnings include English-only research strings, prototype portrait/ARM64 scope, styling/KTX preferences and newer optional dependencies. No physical-phone or emulator run is implied.
 
-Desktop model experiments are recorded in [SCENE_MODEL_FINDINGS.md](SCENE_MODEL_FINDINGS.md). They led to removing the large offline models from the Android build.
+The tests cover crop/alignment geometry, hold/reset and zoom limits, invalid/truncated provider outputs, observed-frame identities, already-good views, stale-scene rejection, selected-subject preservation policy and guide expiry. Real local-server HTTP tests cover sanitized stage reporting, delayed-response timeout, cancellation followed by a fresh request, response-size limits, quota errors without retries, and redirect rejection.
 
-Google AI Studio visibly showed the owner's key named CameraCompositor. The key was not copied into source, an APK, or a local configuration file. No real credential is used by the automated tests. Real provider authentication and scene requests remain pending the phone's private setup and first scan.
+The update uses CameraX 1.6.2. Its SDK 36 compile requirement was handled by installing SDK 36 and moving to AGP 8.10.1, which supports the existing Gradle 8.11.1 wrapper. Minimum SDK 29 and target SDK 35 remain unchanged. The project bootstrap now writes escaped Windows SDK paths; lint's earlier property-path error was corrected.
 
-The new ARM64 APK targets SDK 35 and Android 10+. The owner could not connect the Vivo during development and wanted to continue using it. No new physical-device or emulator runtime test is claimed. Scene-to-screen coordinate mapping, OpenCV tracking behavior, actual cloud latency, capture framing, and Vivo manufacturer processing require the checks in [PHONE_TESTING.md](PHONE_TESTING.md).
+`mergeReleaseAssets` succeeded separately. Inspection confirms the release asset set contains no research `.onnx`, `.tflite` or `.litertlm` weights. Only the private debug build receives the exported GAIC asset. This is an asset-set check, not a claim that a signed production release has been qualified.
 
-Lint warnings include pinned dependency updates, portrait/ARM64 prototype scope, English-only temporary UI strings, accessibility/style suggestions, and KTX preferences. They are separate from device acceptance and final UI design.
+## Research checks
+
+- The 20 development/60 evaluation manifest contains 80 distinct image SHA-256 hashes, excludes the author's training split and reproduces deterministic selection.
+- Both models completed annotated-crop ranking, nine-camera-crop selection, reversed-order checks and five synthetic perturbations on all 80 scenes. The raw results and pinned download metadata are preserved.
+- Python research tests cover the CPU gather operators against scalar equations, candidate geometry, split separation, local-sweep validation and missing/partial/mismatched human-review results.
+- The ONNX export preserved every development-set selection with maximum score error below 0.000002. Android/ARM numerical parity remains pending.
+- The optional NIMA FP16 conversion failed the 0.02 score-error tolerance and was excluded from the APK.
+- The local reviewer has 320 distinct randomized trial mappings. JavaScript syntax passed Node's parser. Ninety-one full-view candidate trials produce byte-identical left/right JPEGs, preventing extra compression from biasing those comparisons.
+- The first six seeded evaluation comparisons and the owner's reference comparison were inspected as images. Both models kept the original palm-tree reference view. That check is excluded from held-out metrics.
+- The browser tool blocked local `file:` navigation. No alternate browser/network workaround was used. Interactive reviewer rendering and downloads remain a manual browser check.
+
+## Artifact checks
+
+Delivered private research APK: `artifacts/CameraCompositor-0.3-research-debug.apk`, **75,180,791 bytes**. The stable `CameraCompositor-debug.apk` alias contains this same build. Earlier versioned APKs remain available.
+
+SHA-256: `2499790516fa2877c31a280af520525c596f6ff7ccd796ad35e01bacb6c5e60b`.
+
+Android SDK apksigner verified its v2 signature. Certificate SHA-256: `eaee0220bb17b9ddd0bd08bcae877bc08c5fde6bf7c5bd1534ef43be7d5cf70d`. The binary includes the expected GAIC model hash and ARM64 libraries. It contains no NIMA, large VLM or training-model files. The added library notices are packaged.
+
+`scripts/check_delivery.py` passed source/APK credential-pattern checks without printing possible matches, checked the model hash, validated the test/lint results and inspected release-asset exclusion. No personal key, camera sweep, source dataset photo or model binary is committed. Model/checkpoint distribution remains gated separately from source licensing.
+
+## Evidence still required
+
+The owner's version 0.2 report establishes that its manual guide appeared to work and its online scan displayed a timeout. The exact transport stage remains unknown. Version 0.3 adds a generated-chart diagnostic and stage timings so the private phone request can supply that evidence without sharing a key or viewfinder image in its report.
+
+Pending items include the real provider request, actual Vivo capabilities, local model startup/warm timing, guide direction/zoom and pause/resume, observed-view export, saved-photo quality against Vivo's camera, five-minute responsiveness/thermal behavior, actual human preference and the physical old-heuristic comparison. No 70% preference, two-second Vivo selection time, native-quality equivalence, calibrated semantic subject selection or reliable automatic angle discovery is claimed.

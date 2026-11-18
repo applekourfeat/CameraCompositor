@@ -1,0 +1,41 @@
+{
+  "sourceSha256": "877ed9d760020710e173b83016688b280955484ed05b46b286a9ca9e1c62adc7",
+  "results": [
+    {
+      "model": "nima-mobilenet",
+      "cropId": 0,
+      "scores": [
+        5.098969459533691,
+        4.4099836349487305,
+        4.617177963256836,
+        4.655916690826416,
+        4.080892562866211,
+        3.8491315841674805,
+        4.293315887451172,
+        4.644620895385742,
+        3.7843761444091797
+      ]
+    },
+    {
+      "model": "gaic-mobilenet-cpu-port",
+      "cropId": 0,
+      "scores": [
+        3.652942419052124,
+        3.131514549255371,
+        2.01957106590271,
+        2.384901762008667,
+        1.8249266147613525,
+        1.3877390623092651,
+        1.566059947013855,
+        2.535149335861206,
+        1.6740996837615967
+      ]
+    }
+  ],
+  "status": "illustrative owner-reference check; excluded from evaluation set",
+  "limitations": [
+    "Reference screenshot contains viewfinder grid lines.",
+    "Content outside the initial frame cannot be recovered by cropping.",
+    "Nine-crop search does not reproduce the reference app's larger zoom change or physical movement."
+  ]
+}

@@ -1,38 +1,31 @@
-# Test version 0.2 on the Vivo V30
+# Vivo V30 research checks
 
-Copy `artifacts/CameraCompositor-0.2-debug.apk` to the phone and open it in Files to install the update. USB debugging and phone mirroring are optional. The new build uses the same application ID and debug signing key as the first prototype.
+Use the standard Vivo V30. A cable or mirroring session is optional. Transfer the research APK and install it on the phone when convenient. Keep the earlier APKs for comparisons. Results remain pending until actually measured.
 
-## Test the camera first
+## Short first session
 
-1. Open the app, grant camera permission, tap to focus, and pinch to zoom.
-2. Take a photo. Open Last photo and verify the saved image. The footer reports its pixel dimensions and processing path.
-3. Under **Options > Camera and scan details**, inspect which manufacturer Auto/HDR/Night modes the phone exposes.
-4. Use **Options > Photo processing** to compare Standard quality with Automatic manufacturer processing. Night appears only if supported. Manufacturer processing may briefly restart the preview at the shutter, because analysis pauses for that capture.
-5. Photograph the same static scene in the Vivo stock app and this app, at similar lens/zoom/exposure, in daylight and low light. Compare saved photos rather than screenshots of their previews. Record detail, highlights, shadows, noise, color, focus, and shutter delay.
+1. Open Options > Camera capability report and copy it. Record Android/Funtouch version and exposed cameras, JPEG sizes, vendor Auto/HDR/Night modes and Ultra HDR support.
+2. Use Test local composition on a few daylight scenes. It needs no key/network. Record the first cold timing and later warm timings from the result dialogs. Judge the framing before choosing Use guide.
+3. Check a kept full view, an unwanted proposal, Cancel, manual pinch, tracking loss, and returning from the gallery/background. A stale target should clear after three seconds of lost tracking. Manual camera controls must remain usable.
+4. Record and export a small local evaluation sweep. Keep zoom fixed. Inspect the eight JPEGs and metadata before using it as evidence. The rotation samples are approximate relative device readings, not calibrated camera pose or translation.
+5. Optionally run the generated-chart service diagnostic and copy Scan diagnostics to investigate the old timeout. Camera-upload consent is separate.
 
-Quality priority and high-resolution JPEG are enabled. Access to Vivo's private processing depends on the APIs Vivo exposes. Exact stock-camera parity remains unverified.
+## Composition acceptance
 
-## Test the visual guide without API setup
+Use the local browser comparison tool on the frozen development/evaluation images. Record which starting views already have good composition, then compare framings with model labels hidden. Download the real answers. Missing judgments remain pending. Ties do not count as improvements. At least 70% of improvable held-out scenes must prefer the suggestion, with enough improvable cases to support that conclusion.
 
-1. Choose **Options > Try the framing guide without AI**.
-2. Inspect the nine framing previews and select one with the number picker. This is your choice, not an AI recommendation.
-3. Follow the outlined frame and arrow. When aim is close, automatic zoom should adjust smoothly. Pinch if you want manual zoom control.
-4. Hold alignment to get the settled signal, then press the shutter.
-5. Move away and return to the scene. Tracking should reacquire the existing plan rather than switch to a different subject. A short gap dims the outline; a longer gap hides the live outline while keeping the target thumbnail.
-6. Cancel guide. Confirm automatic zoom stops and the original scan zoom is restored.
+The fixed crop control in that tool is a limited static baseline. To compare the actual old heuristic, make matched physical captures with the version 0.1 APK and this research build from the same starting scene and phone position. Preserve the intended subject and equivalent lens/zoom. Randomize the final photo order before judging. Do not replace that comparison with the static crop control's result.
 
-Tracking follows scene features and assumes much of the scene is consistent. Fast movement, blur, low texture, repetitive patterns, independent moving subjects, and large depth/perspective changes can still defeat it.
+Include buildings, streets, landscapes, plants and objects. Add clutter, nearby subjects, people near edges, motion, backlight and real low light. The first dataset is scenery-heavy. Reject subject cuts and arbitrary zoom even when the model score increases. Physical viewpoint and subject-preservation behavior need real examples beyond the unit-tested policy.
 
-## Test scene selection
+## Camera-quality comparison
 
-Follow [AI_SETUP.md](AI_SETUP.md). Then test Find a composition on a portrait scene, a building/landscape, and a close object. Check that its proposed framing and explanation match the image, keep important edges, and improve the photograph according to your intent. Note the request time in Camera and scan details. Test cancellation during a request and after a plan arrives.
+Use a fixed support and take pairs in the app and Vivo's stock camera. Match lens, framing, zoom, aspect ratio, lighting and focus point. Test standard capture, exposed Auto/HDR, and Night separately. Take at least three pairs each of daylight detail, backlit highlights and low-light scenes so transient exposure differences are visible.
 
-The model chooses a crop inside the scanned view and a relative zoom up to 1.8×, limited further by the camera's available zoom. It cannot look outside the view or physically move the phone. There is no automatic shutter.
+Compare saved photo dimensions, detail, noise, highlights, color and framing at equal display scale. Inspect EXIF exposure/ISO and capture time. Preview appearance alone cannot establish saved-photo quality. A reported vendor extension is a capability, not proof that its result matches the stock camera.
 
-## Recovery and load
+## Five-minute performance session
 
-Test camera access denial/recovery, rear/front switching, front-preview mirroring versus saved orientation, app background/return, lock/unlock, network failure, and five minutes of guide use. After receiving a plan, disconnect the internet and verify tracking continues locally. Capture and manual framing should also work offline.
+Separate cold model load from warm selection time. Target selection within two seconds after observation. Record repeated scans and a five-minute preview/guidance session, checking responsiveness, thermal warnings, camera interruptions and crashes. Scan diagnostics exposes bounded analyzer timing samples; that statistic is not rendered preview FPS. Measure preview behavior separately before claiming an FPS target.
 
-Record results in [DEVICE_TEST_RESULTS.md](DEVICE_TEST_RESULTS.md). Automated builds do not establish camera quality, actual tracking alignment, API account access, or Vivo scan speed.
-
-For later cable-based testing, see [Android's hardware-device instructions](https://developer.android.com/studio/run/device) and `scripts/install-phone.ps1`.
+Check front-camera mirroring, phone rotations, camera switching, denied/restored permission, background/lock recovery, cloud timeout/quota and photo saving. Record elapsed time, build, scene and actual result in DEVICE_TEST_RESULTS.md. A successful desktop build or ONNX parity run cannot fill in those rows.

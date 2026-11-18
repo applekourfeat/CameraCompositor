@@ -16,7 +16,7 @@ class ThrottledAnalyzer(private val delegate: ImageAnalysis.Analyzer) : ImageAna
             return
         }
         lastFrameMs = now
-        delegate.analyze(image) // MlKitAnalyzer closes the image when its asynchronous task finishes.
+        delegate.analyze(image) // SceneFrameAnalyzer closes the image after its work finishes.
     }
     override fun getTargetCoordinateSystem(): Int = delegate.targetCoordinateSystem
     override fun getDefaultTargetResolution(): Size = Size(640, 480)

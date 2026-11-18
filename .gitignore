@@ -12,3 +12,5 @@ local.properties
 artifacts/
 .env
 .env.*
+**/__pycache__/
+*.pyc

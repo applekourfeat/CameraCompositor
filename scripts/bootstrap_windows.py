@@ -45,8 +45,8 @@ manager = TOOLS / 'android-cli/cmdline-tools/bin/sdkmanager.bat'
 subprocess.run([str(manager), '--sdk_root=' + str(sdk), '--licenses'],
                input='y\n' * 100, text=True, env=env, check=True)
 subprocess.run([str(manager), '--sdk_root=' + str(sdk), 'platform-tools',
-                'platforms;android-35', 'build-tools;35.0.0'], env=env, check=True)
-(ROOT / 'local.properties').write_text('sdk.dir=' + sdk.as_posix() + '\n')
+                'platforms;android-36', 'build-tools;35.0.0'], env=env, check=True)
+(ROOT / 'local.properties').write_text('sdk.dir=' + sdk.as_posix().replace(':', '\\:') + '\n', encoding='utf-8', newline='\n')
 gradle = TOOLS / 'gradle/gradle-8.11.1/bin/gradle.bat'
 subprocess.run([str(gradle), 'wrapper', '--gradle-version', '8.11.1', '--distribution-type', 'bin',
                 '--gradle-distribution-sha256-sum', packages[1][2]],

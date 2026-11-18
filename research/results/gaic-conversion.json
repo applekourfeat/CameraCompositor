@@ -1,0 +1,14 @@
+{
+  "source": "HuiZeng/Grid-Anchor-based-Image-Cropping-Pytorch",
+  "revision": "344e86fb54b4b083d83c405aa63d7fbeeed4fcdc",
+  "checkpointArchiveSha256": "b327c170b9738680b164783a0757fac7bd1f3f7eba76fcd71da09b7e605feef0",
+  "onnxSha256": "0853d7468f78f391730ee39c07daf41e0f600caba3bc2731ee086e63fab766ee",
+  "bytes": 11651155,
+  "developmentScenes": 20,
+  "maximumScoreError": 1.9073486328125e-06,
+  "sameSelectionRate": 1.0,
+  "desktopInferenceMedianMs": 7.513599965022877,
+  "androidParity": "pending Vivo test",
+  "upstreamCudaParity": "not measured on GPU; CPU equations covered by scalar-reference tests",
+  "distribution": "private debug research only; checkpoint redistribution permission unverified"
+}

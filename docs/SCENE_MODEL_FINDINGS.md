@@ -1,4 +1,6 @@
-# Scene-planner evaluation
+# Earlier scene-planner evaluation
+
+Historical results from versions 0.1 and 0.2. The version 0.2 cloud-only direction below is superseded by the local research comparison and measured results in [COMPOSITION_RESEARCH.md](COMPOSITION_RESEARCH.md).
 
 Date: 18 November 2026. Goal: a free Android app with useful scene-aware framing and a responsive live guide.
 
@@ -17,7 +19,7 @@ These results do not meet the desired reliability/speed bar. The offline runtime
 
 Model sources: [SmolVLM conversion](https://huggingface.co/litert-community/SmolVLM2-2.2B), [Qwen2-VL conversion](https://huggingface.co/litert-community/Qwen2-VL-2B), [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM). Both model repositories identify Apache 2.0 licensing. No weights are committed.
 
-## Current decision
+## Historical version 0.2 decision
 
 Use an explicit one-frame Gemini scene request, then OpenCV tracking and bounded zoom on-device. The owner approved the online setup direction and created a personal API key. The key is entered privately on the phone, encrypted locally, and excluded from the APK/source.
 

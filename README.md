@@ -1,66 +1,58 @@
 # Camera Compositor
 
-Android camera with on-demand scene planning, a live visual framing guide, and quality-priority photo capture. Version 0.2.0 is a personal test build. The owner leads final UI/UX design.
+Native Android camera research for useful composition guidance. Version **0.3.0-research** evaluates a small local crop-ranking model, retains a separate live framing guide, and adds diagnostics and local observed-view recording. The owner leads final UI/UX.
 
-## What changed
+The local model requires **no API key or internet connection**. It is a research candidate whose photographic quality and Vivo performance still need acceptance testing. Read [the measured research results](docs/COMPOSITION_RESEARCH.md).
 
-- **Find a composition:** sends one reduced scene image to Google Gemini, which proposes a framing and explains its visual intent.
-- **Visual guidance:** a target-frame thumbnail, an outline, and an arrow replace repeated left/right text instructions.
-- **Automatic zoom:** adjusts gradually near the selected frame, within the phone's available range and at most 1.8× relative to the scanned view. Pinching takes manual zoom control.
-- **Scene tracking:** OpenCV optical flow and feature matching follow the selected scene, including texture that a generic object detector might miss. Temporary tracking loss pauses alignment and zoom; the shot plan stays available for reacquisition.
-- **Photo capture:** quality priority, standard high-resolution 4:3 JPEG, and manufacturer Auto/HDR processing when the phone exposes it. Night is selectable when available. Analysis pauses during manufacturer capture because extensions cannot reliably run it concurrently.
-- **Offline manual fallback:** Options > Try the framing guide without AI lets you select a framing and test tracking/zoom without uploading a frame.
+## Try the research build
 
-Android 10+, ARM64. Primary test phone: Vivo V30. This build compiles and has automated geometry/protocol checks. The new camera pipeline and live API call still require physical-phone testing.
+Install `artifacts/CameraCompositor-0.3-research-debug.apk` on the Vivo V30. Android 10+, ARM64. It uses this computer's existing debug signing key and can update the earlier prototype.
 
-## Install and use
+1. Tap **Test local composition**. The model compares the current view with eight crop options. If it selects the full view, the app keeps your framing.
+2. For a crop suggestion, compare the two images. Choose **Use guide** only if you prefer the proposal. Pinching takes manual zoom control; the shutter remains yours.
+3. **Options > Record a local evaluation sweep** records eight reduced views and relative rotation samples in about four seconds. Nothing is uploaded. Export it through the file picker when convenient.
+4. **Options > Camera capability report** queries camera access on this actual phone. Copy its report to support camera-quality investigation.
 
-Install `artifacts/CameraCompositor-0.2-debug.apk` when supplied. It updates the earlier debug app on this computer's signing key.
+The framing guide expires after three seconds of lost tracking. Saved photographs use quality-priority full-resolution capture, with manufacturer processing when exposed. Photo quality compared with Vivo's stock camera remains unmeasured.
 
-1. Open **Options > AI setup** and enter your own Gemini API key privately on the phone. Default model: `gemini-3.8-flash`.
-2. Tap **Find a composition** and review the first-upload disclosure.
-3. Hold the scanned scene while the request finishes. Follow the outline and arrow, then use the shutter when the framing settles.
+## Research results and review
 
-See [AI setup](docs/AI_SETUP.md) and [phone testing](docs/PHONE_TESTING.md). Capture works without an API key or internet connection.
+On 60 held-out GAICv2 test photos, GAIC's average crop-rating rank correlation was 0.843, compared with NIMA's 0.251. Its nine-crop selection had a 21.6 ms median on this Windows CPU; phone speed remains pending. These measurements do not establish the 70% human-preference gate or physical angle discovery.
 
-## Data, keys, and cost
+Open `artifacts/composition-research/review.html` in your desktop browser to compare model-anonymous framings. Progress stays in that browser; download answers to keep a copy. [Reproduction instructions](research/README.md), [raw results](research/results/), [remaining product gates](docs/PRODUCT_PLAN.md).
 
-An explicit Find button press sends one JPEG of the visible viewfinder to Google's Gemini API, after the owner allows that behavior. Live tracking stays on-device. Full-resolution saved photos stay on the phone. Google may use free-tier inputs for product improvement; see [provider pricing/privacy](https://ai.google.dev/gemini-api/docs/pricing).
+## Optional cloud diagnostics
 
-The owner enters a personal test key on the phone. It is encrypted with Android Keystore, excluded from backup, and never compiled into the APK. Setup masks the field and protects that dialog from screenshots. Requests use HTTPS and an authentication header; credentials are excluded from URLs, request JSON, logs, and provider error displays. Options can remove the saved key.
+The old Gemini path is now **Options > Cloud research scan (personal key)**. It retains encrypted phone-only key storage and explicit upload consent. It is separate from the default local feature. **Test service with a generated image** uploads a synthetic chart through the same composition request format without uploading the viewfinder or granting future camera-upload consent.
 
-There are no automatic retries. This build limits scan attempts to 20 per phone per day and one every 15 seconds. These are development guardrails, not a provider-side spending cap. API availability, free-tier eligibility, rates, and quotas belong to the owner's Google project. Making a public app free requires a separate cost plan and a backend that protects the service key. Never publish a shared provider key inside a mobile app.
+**Scan diagnostics** reports sanitized connection, upload, response and parsing events. A 35-second total deadline and cancellation bound each scene request. No request images, keys or provider error bodies are written to diagnostics. Quota errors do not trigger automatic retries.
+
+The owner's version 0.2 error was `Scene scan could not finish: timeout`. The network path timed out; its specific failing stage is still unknown until the instrumented request runs on the phone. [Diagnostic setup](docs/AI_SETUP.md).
+
+End users can eventually use managed online assistance without supplying credentials. [The Firebase evaluation](docs/CLOUD_GATEWAY.md) describes an unbilled Spark project, enforced App Check, limited shared free capacity and a local fallback. No managed service has been deployed.
 
 ## Build
 
-Open this folder in [Android Studio](https://developer.android.com/studio), sync Gradle, and run on a connected phone. SDK Platform 35 and Build Tools 35.0.0 are used.
-
-The existing project-local toolchain can also build without Android Studio:
+The project uses CameraX 1.6.2, SDK 36 compilation, target SDK 35, minimum SDK 29, AGP 8.10.1, Gradle 8.11.1 and Kotlin 2.3.20. The local Java toolchain is under ignored `.tools/`.
 
 ```powershell
 ./scripts/build.ps1
 ```
 
-This runs `assembleDebug`, `testDebugUnitTest`, and `lintDebug`. With your own Java/Android SDK configured, use `./gradlew.bat assembleDebug testDebugUnitTest lintDebug`.
+This runs `assembleDebug`, `testDebugUnitTest` and `lintDebug`. Android Studio can also open the project normally. `scripts/bootstrap_windows.py` provisions the local SDK/toolchain on another Windows computer; review the Android SDK terms first.
 
-The portable toolchain is under ignored `.tools/`. `scripts/bootstrap_windows.py` can provision it on another Windows computer. Review [Android SDK terms](https://developer.android.com/studio/terms) first; the script downloads official tools, accepts SDK package licenses, and installs SDK 35.
+The experimental model is injected into **debug assets only** from ignored `.local/research-assets`. Run the research export before building to include it. A fresh checkout builds without a model and explains the absent research asset. Release builds contain no research checkpoint. Public model/APK distribution remains gated on checkpoint permission and photographic/device acceptance.
 
-## Code map
+## Code responsibilities
 
 | Component | Responsibility |
 | --- | --- |
-| `MainActivity.kt` | Permission flow, scan/cancel state, visual guide, shutter, camera switching, options |
-| `CloudShotPlanner.kt` | One cancellable HTTPS scene request; no background image streaming |
-| `GeminiProtocol.kt` | Structured request and validated response, independent of Android camera objects |
-| `PlannerSettings.kt` | Encrypted personal key, upload consent, local scan allowance |
-| `SceneFrameAnalyzer.kt` | Camera frame extraction and sensor-to-view coordinate mapping |
-| `SceneTracker.kt` | Optical flow, feature matching, homography checks, plan identity |
-| `ShotGeometry.kt` | Crop bounds, alignment, zoom limits, manual framing choices |
-| `CameraQuality.kt` | Runtime manufacturer-extension capability checks |
-| `GuideOverlay.kt` / `ViewfinderFrame.kt` | Visual target and 4:3 preview layout |
+| `LocalResearchScorer` | Local GAIC preprocessing and inference, separate from camera control |
+| `CompositionDecision` | Experimental keep/observe/guide contract, view identities and subject/zoom constraints |
+| `SceneFrameAnalyzer`, `SceneTracker` | Camera-coordinate extraction and geometric feature tracking |
+| `ShotGeometry`, `GuideOverlay` | Framing rules and viewfinder drawing |
+| `ResearchSweepRecorder` | Explicit local capture of bounded observed views and relative rotation |
+| `SceneHttpClient`, `ScanDiagnostics` | Bounded/cancellable online research requests and sanitized stages |
+| `CameraQuality`, `CameraCapabilityReport` | Exposed manufacturer processing and camera inventory |
 
-## Verification and remaining work
-
-[Verification](docs/VERIFICATION.md) distinguishes automated checks, model experiments, and device tests. The earlier on-device model experiments failed the required consistency/speed checks; their large models and runtimes are excluded from this app. [Research findings](docs/SCENE_MODEL_FINDINGS.md) record that decision.
-
-Current scope: framing proposals inside the scanned view, portrait 3:4 photos, scene tracking rather than independent tracking of moving people, and a temporary functional interface. Physical perspective changes require moving the phone. Scene quality, cloud latency, feature tracking on real movement, and manufacturer capture quality must be measured on the Vivo. [Product plan](docs/PRODUCT_PLAN.md), [GitHub guide](docs/GITHUB.md).
+[Verification](docs/VERIFICATION.md) distinguishes software checks, desktop experiments, owner feedback and outstanding physical-device tests. [Phone test steps](docs/PHONE_TESTING.md), [third-party notices and model permissions](docs/THIRD_PARTY.md), [GitHub guide](docs/GITHUB.md).

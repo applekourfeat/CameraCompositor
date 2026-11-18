@@ -1,0 +1,14 @@
+{
+  "source": "idealo/image-quality-assessment",
+  "revision": "dceaf7c2d218bc6e80b21d6e147e3b56a21b7f31",
+  "weightsSha256": "e563ad91b3d47410e45f7238f07ab8f6abd1bd0c4b18a4b0af9c681a21a91cb2",
+  "tfliteSha256": "1c6db32c431919d7c55eb0a346bbbe55d46636832d58a8d996be51453623ff84",
+  "bytes": 6435268,
+  "precision": "float16 weights, float32 inputs/outputs",
+  "developmentScenes": 20,
+  "maximumScoreError": 0.057436759539996274,
+  "sameSelectionRate": 1.0,
+  "androidNumericalParity": "pending device test",
+  "compositionQuality": "unvalidated research candidate",
+  "status": "rejected"
+}
