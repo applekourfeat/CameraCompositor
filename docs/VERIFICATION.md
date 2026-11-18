@@ -1,21 +1,15 @@
-# Prototype verification
+# Version 0.2 verification
 
-Date: 18 November 2026. Version: 0.1.0.
+Date: 18 November 2026.
 
-| Check | Result |
-| --- | --- |
-| `assembleDebug` | Passed |
-| `testDebugUnitTest` | Passed: 5 tests, 0 failures, 0 errors |
-| `lintDebug` | Passed: 0 errors, 14 warnings |
-| APK signature | Verified with Android SDK `apksigner`, APK Signature Scheme v2 |
-| Package metadata | `dev.cameracompositor`, version 0.1.0, target SDK 35 |
-| Installable artifact | `artifacts/CameraCompositor-debug.apk` |
-| Physical Vivo V30 test | Pending |
+`scripts/build.ps1` passed: Android debug compilation, 17 unit tests with 0 failures/errors, and Android lint with 0 errors and 42 warnings. Unit coverage includes crop bounds, alignment hold/reset, zoom limits, malformed geometry, structured request fields, and invalid/truncated provider responses. The delivered APK signature was verified with Android SDK apksigner. A credential-pattern scan passed for source and APK DEX files, and the removed offline runtime is absent from the APK.
 
-Unit tests cover pan directions, all three framing targets, clipped subjects, invalid/missing detections, and the alignment hold/reset. They exercise the pure composition rules, not camera hardware or the ML model.
+Delivered file: `artifacts/CameraCompositor-0.2-debug.apk`, 36,269,430 bytes. SHA-256: `5a404579e81a3bd9e9ccaae964d4aa2018dd52785f61c08aba482a65f1e403d9`.
 
-Lint warnings cover newer dependency versions, portrait orientation, backup compatibility guidance, the temporary application icon/control styles, a KTX style suggestion, and a viewfinder accessibility string that still needs resource extraction. Dependency versions are pinned for this prototype. These are follow-up polish items.
+Desktop model experiments are recorded in [SCENE_MODEL_FINDINGS.md](SCENE_MODEL_FINDINGS.md). They led to removing the large offline models from the Android build.
 
-The APK is a debug-signed development build. Camera/model runtime behavior, transformed subject coordinates, preview/capture framing, device performance, and thermal behavior require the physical-device checks in PHONE_TESTING.md. No emulator or phone runtime session has been completed.
+Google AI Studio visibly showed the owner's key named CameraCompositor. The key was not copied into source, an APK, or a local configuration file. No real credential is used by the automated tests. Real provider authentication and scene requests remain pending the phone's private setup and first scan.
 
-The two local reference videos were decoded into contact sheets and visually inspected. They were not added to Git.
+The new ARM64 APK targets SDK 35 and Android 10+. The owner could not connect the Vivo during development and wanted to continue using it. No new physical-device or emulator runtime test is claimed. Scene-to-screen coordinate mapping, OpenCV tracking behavior, actual cloud latency, capture framing, and Vivo manufacturer processing require the checks in [PHONE_TESTING.md](PHONE_TESTING.md).
+
+Lint warnings include pinned dependency updates, portrait/ARM64 prototype scope, English-only temporary UI strings, accessibility/style suggestions, and KTX preferences. They are separate from device acceptance and final UI design.

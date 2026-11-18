@@ -10,8 +10,9 @@ android {
         applicationId = "dev.cameracompositor"
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
+        ndk { abiFilters += "arm64-v8a" }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -28,7 +29,8 @@ dependencies {
     implementation("androidx.camera:camera-camera2:$cameraX")
     implementation("androidx.camera:camera-lifecycle:$cameraX")
     implementation("androidx.camera:camera-view:$cameraX")
-    implementation("androidx.camera:camera-mlkit-vision:$cameraX")
-    implementation("com.google.mlkit:object-detection:17.0.2")
+    implementation("androidx.camera:camera-extensions:$cameraX")
+    implementation("org.opencv:opencv:4.12.0")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

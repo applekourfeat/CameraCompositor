@@ -5,7 +5,7 @@
 - Android first. Test on a Vivo V30, standard model.
 - A camera suitable for both casual photography and more deliberate use.
 - Live composition help that stays responsive.
-- Free to use; prefer local processing to recurring server inference charges.
+- Free to use is the product goal. Live tracking stays local. On-demand cloud scene planning was approved for personal testing after local model experiments failed their quality/speed checks.
 - Owner leads UI/UX. Engineering implements the owner's designs and explains the process.
 
 ## What the reference videos show
@@ -19,9 +19,15 @@ These are observations from sampled frames across the supplied clips. Promotiona
 
 Feature ideas guide our own implementation. Visual design, branding, assets, and source code will be original.
 
-## Milestone 1: camera and guidance prototype
+## Current architecture, version 0.2
 
-Capture photos, detect one prominent subject, select a framing target manually, receive stable live pan instructions, turn analysis off, and test on the Vivo. Current code implements this milestone's basic behavior. Physical-device acceptance remains pending.
+The owner tested version 0.1 and reported detection gaps and poor directional-text UX. Version 0.2 replaces the detector-target loop with one explicit scene-planning request, local feature tracking, a target-frame preview, a visual arrow, and bounded automatic zoom. Quality-priority capture and runtime manufacturer-extension checks are implemented. The functional layout is temporary; the owner leads final visual design.
+
+The owner created a personal Google AI Studio API key. Setup is private on the phone, with encrypted storage and first-upload disclosure. This is a personal test configuration; a public app needs a backend, quota/budget controls, and a cost plan. See AI_SETUP.md and SCENE_MODEL_FINDINGS.md.
+
+## Milestone 1: initial camera and guidance prototype
+
+Version 0.1 established basic capture and preview on the owner's phone. Its manually chosen targets and generic object detector were replaced in version 0.2. New pipeline acceptance remains pending.
 
 ## Milestone 2: make guidance dependable
 

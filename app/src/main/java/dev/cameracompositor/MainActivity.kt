@@ -1,30 +1,24 @@
 package dev.cameracompositor
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Bundle
-import android.os.Environment
-import android.os.Handler
-import android.os.Looper
-import android.os.SystemClock
+import android.os.*
 import android.provider.MediaStore
 import android.provider.Settings
-import android.view.View
-import android.view.WindowManager
-import android.widget.Button
-import android.widget.RadioGroup
-import android.widget.TextView
-import android.widget.Toast
+import android.util.Size
+import android.view.*
+import android.widget.*
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.mlkit.vision.MlKitAnalyzer
+import androidx.camera.core.*
+import androidx.camera.core.resolutionselector.*
+import androidx.camera.extensions.ExtensionMode
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
@@ -32,11 +26,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import com.google.mlkit.common.MlKitException
-import com.google.mlkit.vision.objects.ObjectDetection
-import com.google.mlkit.vision.objects.ObjectDetector
-import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
+import androidx.lifecycle.Lifecycle
 import java.util.concurrent.Executors
+import kotlin.math.abs
 
 class MainActivity : ComponentActivity() {
     private lateinit var preview: PreviewView
@@ -46,33 +38,45 @@ class MainActivity : ComponentActivity() {
     private lateinit var capture: Button
     private lateinit var access: Button
     private lateinit var gallery: Button
-    private var controller: LifecycleCameraController? = null
-    private var detector: ObjectDetector? = null
+    private lateinit var find: Button
+    private lateinit var cancel: Button
+    private lateinit var flip: Button
+    private lateinit var plannerSettings: PlannerSettings
+    private lateinit var planner: CloudShotPlanner
+    private lateinit var quality: CameraQuality
+    private val tracker = SceneTracker()
+    private lateinit var analyzer: SceneFrameAnalyzer
     private val analysisExecutor = Executors.newSingleThreadExecutor()
+    private val modelExecutor = Executors.newSingleThreadExecutor()
+    private val main by lazy { ContextCompat.getMainExecutor(this) }
     private val handler = Handler(Looper.getMainLooper())
     private val hold = AlignmentHold()
-    private var guideEnabled = true
+    private var controller: LifecycleCameraController? = null
+    private var baseSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private var cameraReady = false
     private var saving = false
-    private var generation = 0
-    private var lastSubjectMs = 0L
-    private var lastTrackingId: Int? = null
+    private var scanning = false
+    private var activePlan = false
+    private var activePlanId = 0L
+    @Volatile private var generation = 0
+    private var autoZoom = true
+    private var zoomBusy = false
+    private var baselineZoom = 1f
+    private var lastGood: TrackedFrame? = null
     private var lastPhoto: Uri? = null
+    private var modelReason = ""
+    private var lastScanMs = 0L
+    private var lastPhotoDetails = "No photo taken in this session"
+    private var processingMode: Int? = null // null = prefer manufacturer Auto/HDR; NONE = standard
 
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { allowed ->
-        if (allowed) startCamera() else {
-            guidance.setText(R.string.camera_permission)
-            access.visibility = View.VISIBLE
-        }
+        if (allowed) startCamera() else { guidance.setText(R.string.camera_permission); access.visibility = View.VISIBLE }
     }
 
-    private val expireSubject = object : Runnable {
+    private val tick = object : Runnable {
         override fun run() {
-            if (overlay.subject != null && SystemClock.elapsedRealtime() - lastSubjectMs > 800) {
-                clearSubject()
-                if (guideEnabled && cameraReady) guidance.setText(R.string.searching)
-            }
-            handler.postDelayed(this, 200)
+            if (activePlan && !saving && lastGood?.let { SystemClock.elapsedRealtime() - it.timeMs > 350 } != false) trackingLost()
+            handler.postDelayed(this, 250)
         }
     }
 
@@ -83,251 +87,388 @@ class MainActivity : ComponentActivity() {
         setContentView(R.layout.activity_main)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root)) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
-            insets
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom); insets
         }
-        preview = findViewById(R.id.preview)
-        overlay = findViewById(R.id.overlay)
-        guidance = findViewById(R.id.guidance)
-        telemetry = findViewById(R.id.telemetry)
-        capture = findViewById(R.id.capture)
-        access = findViewById(R.id.access)
-        gallery = findViewById(R.id.gallery)
+        preview = findViewById(R.id.preview); overlay = findViewById(R.id.overlay)
+        guidance = findViewById(R.id.guidance); telemetry = findViewById(R.id.telemetry)
+        capture = findViewById(R.id.capture); access = findViewById(R.id.access); gallery = findViewById(R.id.gallery)
+        find = findViewById(R.id.find_shot); cancel = findViewById(R.id.cancel); flip = findViewById(R.id.flip)
+        plannerSettings = PlannerSettings(this); planner = CloudShotPlanner(plannerSettings)
+        analyzer = SceneFrameAnalyzer(tracker) { event -> handler.post {
+            if (!isDestroyed && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && activePlan && !saving && event.planId == activePlanId) {
+                if (event.frame == null) trackingLost() else showTrack(event.frame)
+            }
+        } }
         preview.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+        preview.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> analyzer.viewSize = Size(preview.width, preview.height) }
+        preview.setOnTouchListener { _, event ->
+            if (event.pointerCount > 1 && activePlan) { autoZoom = false; telemetry.text = "Zoom is yours. Cancel guide to reset." }
+            false
+        }
+        quality = CameraQuality(this) { if (!isDestroyed) updateCameraStatus() }
         lastPhoto = savedInstanceState?.getString("lastPhoto")?.let(Uri::parse)
         gallery.isEnabled = lastPhoto != null
         access.setOnClickListener { requestCameraAccess() }
-        capture.setOnClickListener { takePhoto() }
-        gallery.setOnClickListener { openLastPhoto() }
-        findViewById<Button>(R.id.flip).setOnClickListener { flipCamera() }
-        findViewById<Button>(R.id.assist).setOnClickListener {
-            guideEnabled = !guideEnabled
-            (it as Button).setText(if (guideEnabled) R.string.assist_on else R.string.assist_off)
-            overlay.visibility = if (guideEnabled) View.VISIBLE else View.INVISIBLE
-            clearSubject()
-            controller?.let { camera ->
-                generation++
-                camera.clearImageAnalysisAnalyzer()
-                detector?.close()
-                detector = null
-                if (guideEnabled) attachDetector(camera)
-                camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE or if (guideEnabled) CameraController.IMAGE_ANALYSIS else 0)
-            }
-            guidance.setText(if (guideEnabled) R.string.searching else R.string.guide_disabled)
-        }
-        findViewById<RadioGroup>(R.id.targets).setOnCheckedChangeListener { _, id ->
-            overlay.targetX = when (id) {
-                R.id.target_left -> 1f / 3f
-                R.id.target_center -> .5f
-                else -> 2f / 3f
-            }
-            hold.reset()
-            overlay.aligned = false
-            overlay.invalidate()
-        }
-        if (hasCameraPermission()) startCamera() else permissionRequest.launch(Manifest.permission.CAMERA)
+        capture.setOnClickListener { takePhoto() }; gallery.setOnClickListener { openLastPhoto() }
+        find.setOnClickListener { requestComposition() }
+        cancel.setOnClickListener { cancelGuide(true) }
+        flip.setOnClickListener { flipCamera() }
+        findViewById<Button>(R.id.settings).setOnClickListener { showOptions() }
+        if (hasPermission()) startCamera() else permissionRequest.launch(Manifest.permission.CAMERA)
     }
 
     override fun onResume() {
-        super.onResume()
-        hold.reset()
-        handler.post(expireSubject)
-        if (hasCameraPermission() && controller == null) startCamera()
+        super.onResume(); handler.post(tick)
+        if (::analyzer.isInitialized && hasPermission() && controller == null) startCamera()
     }
-
     override fun onPause() {
-        handler.removeCallbacks(expireSubject)
-        clearSubject()
+        handler.removeCallbacks(tick)
+        if (::analyzer.isInitialized) cancelGuide(false)
+        if (::planner.isInitialized) { planner.cancel(); modelExecutor.execute { planner.close() } }
         super.onPause()
     }
-
-    private fun hasCameraPermission() = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-
+    private fun hasPermission() = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
     private fun requestCameraAccess() {
         when {
-            hasCameraPermission() -> startCamera()
+            hasPermission() -> startCamera()
             shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> permissionRequest.launch(Manifest.permission.CAMERA)
-            else -> {
-                guidance.setText(R.string.camera_settings)
-                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
-            }
+            else -> startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
         }
     }
 
     private fun startCamera() {
-        if (!hasCameraPermission() || controller != null) return
+        if (!hasPermission() || controller != null) return
         val camera = LifecycleCameraController(this)
         controller = camera
-        camera.imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-        camera.imageAnalysisBackpressureStrategy = ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
-        camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE or if (guideEnabled) CameraController.IMAGE_ANALYSIS else 0)
-        if (guideEnabled) attachDetector(camera)
-        preview.controller = camera
         try {
-            camera.bindToLifecycle(this)
+            camera.imageCaptureMode = ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
+            camera.imageCaptureResolutionSelector = ResolutionSelector.Builder()
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY).build()
+            camera.imageAnalysisBackpressureStrategy = ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST
+            camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.IMAGE_ANALYSIS)
+            camera.setImageAnalysisAnalyzer(analysisExecutor, ThrottledAnalyzer(analyzer))
+            preview.controller = camera; camera.cameraSelector = baseSelector; camera.bindToLifecycle(this)
             camera.initializationFuture.addListener({
                 if (controller !== camera || isDestroyed) return@addListener
                 try {
-                    camera.initializationFuture.get()
-                    cameraReady = true
-                    capture.isEnabled = true
-                    access.visibility = View.GONE
-                    guidance.setText(if (guideEnabled) R.string.searching else R.string.guide_disabled)
+                    camera.initializationFuture.get(); cameraReady = true; access.visibility = View.GONE
+                    guidance.text = "Point at a scene, then find a composition."
+                    refreshButtons(); updateCameraStatus()
                 } catch (_: Exception) { cameraFailed(camera) }
-            }, ContextCompat.getMainExecutor(this))
+            }, main)
         } catch (_: Exception) { cameraFailed(camera) }
     }
-
     private fun cameraFailed(camera: LifecycleCameraController) {
-        generation++
-        camera.clearImageAnalysisAnalyzer()
-        detector?.close()
-        detector = null
-        camera.unbind()
-        if (controller === camera) controller = null
-        cameraReady = false
-        capture.isEnabled = false
-        guidance.setText(R.string.camera_error)
-        access.visibility = View.VISIBLE
+        camera.clearImageAnalysisAnalyzer(); camera.unbind(); if (controller === camera) controller = null
+        cameraReady = false; refreshButtons(); guidance.setText(R.string.camera_error); access.visibility = View.VISIBLE
     }
 
-    private fun attachDetector(camera: LifecycleCameraController) {
-        val currentGeneration = ++generation
-        val subjectDetector = ObjectDetection.getClient(ObjectDetectorOptions.Builder()
-            .setDetectorMode(ObjectDetectorOptions.STREAM_MODE).build())
-        detector = subjectDetector
-        val mlAnalyzer = MlKitAnalyzer(listOf(subjectDetector), ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED,
-            ContextCompat.getMainExecutor(this)) { result ->
-            if (isDestroyed || !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED) ||
-                !guideEnabled || currentGeneration != generation) return@MlKitAnalyzer
-            val error = result.getThrowable(subjectDetector)
-            if (error != null) {
-                clearSubject()
-                guidance.setText(if ((error as? MlKitException)?.errorCode == MlKitException.UNAVAILABLE)
-                    R.string.model_wait else R.string.detector_error)
-                return@MlKitAnalyzer
+    private fun scan(manual: Boolean) {
+        if (!cameraReady || scanning || saving) return
+        cancelGuide(false)
+        val token = ++generation
+        val cloudRequest = planner.beginRequest()
+        scanning = true; baselineZoom = controller?.zoomState?.value?.zoomRatio ?: 1f
+        val maxRelativeZoom = ((controller?.zoomState?.value?.maxZoomRatio ?: baselineZoom) / baselineZoom).coerceIn(1f, 1.8f)
+        guidance.text = "Hold this view while the shot is selected…"; refreshButtons()
+        handler.postDelayed({ if (token == generation && scanning) { cancelGuide(false); guidance.text = "No camera frame arrived. Try again." } }, 5000)
+        analyzer.requestSnapshot { frame -> handler.post {
+            if (token != generation || isDestroyed) { frame?.image?.recycle(); return@post }
+            if (frame == null) { scanning = false; refreshButtons(); guidance.text = "Could not scan this frame. Try again."; return@post }
+            // The frame timeout applies only to acquisition, not to model inference.
+            val inferenceToken = ++generation
+            if (manual) { showManualChoices(frame, inferenceToken); return@post }
+            val started = SystemClock.elapsedRealtime()
+            modelExecutor.execute {
+                if (inferenceToken != generation) { frame.image.recycle(); return@execute }
+                val result = runCatching { planner.choose(frame.image, cloudRequest, maxRelativeZoom) { stage -> handler.post {
+                    if (inferenceToken == generation && !isDestroyed) guidance.text = stage
+                } } }
+                handler.post {
+                    if (inferenceToken != generation || isDestroyed) { frame.image.recycle(); return@post }
+                    scanning = false; lastScanMs = SystemClock.elapsedRealtime() - started
+                    result.onSuccess { applyChoice(frame, it) }.onFailure { error ->
+                        guidance.text = "Scene scan failed. Camera still works."; refreshButtons()
+                        AlertDialog.Builder(this).setTitle("Scene scan could not finish")
+                            .setMessage(error.message?.take(350) ?: "Unknown model error")
+                            .setPositiveButton("Choose a framing yourself") { _, _ -> showManualChoices(frame, generation) }
+                            .setNegativeButton("Close") { _, _ -> frame.image.recycle() }.setOnCancelListener { frame.image.recycle() }.show()
+                    }
+                }
             }
-            val found = result.getValue(subjectDetector)?.firstOrNull()
-            if (found == null || preview.width == 0 || preview.height == 0) {
-                clearSubject()
-                guidance.setText(R.string.searching)
-                return@MlKitAnalyzer
-            }
-            val bounds = found.boundingBox
-            val raw = SubjectBox(bounds.left.toFloat() / preview.width, bounds.top.toFloat() / preview.height,
-                bounds.right.toFloat() / preview.width, bounds.bottom.toFloat() / preview.height)
-            val previous = overlay.subject
-            val box = if (previous != null && found.trackingId != null && found.trackingId == lastTrackingId) {
-                fun blend(old: Float, new: Float) = old * .55f + new * .45f
-                SubjectBox(blend(previous.left, raw.left), blend(previous.top, raw.top),
-                    blend(previous.right, raw.right), blend(previous.bottom, raw.bottom))
-            } else { hold.reset(); raw }
-            lastTrackingId = found.trackingId
-            lastSubjectMs = SystemClock.elapsedRealtime()
-            val cue = CompositionEngine.evaluate(box, overlay.targetX)
-            val aligned = hold.update(cue, lastSubjectMs)
-            overlay.subject = box
-            overlay.aligned = aligned
-            overlay.invalidate()
-            guidance.setText(when (cue) {
-                Cue.SEARCHING -> R.string.searching
-                Cue.SPACE -> R.string.step_back
-                Cue.LEFT -> R.string.pan_left
-                Cue.RIGHT -> R.string.pan_right
-                Cue.UP -> R.string.pan_up
-                Cue.DOWN -> R.string.pan_down
-                Cue.ALIGNED -> if (aligned) R.string.aligned else R.string.settling
-            })
-            telemetry.setText(R.string.tracking_telemetry)
+        } }
+    }
+
+    private fun showManualChoices(frame: ScanFrame, token: Int) {
+        val sheet = CropPreviews.contactSheet(frame.image)
+        val image = ImageView(this).apply { setImageBitmap(sheet); adjustViewBounds = true }
+        val picker = NumberPicker(this).apply { minValue = 0; maxValue = 8; wrapSelectorWheel = false }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(image, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                minOf(resources.displayMetrics.heightPixels * .4f, 320 * resources.displayMetrics.density).toInt()))
+            addView(picker)
         }
-        camera.setImageAnalysisAnalyzer(analysisExecutor, ThrottledAnalyzer(mlAnalyzer))
+        AlertDialog.Builder(this).setTitle("Choose a framing (0 to 8)")
+            .setView(panel)
+            .setPositiveButton("Use frame") { _, _ ->
+                scanning = false
+                if (token == generation) applyChoice(frame, ModelChoice(picker.value, "Your selected framing")) else frame.image.recycle()
+                sheet.recycle(); refreshButtons()
+            }.setNegativeButton("Cancel") { _, _ -> scanning = false; frame.image.recycle(); sheet.recycle(); refreshButtons() }
+            .setOnCancelListener { scanning = false; frame.image.recycle(); sheet.recycle(); refreshButtons() }.show()
     }
 
-    private fun clearSubject() {
-        overlay.subject = null
-        overlay.aligned = false
-        lastTrackingId = null
-        hold.reset()
+    private fun applyChoice(frame: ScanFrame, choice: ModelChoice) {
+        val crop = choice.customCrop?.let { CropOption(-1, it) } ?: ShotGeometry.options[choice.cropId]
+        val b = crop.box
+        overlay.targetPreview?.recycle()
+        val selected = Bitmap.createBitmap(frame.image, (b.left * frame.image.width).toInt(),
+            (b.top * frame.image.height).toInt(), ((b.right - b.left) * frame.image.width).toInt(),
+            ((b.bottom - b.top) * frame.image.height).toInt())
+        overlay.targetPreview = Bitmap.createScaledBitmap(selected, 180, 240, true)
+        if (selected !== frame.image && selected !== overlay.targetPreview) selected.recycle()
+        activePlanId = tracker.select(frame, crop)
+        modelReason = choice.explanation; activePlan = true; autoZoom = true; lastGood = null
+        guidance.text = "Move toward the outlined frame."
+        telemetry.text = choice.explanation
+        frame.image.recycle(); refreshButtons()
+    }
+
+    private fun showTrack(tracked: TrackedFrame) {
+        if (SystemClock.elapsedRealtime() - tracked.timeMs > 350) { trackingLost(); return }
+        lastGood = tracked; overlay.frame = tracked.corners; overlay.fresh = true
+        val aligned = hold.update(ShotGeometry.framingReady(tracked.corners), tracked.timeMs)
+        if (aligned && !overlay.aligned) overlay.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        overlay.aligned = aligned; overlay.invalidate()
+        guidance.text = when {
+            aligned -> "That's the frame. Hold steady and take the photo."
+            ShotGeometry.aimReady(tracked.corners) && !autoZoom -> "Pinch to match the outlined frame."
+            ShotGeometry.aimReady(tracked.corners) && autoZoom -> "Framing your shot…"
+            else -> "Move toward the outlined frame."
+        }
+        if (autoZoom && !zoomBusy) {
+            val camera = controller ?: return
+            val zoom = camera.zoomState.value ?: return
+            val desired = ShotGeometry.desiredZoom(zoom.zoomRatio, tracked.corners, baselineZoom, zoom.maxZoomRatio) ?: return
+            if (abs(desired - zoom.zoomRatio) > .025f) {
+                val next = zoom.zoomRatio + (desired - zoom.zoomRatio).coerceIn(-.04f, .04f)
+                zoomBusy = true
+                val future = camera.setZoomRatio(next)
+                future.addListener({ zoomBusy = false; runCatching { future.get() }.onFailure { autoZoom = false } }, main)
+            }
+        }
+    }
+    private fun trackingLost() {
+        hold.reset(); overlay.aligned = false; overlay.fresh = false
+        val age = lastGood?.let { SystemClock.elapsedRealtime() - it.timeMs } ?: Long.MAX_VALUE
+        if (age > 600) overlay.frame = null
         overlay.invalidate()
+        guidance.text = if (age < 600) "Holding your shot plan…" else "Return to the scanned scene, or find another shot."
+    }
+    private fun cancelGuide(resetZoom: Boolean) {
+        generation++; planner.cancel(); analyzer.cancelSnapshot(); tracker.reset()
+        scanning = false; activePlan = false; lastGood = null; hold.reset()
+        overlay.frame = null; overlay.aligned = false; overlay.fresh = false
+        overlay.targetPreview?.recycle(); overlay.targetPreview = null; overlay.invalidate()
+        if (resetZoom) { controller?.setZoomRatio(baselineZoom); guidance.text = "Point at a scene, then find a composition." }
+        refreshButtons()
+    }
+
+    private fun requestComposition() {
+        if (plannerSettings.key() == null) { showAiSetup(); return }
+        if (plannerSettings.consent) { scan(false); return }
+        AlertDialog.Builder(this).setTitle("Send one scene image to Google?")
+            .setMessage("Each tap of Find a composition sends one reduced camera image to Google's Gemini API. " +
+                "Live tracking and your full-resolution saved photo stay on the phone. " +
+                "Google's free tier may use submitted images to improve its products. " +
+                "Your API project's pricing and quota apply. This test build limits scans to 20 attempts per day.")
+            .setPositiveButton("Allow scene scans") { _, _ -> plannerSettings.consentToUpload(); scan(false) }
+            .setNeutralButton("Privacy and pricing") { _, _ -> startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://ai.google.dev/gemini-api/docs/pricing"))) }
+            .setNegativeButton("Keep camera local", null).show()
+    }
+
+    private fun showAiSetup() {
+        cancelGuide(false)
+        val keyInput = EditText(this).apply {
+            hint = if (plannerSettings.key() == null) "Paste your personal API key" else "Saved key retained if you leave this blank"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+            setSingleLine(true)
+        }
+        val modelInput = EditText(this).apply { setText(plannerSettings.model); hint = "Gemini model ID"; setSingleLine(true) }
+        val accessStatus = TextView(this)
+        val checkAccess = Button(this).apply {
+            text = "Check key and model"; isAllCaps = false
+            setOnClickListener {
+                val credential = keyInput.text.toString().trim().ifBlank { plannerSettings.key().orEmpty() }
+                val model = modelInput.text.toString().trim()
+                isEnabled = false; accessStatus.text = "Checking access without uploading an image…"
+                modelExecutor.execute {
+                    val result = runCatching { CloudShotPlanner.checkAccess(credential, model) }
+                    handler.post { if (!isDestroyed) {
+                        isEnabled = true; accessStatus.text = result.getOrElse { it.message ?: "Access check failed." }
+                    } }
+                }
+            }
+        }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(24, 8, 24, 8)
+            addView(TextView(this@MainActivity).apply { text = "Personal test setup. The key is encrypted on this phone. " +
+                "Use your own key; keep it out of chat and GitHub. Your Google project's pricing and quota apply." })
+            addView(keyInput); addView(modelInput); addView(checkAccess); addView(accessStatus)
+        }
+        val dialog = AlertDialog.Builder(this).setTitle("AI setup").setView(panel)
+            .setPositiveButton("Save", null).setNegativeButton("Cancel", null)
+            .setNeutralButton("Open AI Studio") { _, _ -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/api-keys"))) }.create()
+        dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        dialog.setOnDismissListener { keyInput.text.clear() }
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                runCatching { plannerSettings.save(keyInput.text.toString().ifBlank { plannerSettings.key().orEmpty() }, modelInput.text.toString().trim()) }
+                    .onSuccess { keyInput.text.clear(); dialog.dismiss(); guidance.text = "AI setup saved. Tap Find a composition." }
+                    .onFailure { keyInput.error = it.message }
+            }
+        }
+        dialog.show()
+    }
+    private fun showOptions() {
+        AlertDialog.Builder(this).setTitle("Camera options").setItems(arrayOf("AI setup", "Try the framing guide without AI",
+            "Photo processing", "Camera and scan details", "Google privacy and pricing", "Forget saved API key")) { _, index ->
+            when (index) {
+                0 -> showAiSetup()
+                1 -> scan(true)
+                2 -> chooseProcessing()
+                3 -> AlertDialog.Builder(this).setTitle("Device details").setMessage(
+                    "${Build.MANUFACTURER} ${Build.MODEL}\nAndroid ${Build.VERSION.RELEASE}\n${quality.status}\n" +
+                    "Exposed extensions: ${quality.supported(baseSelector).joinToString { it.second }.ifBlank { "none" }}\n" +
+                    "Capture: quality priority, standard high-resolution 4:3 JPEG\n$lastPhotoDetails\n" +
+                    "Model backend: ${planner.backendLabel.ifBlank { "not loaded" }}\nLast scan: ${lastScanMs / 1000f} s\n$modelReason")
+                    .setPositiveButton("Close", null).show()
+                4 -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://ai.google.dev/gemini-api/docs/pricing")))
+                5 -> { plannerSettings.forget(); guidance.text = "Saved API key removed." }
+            }
+        }.show()
+    }
+    private fun chooseProcessing() {
+        val modes = listOf(null to "Automatic manufacturer processing", ExtensionMode.NONE to "Standard quality capture") + quality.supported(baseSelector)
+        AlertDialog.Builder(this).setTitle("Photo processing").setItems(modes.map { it.second }.toTypedArray()) { _, index ->
+            processingMode = modes[index].first; updateCameraStatus()
+        }.show()
+    }
+    private fun updateCameraStatus() {
+        if (!::telemetry.isInitialized || activePlan || scanning) return
+        val extension = captureExtension()
+        telemetry.text = "${extension?.second ?: "Standard quality"} · 4:3 · tap to focus · pinch to zoom"
+    }
+    private fun captureExtension(): Pair<CameraSelector, String>? = when (val mode = processingMode) {
+        null -> quality.automatic(baseSelector)
+        ExtensionMode.NONE -> null
+        else -> quality.selector(baseSelector, mode)?.let { it to "Manufacturer ${quality.supported(baseSelector).firstOrNull { entry -> entry.first == mode }?.second}" }
     }
 
     private fun flipCamera() {
         val camera = controller ?: return
-        if (!cameraReady || saving) return
-        val previous = camera.cameraSelector
-        val next = if (previous == CameraSelector.DEFAULT_BACK_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+        if (!cameraReady || saving || scanning) return
+        val next = if (baseSelector == CameraSelector.DEFAULT_BACK_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
         if (!camera.hasCamera(next)) { toast(R.string.no_other_camera); return }
-        try {
-            generation++
-            camera.clearImageAnalysisAnalyzer()
-            detector?.close()
-            detector = null
-            clearSubject()
-            camera.cameraSelector = next
-            if (guideEnabled) attachDetector(camera)
-        } catch (_: Exception) {
-            camera.cameraSelector = previous
-            if (guideEnabled) attachDetector(camera)
-            toast(R.string.no_other_camera)
-        }
+        cancelGuide(false)
+        val previous = baseSelector
+        try { camera.cameraSelector = next; baseSelector = next; updateCameraStatus() }
+        catch (_: Exception) { camera.cameraSelector = previous; toast(R.string.no_other_camera) }
     }
 
     private fun takePhoto() {
         val camera = controller ?: return
-        if (!cameraReady || saving) return
-        saving = true
-        capture.isEnabled = false
+        if (!cameraReady || saving || scanning) return
+        saving = true; refreshButtons()
+        val zoom = camera.zoomState.value?.zoomRatio ?: 1f
+        val extension = captureExtension()
+        var used = extension?.second ?: "Standard quality"
+        var zoomRequest: com.google.common.util.concurrent.ListenableFuture<Void>? = null
+        if (extension != null) {
+            try {
+                // Extensions cannot reliably run ImageAnalysis. Switch only for the still capture.
+                camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE)
+                camera.cameraSelector = extension.first; zoomRequest = camera.setZoomRatio(zoom)
+                guidance.text = "Capturing with ${extension.second}…"
+            } catch (_: Exception) {
+                camera.cameraSelector = baseSelector
+                camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.IMAGE_ANALYSIS)
+                used = "Standard quality (manufacturer processing failed)"
+            }
+        }
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, "CC_${System.currentTimeMillis()}.jpg")
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/CameraCompositor")
         }
-        val output = ImageCapture.OutputFileOptions.Builder(contentResolver,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values).build()
-        try {
-            camera.takePicture(output, ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageSavedCallback {
+        val output = ImageCapture.OutputFileOptions.Builder(contentResolver, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values).build()
+        val usedProcessing = used
+        fun restore() {
+            if (!isDestroyed) {
+                runCatching { camera.cameraSelector = baseSelector; camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.IMAGE_ANALYSIS); camera.setZoomRatio(zoom) }
+                    .onFailure { cameraFailed(camera) }
+                saving = false; hold.reset(); refreshButtons()
+            }
+        }
+        fun performCapture() { try {
+            camera.takePicture(output, main, object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(result: ImageCapture.OutputFileResults) {
-                    saving = false
-                    if (isDestroyed) return
-                    capture.isEnabled = cameraReady
-                    lastPhoto = result.savedUri
-                    gallery.isEnabled = lastPhoto != null
+                    restore(); if (isDestroyed) return
+                    lastPhoto = result.savedUri; gallery.isEnabled = lastPhoto != null
                     toast(R.string.photo_saved)
+                    modelExecutor.execute {
+                        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        runCatching { result.savedUri?.let { uri -> contentResolver.openInputStream(uri).use { BitmapFactory.decodeStream(it, null, bounds) } } }
+                        handler.post { if (!isDestroyed) {
+                            lastPhotoDetails = "Last photo: ${bounds.outWidth} × ${bounds.outHeight} · $usedProcessing"
+                            telemetry.text = lastPhotoDetails
+                        } }
+                    }
                 }
-                override fun onError(exception: ImageCaptureException) { saveFailed() }
+                override fun onError(exception: ImageCaptureException) { restore(); toast(R.string.photo_failed) }
             })
-        } catch (_: Exception) { saveFailed() }
+        } catch (_: Exception) { restore(); toast(R.string.photo_failed) } }
+        val zoomFuture = zoomRequest
+        if (zoomFuture == null) performCapture() else {
+            var settled = false
+            zoomFuture.addListener({
+                if (!settled) {
+                    settled = true
+                    runCatching { zoomFuture.get() }.onSuccess { if (!isDestroyed) performCapture() }
+                        .onFailure { restore(); toast(R.string.photo_failed) }
+                }
+            }, main)
+            handler.postDelayed({
+                if (!settled && !isDestroyed) {
+                    settled = true; restore()
+                    guidance.text = "Camera zoom did not settle. Try Standard quality in Photo processing."
+                }
+            }, 3500)
+        }
     }
-
-    private fun saveFailed() {
-        saving = false
-        if (isDestroyed) return
-        capture.isEnabled = cameraReady
-        toast(R.string.photo_failed)
-    }
-
     private fun openLastPhoto() {
-        val uri = lastPhoto ?: return
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "image/jpeg")
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
-        } catch (_: android.content.ActivityNotFoundException) { toast(R.string.no_gallery) }
+        lastPhoto?.let { uri -> runCatching {
+            startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "image/jpeg").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
+        }.onFailure { toast(R.string.no_gallery) } }
     }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.putString("lastPhoto", lastPhoto?.toString())
-        super.onSaveInstanceState(outState)
+    private fun refreshButtons() {
+        if (!::find.isInitialized) return
+        capture.isEnabled = cameraReady && !saving && !scanning
+        find.isEnabled = cameraReady && !saving && !scanning
+        flip.isEnabled = cameraReady && !saving && !scanning
+        cancel.visibility = if (activePlan || scanning) View.VISIBLE else View.GONE
     }
-
-    private fun toast(message: Int) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-
+    private fun toast(resource: Int) = Toast.makeText(this, resource, Toast.LENGTH_SHORT).show()
+    override fun onSaveInstanceState(outState: Bundle) { outState.putString("lastPhoto", lastPhoto?.toString()); super.onSaveInstanceState(outState) }
     override fun onDestroy() {
-        generation++
-        handler.removeCallbacksAndMessages(null)
-        controller?.clearImageAnalysisAnalyzer()
-        controller?.unbind()
-        detector?.close()
-        analysisExecutor.shutdown()
+        generation++; handler.removeCallbacksAndMessages(null); analyzer.cancelSnapshot()
+        controller?.clearImageAnalysisAnalyzer(); controller?.unbind(); planner.cancel()
+        analysisExecutor.execute { tracker.close() }; analysisExecutor.shutdown()
+        modelExecutor.execute { planner.close() }; modelExecutor.shutdown()
         super.onDestroy()
     }
 }

@@ -1,74 +1,66 @@
 # Camera Compositor
 
-An Android camera prototype for live composition assistance. Working name and temporary native controls. The owner designs the final UI/UX.
+Android camera with on-demand scene planning, a live visual framing guide, and quality-priority photo capture. Version 0.2.0 is a personal test build. The owner leads final UI/UX design.
 
-## Current milestone
+## What changed
 
-- Rear/front camera preview, tap to focus, pinch to zoom.
-- JPEG capture to `Pictures/CameraCompositor`, with a button to open the latest shot.
-- On-device ML Kit detection of one prominent subject.
-- Manual left-third, center, or right-third framing targets.
-- Live pan instructions, subject outline, grid, and a target marker.
-- A 650 ms hold before alignment turns green; expired results are cleared.
-- Guide toggle disables image analysis to reduce work.
+- **Find a composition:** sends one reduced scene image to Google Gemini, which proposes a framing and explains its visual intent.
+- **Visual guidance:** a target-frame thumbnail, an outline, and an arrow replace repeated left/right text instructions.
+- **Automatic zoom:** adjusts gradually near the selected frame, within the phone's available range and at most 1.8× relative to the scanned view. Pinching takes manual zoom control.
+- **Scene tracking:** OpenCV optical flow and feature matching follow the selected scene, including texture that a generic object detector might miss. Temporary tracking loss pauses alignment and zoom; the shot plan stays available for reacquisition.
+- **Photo capture:** quality priority, standard high-resolution 4:3 JPEG, and manufacturer Auto/HDR processing when the phone exposes it. Night is selectable when available. Analysis pauses during manufacturer capture because extensions cannot reliably run it concurrently.
+- **Offline manual fallback:** Options > Try the framing guide without AI lets you select a framing and test tracking/zoom without uploading a frame.
 
-Android 10 or newer. First test device: Vivo V30. Native Kotlin and CameraX.
+Android 10+, ARM64. Primary test phone: Vivo V30. This build compiles and has automated geometry/protocol checks. The new camera pipeline and live API call still require physical-phone testing.
 
-This milestone locates a subject with ML and applies geometric rules. It does **not** yet choose a composition based on scene meaning, detect a horizon, understand a person's pose, rate a photo, or reproduce the scene-scan and automatic zoom behavior in the reference videos. The subject box center is the alignment anchor, so a person and a landscape will need richer framing logic later.
+## Install and use
 
-## Try the APK
+Install `artifacts/CameraCompositor-0.2-debug.apk` when supplied. It updates the earlier debug app on this computer's signing key.
 
-After a successful build, use `app/build/outputs/apk/debug/app-debug.apk`, or the convenient copy in `artifacts/CameraCompositor-debug.apk` when supplied. These generated files are excluded from Git.
+1. Open **Options > AI setup** and enter your own Gemini API key privately on the phone. Default model: `gemini-3.8-flash`.
+2. Tap **Find a composition** and review the first-upload disclosure.
+3. Hold the scanned scene while the request finishes. Follow the outline and arrow, then use the shutter when the framing settles.
 
-See [the phone testing guide](docs/PHONE_TESTING.md) for installation and the first test session. A Play Store account is unnecessary for local testing.
+See [AI setup](docs/AI_SETUP.md) and [phone testing](docs/PHONE_TESTING.md). Capture works without an API key or internet connection.
+
+## Data, keys, and cost
+
+An explicit Find button press sends one JPEG of the visible viewfinder to Google's Gemini API, after the owner allows that behavior. Live tracking stays on-device. Full-resolution saved photos stay on the phone. Google may use free-tier inputs for product improvement; see [provider pricing/privacy](https://ai.google.dev/gemini-api/docs/pricing).
+
+The owner enters a personal test key on the phone. It is encrypted with Android Keystore, excluded from backup, and never compiled into the APK. Setup masks the field and protects that dialog from screenshots. Requests use HTTPS and an authentication header; credentials are excluded from URLs, request JSON, logs, and provider error displays. Options can remove the saved key.
+
+There are no automatic retries. This build limits scan attempts to 20 per phone per day and one every 15 seconds. These are development guardrails, not a provider-side spending cap. API availability, free-tier eligibility, rates, and quotas belong to the owner's Google project. Making a public app free requires a separate cost plan and a backend that protects the service key. Never publish a shared provider key inside a mobile app.
 
 ## Build
 
-Recommended beginner workflow: install [Android Studio](https://developer.android.com/studio), open this folder, let Gradle sync, then run the app on a connected phone. Android Studio's bundled Java runtime works for this project. Install Android SDK Platform 35 and Build Tools 35.0.0 if prompted.
+Open this folder in [Android Studio](https://developer.android.com/studio), sync Gradle, and run on a connected phone. SDK Platform 35 and Build Tools 35.0.0 are used.
 
-This computer also has an isolated toolchain under `.tools/`. It can build without Android Studio:
+The existing project-local toolchain can also build without Android Studio:
 
 ```powershell
 ./scripts/build.ps1
 ```
 
-That runs `assembleDebug`, `testDebugUnitTest`, and `lintDebug`. With your own Java and Android SDK configured, use the standard wrapper instead:
+This runs `assembleDebug`, `testDebugUnitTest`, and `lintDebug`. With your own Java/Android SDK configured, use `./gradlew.bat assembleDebug testDebugUnitTest lintDebug`.
 
-```powershell
-./gradlew.bat assembleDebug testDebugUnitTest lintDebug
-```
+The portable toolchain is under ignored `.tools/`. `scripts/bootstrap_windows.py` can provision it on another Windows computer. Review [Android SDK terms](https://developer.android.com/studio/terms) first; the script downloads official tools, accepts SDK package licenses, and installs SDK 35.
 
-`scripts/bootstrap_windows.py` provisions the portable toolchain for another Windows machine. Review the [Android SDK terms](https://developer.android.com/studio/terms) before running it. It downloads Java 21, Gradle 8.11.1, and Android command-line tools from their official sources, accepts SDK package licenses, and installs SDK 35. It requires Python 3 and internet access. For most beginners Android Studio is the easier setup.
+## Code map
 
-## How the code fits together
-
-Think of the camera as a game render loop and the detector as a slower background system:
-
-1. CameraX shows the camera stream and handles capture and focus.
-2. A separate analyzer samples up to 10 frames per second at a requested 640 × 480 resolution.
-3. ML Kit locates a prominent subject. CameraX maps its coordinates into the visible viewfinder.
-4. `CompositionEngine` compares the subject center to the target you selected.
-5. The overlay and one line of guidance update without drawing onto the saved photo.
-
-Old analysis frames are dropped rather than queued. The 10-check limit is a work cap, not a measured frame-rate guarantee. Actual preview smoothness, inference latency, heat, battery use, and photo quality require physical-device testing.
-
-| File | Purpose |
+| Component | Responsibility |
 | --- | --- |
-| `app/src/main/java/dev/cameracompositor/MainActivity.kt` | Camera lifecycle, permission flow, photo saving, detector wiring |
-| `app/src/main/java/dev/cameracompositor/CompositionEngine.kt` | Framing rules, direction decisions, alignment hold |
-| `app/src/main/java/dev/cameracompositor/ThrottledAnalyzer.kt` | Limits analysis work and forwards coordinate transforms |
-| `app/src/main/java/dev/cameracompositor/GuideOverlay.kt` | Draws viewfinder guides |
-| `app/src/main/res/layout/activity_main.xml` | Temporary screen layout |
-| `app/src/test/java/dev/cameracompositor/CompositionEngineTest.kt` | Direction, clipping, missing-subject, and alignment tests |
+| `MainActivity.kt` | Permission flow, scan/cancel state, visual guide, shutter, camera switching, options |
+| `CloudShotPlanner.kt` | One cancellable HTTPS scene request; no background image streaming |
+| `GeminiProtocol.kt` | Structured request and validated response, independent of Android camera objects |
+| `PlannerSettings.kt` | Encrypted personal key, upload consent, local scan allowance |
+| `SceneFrameAnalyzer.kt` | Camera frame extraction and sensor-to-view coordinate mapping |
+| `SceneTracker.kt` | Optical flow, feature matching, homography checks, plan identity |
+| `ShotGeometry.kt` | Crop bounds, alignment, zoom limits, manual framing choices |
+| `CameraQuality.kt` | Runtime manufacturer-extension capability checks |
+| `GuideOverlay.kt` / `ViewfinderFrame.kt` | Visual target and 4:3 preview layout |
 
-## Model and connectivity
+## Verification and remaining work
 
-The ML Kit object detector downloads its model on first use. Keep internet available for the first launch, and expect an initial warm-up before detection starts. Camera capture can still work while detection is unavailable. Test offline after the model is ready.
+[Verification](docs/VERIFICATION.md) distinguishes automated checks, model experiments, and device tests. The earlier on-device model experiments failed the required consistency/speed checks; their large models and runtimes are excluded from this app. [Research findings](docs/SCENE_MODEL_FINDINGS.md) record that decision.
 
-The app has no accounts, cloud inference API, paid API key, or server backend. ML Kit processes images on the device. Its SDK can communicate for model delivery and diagnostics under [Google's terms and privacy documentation](https://developers.google.com/ml-kit/terms). The app's internet permission supports the model dependency.
-
-## Design and next milestones
-
-See [the product plan](docs/PRODUCT_PLAN.md). Final layouts, typography, colors, interactions, and professional/casual modes belong to the owner. Wireframes in Figma, sketches, and annotated screenshots can all guide implementation.
-
-See [the GitHub guide](docs/GITHUB.md) for saving and publishing changes. Reference videos, decoded reference frames, build tools, local SDKs, APKs, and signing keys are excluded from version control.
+Current scope: framing proposals inside the scanned view, portrait 3:4 photos, scene tracking rather than independent tracking of moving people, and a temporary functional interface. Physical perspective changes require moving the phone. Scene quality, cloud latency, feature tracking on real movement, and manufacturer capture quality must be measured on the Vivo. [Product plan](docs/PRODUCT_PLAN.md), [GitHub guide](docs/GITHUB.md).

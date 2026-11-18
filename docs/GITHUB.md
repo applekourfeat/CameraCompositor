@@ -1,5 +1,7 @@
 # GitHub, in practical terms
 
+Repository: [applekourfeat/CameraCompositor](https://github.com/applekourfeat/CameraCompositor). It was published through GitHub Desktop. The connected GitHub app may require separate permission for this new repository; local Git/GitHub Desktop are configured independently.
+
 Your project folder is the working copy. A **commit** saves a named snapshot locally. **Push** uploads those commits to your GitHub repository. A **branch** lets us make a change separately before combining it with the main version.
 
 GitHub Desktop is already installed on this computer and provides buttons for this workflow.

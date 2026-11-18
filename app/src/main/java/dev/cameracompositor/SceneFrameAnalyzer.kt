@@ -1,0 +1,64 @@
+package dev.cameracompositor
+
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.os.SystemClock
+import android.util.Size
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
+import java.util.concurrent.atomic.AtomicReference
+
+data class ScanFrame(val image: Bitmap, val gray: ByteArray, val width: Int, val height: Int,
+    val bufferToView: Matrix, val viewSize: Size)
+
+/** Shared analysis frames feed both the one-shot scan and scene tracking. */
+class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack: (TrackingEvent) -> Unit) : ImageAnalysis.Analyzer {
+    @Volatile private var sensorToView: Matrix? = null
+    @Volatile var viewSize = Size(0, 0)
+    private val snapshotRequest = AtomicReference<((ScanFrame?) -> Unit)?>(null)
+    fun requestSnapshot(callback: (ScanFrame?) -> Unit) { snapshotRequest.getAndSet(callback)?.invoke(null) }
+    fun cancelSnapshot() { snapshotRequest.getAndSet(null)?.invoke(null) }
+    override fun getTargetCoordinateSystem() = ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED
+    override fun getDefaultTargetResolution() = Size(640, 480)
+    override fun updateTransform(matrix: Matrix?) { sensorToView = matrix?.let(::Matrix) }
+
+    override fun analyze(image: ImageProxy) {
+        try {
+            val transform = sensorToView ?: return
+            val size = viewSize
+            if (size.width == 0 || size.height == 0) return
+            val inverse = Matrix()
+            if (!image.imageInfo.sensorToBufferTransformMatrix.invert(inverse)) return
+            val bufferToView = Matrix().apply { setConcat(transform, inverse) }
+            val plane = image.planes[0]
+            val buffer = plane.buffer.duplicate()
+            val base = buffer.position()
+            val gray = ByteArray(image.width * image.height)
+            for (y in 0 until image.height) {
+                if (plane.pixelStride == 1) {
+                    buffer.position(base + y * plane.rowStride)
+                    buffer.get(gray, y * image.width, image.width)
+                } else for (x in 0 until image.width) {
+                    gray[y * image.width + x] = buffer.get(base + y * plane.rowStride + x * plane.pixelStride)
+                }
+            }
+            snapshotRequest.getAndSet(null)?.let { callback ->
+                try {
+                    val raw = image.toBitmap()
+                    val width = 480
+                    val height = (width.toFloat() * size.height / size.width).toInt()
+                    val visible = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    val scale = Matrix().apply { setScale(width.toFloat() / size.width, height.toFloat() / size.height) }
+                    val toBitmap = Matrix().apply { setConcat(scale, bufferToView) }
+                    Canvas(visible).drawBitmap(raw, toBitmap, null)
+                    raw.recycle()
+                    callback(ScanFrame(visible, gray.copyOf(), image.width, image.height, bufferToView, size))
+                } catch (_: Exception) { callback(null) }
+            }
+            val tracked = tracker.update(gray, image.width, image.height, bufferToView, size, SystemClock.elapsedRealtime())
+            onTrack(TrackingEvent(tracker.activePlanId, tracked))
+        } catch (_: Exception) { onTrack(TrackingEvent(tracker.activePlanId, null)) }
+        finally { image.close() }
+    }
+}
