@@ -1,0 +1,1130 @@
+{
+  "policy": {
+    "revision": "distinct-shot-ideas-v1",
+    "minNegativeMargin": 0.025,
+    "minGaic": 2.5,
+    "focusZooms": [
+      1.8,
+      2.2
+    ],
+    "contextZooms": [
+      1.25,
+      1.5
+    ],
+    "detailZooms": [
+      2.6,
+      3.2
+    ],
+    "maxIdeas": 3,
+    "maxIoU": 0.6
+  },
+  "policySha256": "987e2f06609b7c47d4845bae114ec144f158ccfbeddef4de09485ce5704b8202",
+  "split": "development",
+  "sceneCount": 20,
+  "proposalScenes": 18,
+  "desktopMedianMs": 751.4858499926049,
+  "desktopP95Ms": 810.4920700076036,
+  "timing": "two Windows CPU threads; warm models; image preparation and inference included; phone/loading pending",
+  "humanPreference": "pending",
+  "alreadyGoodPreservation": "unimplemented: this policy proposes details only",
+  "releaseApproved": false,
+  "results": [
+    {
+      "sceneId": "gaic-val-451437",
+      "split": "development",
+      "imageSha256": "95c84cfbb1357f713b9f82be687923ee4ef16f5340da0d2ca6199775457bb2af",
+      "gaicMs": 80.13839996419847,
+      "semanticMs": 735.8934999792837,
+      "selected": [
+        {
+          "index": 129,
+          "box": [
+            0.14814814814814814,
+            0.2962962962962963,
+            0.7037037037037037,
+            0.8518518518518519
+          ],
+          "gaic": 3.6177971363067627,
+          "subject": "a bird",
+          "similarity": 0.30705004930496216,
+          "negativeMargin": 0.10546377301216125,
+          "top": [
+            [
+              "a bird",
+              0.30705004930496216
+            ],
+            [
+              "a wild animal",
+              0.23527906835079193
+            ],
+            [
+              "a small object",
+              0.222406268119812
+            ],
+            [
+              "an insect",
+              0.21884191036224365
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-318776",
+      "split": "development",
+      "imageSha256": "bd74af81a758792c837c07881671dba32e9746dda18230b35a9bf06d6afa912a",
+      "gaicMs": 47.74310003267601,
+      "semanticMs": 710.9628999605775,
+      "selected": [
+        {
+          "index": 137,
+          "box": [
+            0.2222222222222222,
+            0.37037037037037035,
+            0.7777777777777778,
+            0.9259259259259259
+          ],
+          "gaic": 2.5025577545166016,
+          "subject": "a cat",
+          "similarity": 0.27551335096359253,
+          "negativeMargin": 0.0265386700630188,
+          "top": [
+            [
+              "a cat",
+              0.27551335096359253
+            ],
+            [
+              "a blurry scene",
+              0.24897468090057373
+            ],
+            [
+              "a small object",
+              0.2457515001296997
+            ],
+            [
+              "a reflection in a window",
+              0.233018159866333
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-238737",
+      "split": "development",
+      "imageSha256": "ecf6f4c928fb7a46af08c5fda649421e9637eea2f526f45eb6a1ebafbc43650e",
+      "gaicMs": 42.81949996948242,
+      "semanticMs": 690.1785000227392,
+      "selected": [
+        {
+          "index": 116,
+          "box": [
+            0.2222222222222222,
+            0.14814814814814814,
+            0.7777777777777778,
+            0.7037037037037037
+          ],
+          "gaic": 3.2134029865264893,
+          "subject": "a person",
+          "similarity": 0.22477659583091736,
+          "negativeMargin": 0.05606397986412048,
+          "top": [
+            [
+              "a person",
+              0.22477659583091736
+            ],
+            [
+              "a drink",
+              0.1927500069141388
+            ],
+            [
+              "a blurry scene",
+              0.16871261596679688
+            ],
+            [
+              "food",
+              0.16431114077568054
+            ]
+          ]
+        },
+        {
+          "index": 16,
+          "box": [
+            0.033333333333333326,
+            0.06666666666666665,
+            0.8333333333333334,
+            0.8666666666666667
+          ],
+          "gaic": 4.5294928550720215,
+          "subject": "a drink",
+          "similarity": 0.22759650647640228,
+          "negativeMargin": 0.047715991735458374,
+          "top": [
+            [
+              "a drink",
+              0.22759650647640228
+            ],
+            [
+              "a person",
+              0.2272084355354309
+            ],
+            [
+              "food",
+              0.18041899800300598
+            ],
+            [
+              "a blurry scene",
+              0.1798805147409439
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 33
+    },
+    {
+      "sceneId": "gaic-val-420461",
+      "split": "development",
+      "imageSha256": "1d44b960d8befbf28cef7a2428930a55fe26d9dd0757e8b04611168b28b39a94",
+      "gaicMs": 37.823099992237985,
+      "semanticMs": 712.2655999846756,
+      "selected": [
+        {
+          "index": 117,
+          "box": [
+            0.2962962962962963,
+            0.14814814814814814,
+            0.8518518518518519,
+            0.7037037037037037
+          ],
+          "gaic": 3.123779058456421,
+          "subject": "a person",
+          "similarity": 0.22530604898929596,
+          "negativeMargin": 0.03094358742237091,
+          "top": [
+            [
+              "a person",
+              0.22530604898929596
+            ],
+            [
+              "a street",
+              0.2124074399471283
+            ],
+            [
+              "a blurry scene",
+              0.19436246156692505
+            ],
+            [
+              "an obstructing railing",
+              0.17152750492095947
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 33
+    },
+    {
+      "sceneId": "gaic-val-251975",
+      "split": "development",
+      "imageSha256": "8e4d61d62349f5d360915f7502fa0bebb6aeb6f7774cae306324a357d9910597",
+      "gaicMs": 40.43709998950362,
+      "semanticMs": 744.5693999761716,
+      "selected": [
+        {
+          "index": 136,
+          "box": [
+            0.14814814814814814,
+            0.37037037037037035,
+            0.7037037037037037,
+            0.9259259259259259
+          ],
+          "gaic": 3.940420150756836,
+          "subject": "a city skyline",
+          "similarity": 0.2793208658695221,
+          "negativeMargin": 0.0808933824300766,
+          "top": [
+            [
+              "a city skyline",
+              0.2793208658695221
+            ],
+            [
+              "a tall building",
+              0.25243106484413147
+            ],
+            [
+              "a mountain",
+              0.22440025210380554
+            ],
+            [
+              "a modern building",
+              0.21501076221466064
+            ]
+          ]
+        },
+        {
+          "index": 294,
+          "box": [
+            0.6875,
+            0.6875,
+            1.0,
+            1.0
+          ],
+          "gaic": 3.175621509552002,
+          "subject": "a boat",
+          "similarity": 0.23322847485542297,
+          "negativeMargin": 0.04290857911109924,
+          "top": [
+            [
+              "a boat",
+              0.23322847485542297
+            ],
+            [
+              "the sea",
+              0.2135145664215088
+            ],
+            [
+              "a bridge",
+              0.20759382843971252
+            ],
+            [
+              "a city skyline",
+              0.19692528247833252
+            ]
+          ]
+        },
+        {
+          "index": 288,
+          "box": [
+            0.0,
+            0.6875,
+            0.3125,
+            1.0
+          ],
+          "gaic": 2.818376064300537,
+          "subject": "a tall building",
+          "similarity": 0.29886674880981445,
+          "negativeMargin": 0.10269014537334442,
+          "top": [
+            [
+              "a tall building",
+              0.29886674880981445
+            ],
+            [
+              "a city skyline",
+              0.2819477319717407
+            ],
+            [
+              "a modern building",
+              0.23520585894584656
+            ],
+            [
+              "a street",
+              0.19635654985904694
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-296311",
+      "split": "development",
+      "imageSha256": "d969ac32d3ba1b625272611283ee77a76bbce401574cdba4fe2825c53705c9e5",
+      "gaicMs": 44.1582000348717,
+      "semanticMs": 761.1926000099629,
+      "selected": [
+        {
+          "index": 171,
+          "box": [
+            0.1818181818181818,
+            0.2727272727272727,
+            0.6363636363636364,
+            0.7272727272727273
+          ],
+          "gaic": 3.698970317840576,
+          "subject": "a lake",
+          "similarity": 0.23338069021701813,
+          "negativeMargin": 0.060233041644096375,
+          "top": [
+            [
+              "a lake",
+              0.23338069021701813
+            ],
+            [
+              "a boat",
+              0.23194682598114014
+            ],
+            [
+              "a bridge",
+              0.19383150339126587
+            ],
+            [
+              "a blurry scene",
+              0.17314764857292175
+            ]
+          ]
+        },
+        {
+          "index": 175,
+          "box": [
+            0.5454545454545454,
+            0.2727272727272727,
+            1.0,
+            0.7272727272727273
+          ],
+          "gaic": 3.0488319396972656,
+          "subject": "an old building",
+          "similarity": 0.2237071692943573,
+          "negativeMargin": 0.04765930771827698,
+          "top": [
+            [
+              "an old building",
+              0.2237071692943573
+            ],
+            [
+              "a bridge",
+              0.21291549503803253
+            ],
+            [
+              "a lake",
+              0.21000854671001434
+            ],
+            [
+              "a boat",
+              0.20963062345981598
+            ]
+          ]
+        },
+        {
+          "index": 219,
+          "box": [
+            0.10256410256410259,
+            0.3076923076923077,
+            0.48717948717948717,
+            0.6923076923076923
+          ],
+          "gaic": 2.9552078247070312,
+          "subject": "a boat",
+          "similarity": 0.25831952691078186,
+          "negativeMargin": 0.06904646754264832,
+          "top": [
+            [
+              "a boat",
+              0.25831952691078186
+            ],
+            [
+              "a lake",
+              0.25587838888168335
+            ],
+            [
+              "the sea",
+              0.19816753268241882
+            ],
+            [
+              "a bridge",
+              0.19348114728927612
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-343850",
+      "split": "development",
+      "imageSha256": "1c06949eb3211a1886aa1b2d5bbbcf816065e5d2b214b75ae530b5d83399d6f1",
+      "gaicMs": 39.06699997605756,
+      "semanticMs": 741.3778000045568,
+      "selected": [
+        {
+          "index": 107,
+          "box": [
+            0.07407407407407407,
+            0.07407407407407407,
+            0.6296296296296297,
+            0.6296296296296297
+          ],
+          "gaic": 4.816706657409668,
+          "subject": "a flower",
+          "similarity": 0.2781732678413391,
+          "negativeMargin": 0.10013113915920258,
+          "top": [
+            [
+              "a flower",
+              0.2781732678413391
+            ],
+            [
+              "a small object",
+              0.21316517889499664
+            ],
+            [
+              "an insect",
+              0.18953758478164673
+            ],
+            [
+              "a bird",
+              0.18863746523857117
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-398441",
+      "split": "development",
+      "imageSha256": "b9d196b64cc3faafa2380a80d786638df9322d6210dad4521d4b8b957ab4ce8d",
+      "gaicMs": 40.513499989174306,
+      "semanticMs": 718.3559000259265,
+      "selected": [
+        {
+          "index": 115,
+          "box": [
+            0.14814814814814814,
+            0.14814814814814814,
+            0.7037037037037037,
+            0.7037037037037037
+          ],
+          "gaic": 3.0692861080169678,
+          "subject": "a mountain",
+          "similarity": 0.2551767826080322,
+          "negativeMargin": 0.0268915593624115,
+          "top": [
+            [
+              "a mountain",
+              0.2551767826080322
+            ],
+            [
+              "empty sky",
+              0.22828522324562073
+            ],
+            [
+              "a sunset",
+              0.2189447432756424
+            ],
+            [
+              "a small object",
+              0.20483839511871338
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 33
+    },
+    {
+      "sceneId": "gaic-val-253798",
+      "split": "development",
+      "imageSha256": "37c2401357a64f287196eae8821742410e1ea75365ad02b5d01f4253a999d577",
+      "gaicMs": 41.224799992050976,
+      "semanticMs": 686.4885999821126,
+      "selected": [
+        {
+          "index": 166,
+          "box": [
+            0.36363636363636354,
+            0.1818181818181818,
+            0.8181818181818181,
+            0.6363636363636364
+          ],
+          "gaic": 3.046516180038452,
+          "subject": "a tree",
+          "similarity": 0.26957494020462036,
+          "negativeMargin": 0.0316925048828125,
+          "top": [
+            [
+              "a tree",
+              0.26957494020462036
+            ],
+            [
+              "a sunset",
+              0.24691280722618103
+            ],
+            [
+              "a mountain",
+              0.24173471331596375
+            ],
+            [
+              "empty sky",
+              0.23788243532180786
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 33
+    },
+    {
+      "sceneId": "gaic-val-269830",
+      "split": "development",
+      "imageSha256": "54353ab45dbc3ae520dc9184f2d3e5b6dd23ab8a84b9127bbb8aed426edabfb4",
+      "gaicMs": 38.953500043135136,
+      "semanticMs": 692.4686999991536,
+      "selected": [
+        {
+          "index": 116,
+          "box": [
+            0.2222222222222222,
+            0.14814814814814814,
+            0.7777777777777778,
+            0.7037037037037037
+          ],
+          "gaic": 3.833883047103882,
+          "subject": "a sunset",
+          "similarity": 0.2930532693862915,
+          "negativeMargin": 0.09744389355182648,
+          "top": [
+            [
+              "a sunset",
+              0.2930532693862915
+            ],
+            [
+              "the sea",
+              0.24680183827877045
+            ],
+            [
+              "a lake",
+              0.2203644961118698
+            ],
+            [
+              "a blurry scene",
+              0.19560937583446503
+            ]
+          ]
+        },
+        {
+          "index": 291,
+          "box": [
+            0.34375,
+            0.6875,
+            0.65625,
+            1.0
+          ],
+          "gaic": 2.7603347301483154,
+          "subject": "a lake",
+          "similarity": 0.28566500544548035,
+          "negativeMargin": 0.033260226249694824,
+          "top": [
+            [
+              "a lake",
+              0.28566500544548035
+            ],
+            [
+              "the sea",
+              0.2778201103210449
+            ],
+            [
+              "a sunset",
+              0.27474918961524963
+            ],
+            [
+              "a blurry scene",
+              0.2524047791957855
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 33
+    },
+    {
+      "sceneId": "gaic-val-292556",
+      "split": "development",
+      "imageSha256": "9384b51d5954243f85b6b3d04b191da9dd1ececcaa8c19108fa01e764ebca5b3",
+      "gaicMs": 46.934999991208315,
+      "semanticMs": 693.7752999947406,
+      "selected": [
+        {
+          "index": 168,
+          "box": [
+            0.5454545454545454,
+            0.1818181818181818,
+            1.0,
+            0.6363636363636364
+          ],
+          "gaic": 3.937019109725952,
+          "subject": "a modern building",
+          "similarity": 0.2533770203590393,
+          "negativeMargin": 0.07199990749359131,
+          "top": [
+            [
+              "a modern building",
+              0.2533770203590393
+            ],
+            [
+              "a blurry scene",
+              0.181377112865448
+            ],
+            [
+              "a reflection in a window",
+              0.17094829678535461
+            ],
+            [
+              "a tall building",
+              0.16074351966381073
+            ]
+          ]
+        },
+        {
+          "index": 114,
+          "box": [
+            0.07407407407407407,
+            0.14814814814814814,
+            0.6296296296296297,
+            0.7037037037037037
+          ],
+          "gaic": 3.2140893936157227,
+          "subject": "a city skyline",
+          "similarity": 0.23931586742401123,
+          "negativeMargin": 0.036750078201293945,
+          "top": [
+            [
+              "a city skyline",
+              0.23931586742401123
+            ],
+            [
+              "a modern building",
+              0.2151891589164734
+            ],
+            [
+              "a blurry scene",
+              0.20256578922271729
+            ],
+            [
+              "a tall building",
+              0.20192784070968628
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 33
+    },
+    {
+      "sceneId": "gaic-val-216030",
+      "split": "development",
+      "imageSha256": "635910db92999c1d27a8f51e7205b9529c119c68927e02547329398cffb55e50",
+      "gaicMs": 40.417500014882535,
+      "semanticMs": 703.5288999904878,
+      "selected": [
+        {
+          "index": 118,
+          "box": [
+            0.37037037037037035,
+            0.14814814814814814,
+            0.9259259259259259,
+            0.7037037037037037
+          ],
+          "gaic": 3.6752634048461914,
+          "subject": "a person",
+          "similarity": 0.22368985414505005,
+          "negativeMargin": 0.05398134887218475,
+          "top": [
+            [
+              "a person",
+              0.22368985414505005
+            ],
+            [
+              "a blurry scene",
+              0.1697085052728653
+            ],
+            [
+              "a mountain",
+              0.16437003016471863
+            ],
+            [
+              "a street",
+              0.16409680247306824
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-255005",
+      "split": "development",
+      "imageSha256": "46602f8d6b9cdacd804c13e6292ce16aa968d89ba428d3c884b8e7a6b28367c8",
+      "gaicMs": 39.9500000057742,
+      "semanticMs": 694.12800000282,
+      "selected": [],
+      "semanticCount": 33
+    },
+    {
+      "sceneId": "gaic-val-481808",
+      "split": "development",
+      "imageSha256": "df8e441e4eab72b9577de1660f4dee957bf8d19a01b05973e9b1cccb6d05e633",
+      "gaicMs": 42.45960002299398,
+      "semanticMs": 684.9148999899626,
+      "selected": [
+        {
+          "index": 131,
+          "box": [
+            0.2962962962962963,
+            0.2962962962962963,
+            0.8518518518518519,
+            0.8518518518518519
+          ],
+          "gaic": 4.133173942565918,
+          "subject": "a boat",
+          "similarity": 0.1991114467382431,
+          "negativeMargin": 0.045972079038619995,
+          "top": [
+            [
+              "a boat",
+              0.1991114467382431
+            ],
+            [
+              "a person",
+              0.1667059063911438
+            ],
+            [
+              "a lake",
+              0.16499760746955872
+            ],
+            [
+              "a group of people",
+              0.16060149669647217
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 33
+    },
+    {
+      "sceneId": "gaic-val-217729",
+      "split": "development",
+      "imageSha256": "c0a3d0dbc8e79674823bb68bc85866ec1ce6a76b86f853029903bf6759d29e31",
+      "gaicMs": 40.71060003479943,
+      "semanticMs": 711.8368999799713,
+      "selected": [
+        {
+          "index": 146,
+          "box": [
+            0.37037037037037035,
+            0.4444444444444444,
+            0.9259259259259259,
+            1.0
+          ],
+          "gaic": 4.100522994995117,
+          "subject": "a mountain",
+          "similarity": 0.24311816692352295,
+          "negativeMargin": 0.04848340153694153,
+          "top": [
+            [
+              "a mountain",
+              0.24311816692352295
+            ],
+            [
+              "a person",
+              0.20635947585105896
+            ],
+            [
+              "empty sky",
+              0.19463476538658142
+            ],
+            [
+              "an obstructing railing",
+              0.17855298519134521
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-409964",
+      "split": "development",
+      "imageSha256": "250ba348b05cd0efdd4b1cf4fefce2b608f3ca3d9e332e39cdb0d743a7ea8c7d",
+      "gaicMs": 40.7435999950394,
+      "semanticMs": 769.456900015939,
+      "selected": [],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-323970",
+      "split": "development",
+      "imageSha256": "1734f6a4edd333bae0021a102667641cbf3238b8ebe0e695965632e8081096b3",
+      "gaicMs": 37.69530000863597,
+      "semanticMs": 720.4922999953851,
+      "selected": [
+        {
+          "index": 108,
+          "box": [
+            0.14814814814814814,
+            0.07407407407407407,
+            0.7037037037037037,
+            0.6296296296296297
+          ],
+          "gaic": 3.1408236026763916,
+          "subject": "an old building",
+          "similarity": 0.2726057171821594,
+          "negativeMargin": 0.11421814560890198,
+          "top": [
+            [
+              "an old building",
+              0.2726057171821594
+            ],
+            [
+              "a street",
+              0.24592235684394836
+            ],
+            [
+              "a modern building",
+              0.21402563154697418
+            ],
+            [
+              "a tall building",
+              0.18181635439395905
+            ]
+          ]
+        },
+        {
+          "index": 161,
+          "box": [
+            0.5454545454545454,
+            0.09090909090909091,
+            1.0,
+            0.5454545454545454
+          ],
+          "gaic": 3.1078829765319824,
+          "subject": "a street",
+          "similarity": 0.27704480290412903,
+          "negativeMargin": 0.06976164877414703,
+          "top": [
+            [
+              "a street",
+              0.27704480290412903
+            ],
+            [
+              "empty sky",
+              0.207283154129982
+            ],
+            [
+              "a blurry scene",
+              0.20039382576942444
+            ],
+            [
+              "a city skyline",
+              0.2001056671142578
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-254884",
+      "split": "development",
+      "imageSha256": "5923c2c08cc8b85323dee167e360028865479c0c1d9635b5f89676e71335972d",
+      "gaicMs": 39.32569996686652,
+      "semanticMs": 745.7386000314727,
+      "selected": [
+        {
+          "index": 117,
+          "box": [
+            0.2962962962962963,
+            0.14814814814814814,
+            0.8518518518518519,
+            0.7037037037037037
+          ],
+          "gaic": 3.9018523693084717,
+          "subject": "a small object",
+          "similarity": 0.2850746810436249,
+          "negativeMargin": 0.03553830087184906,
+          "top": [
+            [
+              "a small object",
+              0.2850746810436249
+            ],
+            [
+              "an obstructing railing",
+              0.24953638017177582
+            ],
+            [
+              "a drink",
+              0.22955720126628876
+            ],
+            [
+              "a bird",
+              0.2263108789920807
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-212042",
+      "split": "development",
+      "imageSha256": "654cbeba09f3d09281b7b71e2483c8600087e3bb052cfcb847d830937416cb71",
+      "gaicMs": 39.6329999784939,
+      "semanticMs": 704.1932999854907,
+      "selected": [
+        {
+          "index": 116,
+          "box": [
+            0.2222222222222222,
+            0.14814814814814814,
+            0.7777777777777778,
+            0.7037037037037037
+          ],
+          "gaic": 3.7919673919677734,
+          "subject": "a wild animal",
+          "similarity": 0.25259220600128174,
+          "negativeMargin": 0.07025422155857086,
+          "top": [
+            [
+              "a wild animal",
+              0.25259220600128174
+            ],
+            [
+              "a forest",
+              0.20544621348381042
+            ],
+            [
+              "a tree",
+              0.18796133995056152
+            ],
+            [
+              "an obstructing railing",
+              0.18233798444271088
+            ]
+          ]
+        },
+        {
+          "index": 252,
+          "box": [
+            0.6875,
+            0.0,
+            1.0,
+            0.3125
+          ],
+          "gaic": 2.9474730491638184,
+          "subject": "a forest",
+          "similarity": 0.26178455352783203,
+          "negativeMargin": 0.06049466133117676,
+          "top": [
+            [
+              "a forest",
+              0.26178455352783203
+            ],
+            [
+              "a tree",
+              0.2585741877555847
+            ],
+            [
+              "a blurry scene",
+              0.20128989219665527
+            ],
+            [
+              "an obstructing railing",
+              0.19700992107391357
+            ]
+          ]
+        },
+        {
+          "index": 246,
+          "box": [
+            0.0,
+            0.0,
+            0.3125,
+            0.3125
+          ],
+          "gaic": 2.6895928382873535,
+          "subject": "a tree",
+          "similarity": 0.2955634295940399,
+          "negativeMargin": 0.08383792638778687,
+          "top": [
+            [
+              "a tree",
+              0.2955634295940399
+            ],
+            [
+              "a forest",
+              0.24372532963752747
+            ],
+            [
+              "an obstructing railing",
+              0.21172550320625305
+            ],
+            [
+              "a blurry scene",
+              0.20872777700424194
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    },
+    {
+      "sceneId": "gaic-val-455503",
+      "split": "development",
+      "imageSha256": "a16981369fc6690a66f7d4b4fc98bc3335d8295be5c3afad0e63cdb35e05e1c0",
+      "gaicMs": 38.66829996695742,
+      "semanticMs": 711.7559000034817,
+      "selected": [
+        {
+          "index": 131,
+          "box": [
+            0.2962962962962963,
+            0.2962962962962963,
+            0.8518518518518519,
+            0.8518518518518519
+          ],
+          "gaic": 3.6424918174743652,
+          "subject": "a person",
+          "similarity": 0.2852247953414917,
+          "negativeMargin": 0.08222594857215881,
+          "top": [
+            [
+              "a person",
+              0.2852247953414917
+            ],
+            [
+              "a forest",
+              0.2491115927696228
+            ],
+            [
+              "a blurry scene",
+              0.20299884676933289
+            ],
+            [
+              "a bird",
+              0.1891784965991974
+            ]
+          ]
+        },
+        {
+          "index": 196,
+          "box": [
+            0.5454545454545454,
+            0.5454545454545454,
+            1.0,
+            1.0
+          ],
+          "gaic": 2.6005752086639404,
+          "subject": "a forest",
+          "similarity": 0.28250327706336975,
+          "negativeMargin": 0.033098116517066956,
+          "top": [
+            [
+              "a forest",
+              0.28250327706336975
+            ],
+            [
+              "a person",
+              0.27029672265052795
+            ],
+            [
+              "a blurry scene",
+              0.2494051605463028
+            ],
+            [
+              "a tree",
+              0.23112571239471436
+            ]
+          ]
+        }
+      ],
+      "semanticCount": 34
+    }
+  ]
+}

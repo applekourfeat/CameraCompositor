@@ -10,7 +10,8 @@ import androidx.camera.core.ImageProxy
 import java.util.concurrent.atomic.AtomicReference
 
 data class ScanFrame(val image: Bitmap, val gray: ByteArray, val width: Int, val height: Int,
-    val bufferToView: Matrix, val viewSize: Size)
+    val bufferToView: Matrix, val viewSize: Size, val cameraTimestampNs: Long,
+    val sensorToBuffer: Matrix)
 
 /** Shared analysis frames feed both the one-shot scan and scene tracking. */
 class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack: (TrackingEvent) -> Unit) : ImageAnalysis.Analyzer {
@@ -56,7 +57,8 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
                     val toBitmap = Matrix().apply { setConcat(scale, bufferToView) }
                     Canvas(visible).drawBitmap(raw, toBitmap, null)
                     raw.recycle()
-                    callback(ScanFrame(visible, gray.copyOf(), image.width, image.height, bufferToView, size))
+                    callback(ScanFrame(visible, gray.copyOf(), image.width, image.height, bufferToView, size,
+                        image.imageInfo.timestamp, Matrix(image.imageInfo.sensorToBufferTransformMatrix)))
                 } catch (_: Exception) { callback(null) }
             }
             val tracked = tracker.update(gray, image.width, image.height, bufferToView, size, SystemClock.elapsedRealtime())

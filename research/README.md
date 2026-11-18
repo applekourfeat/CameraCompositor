@@ -5,6 +5,7 @@ The research compares actual model outputs with rated crops and provides a separ
 ## Open the results
 
 - Read [the report](../docs/COMPOSITION_RESEARCH.md).
+- Read the latest [environment-composition investigation](../docs/ENVIRONMENT_COMPOSITION_RESEARCH.md), including the owner's city failure and the rejected initial 3D backend. Crop proposals and spatial geometry have separate evidence and neither is a completed environment-aware camera assistant.
 - Open `artifacts/composition-research/review.html` in your own desktop browser. Start with Development > Compare suggestions. You can stop and return later. Download answers before moving or closing the workspace.
 - Run `summarize_review.py` on the downloaded answers. Blank or partial reviews remain pending.
 - Inspect `artifacts/composition-research/examples-1.jpg` and `examples-2.jpg` for the first six seeded evaluation scenes.
@@ -46,3 +47,29 @@ The 20/60 split separates our development and evaluation samples and uses the au
 Candidate-order invariance and the scalar tests verify useful numerical behavior. The 70% gate comes from actual human comparisons on improvable held-out scenes. The fixed upper-right crop control is not equivalent to the old ML Kit pan-guidance pipeline, so matched physical captures remain a separate required comparison. Additional phone examples are needed to improve coverage of plants, objects and real low light.
 
 Model/data redistribution rights remain a separate gate. The code includes the upstream GAIC MIT notice in `GAIC-LICENSE.txt`; that notice does not establish permission to redistribute its checkpoint or source photographs.
+
+## Environment and subject-discovery experiments
+
+All of these commands run locally. Only the fetch commands download public model/dataset assets. Camera photos, reconstructed points and generated comparisons stay outside Git and Android assets.
+
+```powershell
+& $ResearchPython -X utf8 research/fetch_semantic_assets.py
+# Use the owner's exact unobstructed 1080x2400 screenshot. Its coordinates extract the
+# viewfinder only; they do not prescribe any winning composition.
+& $ResearchPython -X utf8 research/owner_city_experiment.py --screenshot 'C:/path/to/owner-screenshot.png'
+& $ResearchPython -X utf8 research/semantic_shots.py
+& $ResearchPython -X utf8 research/make_owner_comparison.py
+& $ResearchPython -X utf8 research/evaluate_shot_discovery.py --split development
+& $ResearchPython -X utf8 research/evaluate_shot_discovery.py --split evaluation
+& $ResearchPython -X utf8 research/evaluate_environment_geometry.py --feature orb
+& $ResearchPython -X utf8 research/evaluate_environment_geometry.py --feature sift
+& $ResearchPython -X utf8 -m unittest discover -s research -p 'test_*.py'
+```
+
+Run the scene benchmarks sequentially, without concurrent model export or builds. The fixed semantic vocabulary, scale-bank policy and thresholds are research choices. Proposal count is not a preference rate. Development and evaluation images still have the existing dataset limitations. The ETH3D script verifies a pinned 37 MB ZIP before reading images and calibration; supplied camera poses are used only to evaluate its independently estimated geometry. The second detector experiment was developed after observing the first detector's failures. This is not an independent held-out SLAM qualification.
+
+`export_shot_models.py` creates isolated float/dynamic ONNX files in `.local/shot-discovery-assets`, with parity measurements over the 20 development images. Its int8 conversion currently fails the fidelity gates and exits with an error after saving the negative result and removing the rejected binary. It never replaces `.local/research-assets` or includes these experiments in the app.
+
+`environment_geometry.py frame-a.png frame-b.png calibration.json` can test an independently calibrated, undistorted pair. Calibration JSON requires `verifiedForTheseFrames: true`, `distortionCorrected: true`, the exact `imageSize: [width,height]` and `cameraMatrix: [[fx,0,cx],[0,fy,cy],[0,0,1]]`. Those flags assert measurements that must actually be established; they are not a substitute for calibration. The existing phone sweep lacks verified aligned intrinsics and cannot be passed straight into this solver. Unknown scale stays explicit, even after a pair triangulates.
+
+Unreleased Android sweep metadata keeps schema 1 for compatibility and adds `geometryMetadataVersion`, actual camera timestamps, sensor timestamps, source dimensions and pixel transforms. A separate `camera-capabilities.txt` inventories all exposed lenses. Sensor quaternion samples remain unsynchronised device orientation, with no camera-pose or metric-depth claim. These fields support future calibration work; they do not make the recording a SLAM map.

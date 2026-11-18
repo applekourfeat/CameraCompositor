@@ -1,0 +1,49 @@
+{
+  "repository": "wkcn/TinyCLIP-ViT-40M-32-Text-19M-LAION400M",
+  "revision": "95ec8197b3f2fe7f747865c61ca556cf0768b2f7",
+  "policy": {
+    "revision": "distinct-shot-ideas-v1",
+    "minNegativeMargin": 0.025,
+    "minGaic": 2.5,
+    "focusZooms": [
+      1.8,
+      2.2
+    ],
+    "contextZooms": [
+      1.25,
+      1.5
+    ],
+    "detailZooms": [
+      2.6,
+      3.2
+    ],
+    "maxIdeas": 3,
+    "maxIoU": 0.6
+  },
+  "dynamicGaicMaxError": 2.6226043701171875e-06,
+  "dynamicGaicSizesTested": [
+    9,
+    295
+  ],
+  "developmentScenes": 20,
+  "floatEncoderMaxError": 1.125037670135498e-06,
+  "quantizedMinEmbeddingCosine": 0.9861996173858643,
+  "quantizedMaxTextSimilarityError": 0.020586475729942322,
+  "quantizedSameTopClass": 0.9833333333333333,
+  "quantizationApproved": false,
+  "androidPerformance": "pending",
+  "humanPreference": "pending",
+  "releaseApproved": false,
+  "gaic-dynamic.onnx": {
+    "bytes": 11652277,
+    "sha256": "4fc5e490e50a23f6c1f7326c3c797f0a17020747f8e3de66aa74f5a2e9c36a6d"
+  },
+  "tinyclip-image-f32.onnx": {
+    "bytes": 158953765,
+    "sha256": "6accc5b2b6cf3c0c73c7578948daf837ec6b2d67276388cf2d6bba1019bf7abb"
+  },
+  "tinyclip-image-int8.onnx": {
+    "bytes": 45365746,
+    "sha256": "f6ffe81c61c61b4133919cf1d7a9d220391a12be18f217acc7a9685efe8b9b94"
+  }
+}

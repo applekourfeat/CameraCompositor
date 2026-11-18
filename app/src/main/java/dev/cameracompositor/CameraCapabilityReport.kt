@@ -22,11 +22,20 @@ object CameraCapabilityReport {
             appendLine("OIS modes: ${c.get(C.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION)?.joinToString()}")
             val capabilities = c.get(C.REQUEST_AVAILABLE_CAPABILITIES) ?: intArrayOf()
             appendLine("RAW: ${C.REQUEST_AVAILABLE_CAPABILITIES_RAW in capabilities}")
+            appendLine("Depth output capability: ${C.REQUEST_AVAILABLE_CAPABILITIES_DEPTH_OUTPUT in capabilities}")
+            appendLine("Intrinsic calibration fx,fy,cx,cy,skew: ${c.get(C.LENS_INTRINSIC_CALIBRATION)?.joinToString() ?: "not exposed"}")
+            appendLine("Lens distortion: ${c.get(C.LENS_DISTORTION)?.joinToString() ?: "not exposed"}")
+            appendLine("Sensor active array: ${c.get(C.SENSOR_INFO_ACTIVE_ARRAY_SIZE)}")
+            appendLine("Pre-correction active array: ${c.get(C.SENSOR_INFO_PRE_CORRECTION_ACTIVE_ARRAY_SIZE)}")
+            appendLine("Sensor physical size: ${c.get(C.SENSOR_INFO_PHYSICAL_SIZE)}; orientation=${c.get(C.SENSOR_ORIENTATION)}")
+            appendLine("Sensor timestamp source: ${c.get(C.SENSOR_INFO_TIMESTAMP_SOURCE)}")
             val map = c.get(C.SCALER_STREAM_CONFIGURATION_MAP)
             val jpeg = map?.getOutputSizes(ImageFormat.JPEG).orEmpty().sortedByDescending { it.width.toLong() * it.height }
             appendLine("JPEG sizes: ${jpeg.take(12).joinToString { "${it.width}x${it.height}" }}")
+            appendLine("Depth16 sizes: ${map?.getOutputSizes(ImageFormat.DEPTH16)?.joinToString { "${it.width}x${it.height}" } ?: "none exposed"}")
             if (Build.VERSION.SDK_INT >= 34) appendLine("Ultra HDR JPEG/R exposed: ${map?.outputFormats?.contains(ImageFormat.JPEG_R) == true}")
         }
-        appendLine("\nImage quality and thermal performance require photographs and measurements on this phone.")
+        appendLine("\nThis inventory does not establish ARCore support or aligned, per-frame camera calibration.")
+        appendLine("Image quality, geometry and thermal performance require photographs and measurements on this phone.")
     }
 }

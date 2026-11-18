@@ -1,0 +1,239 @@
+{
+  "dataset": "https://www.eth3d.net/data/slam/datasets/cables_2_mono.zip",
+  "archiveSha256": "cf6e2d74a606b021bb90d0426ad3fd651bf9efbc60220d7c462cf1c8836375ee",
+  "feature": "sift",
+  "datasetFrames": 98,
+  "pairSelection": "start=0,8,16,...; end=start+6",
+  "pairs": 12,
+  "acceptedPairs": 9,
+  "cameraMatrix": [
+    [
+      726.28741455078,
+      0.0,
+      354.6496887207
+    ],
+    [
+      0.0,
+      726.28741455078,
+      186.46566772461
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "groundTruthSource": "ETH3D camera-to-world pose; nearest timestamp within 20ms",
+  "medianRotationErrorDegrees": 7.826839524895201,
+  "medianTranslationDirectionErrorDegrees": 28.470339408880548,
+  "desktopMedianMs": 103.34050000528805,
+  "scope": "real images from a calibrated global-shutter laboratory rig; pair geometry only; not live mapping, phone performance or photographic selection",
+  "guidanceAssessment": "rejected: substantial pose errors remain despite low reprojection errors",
+  "metricScaleRecovered": false,
+  "vivoValidated": false,
+  "releaseApproved": false,
+  "results": [
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 37,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 34,
+      "medianParallaxDegrees": 12.526542844496987,
+      "medianReprojectionErrorPixels": 0.4411160451862772,
+      "frameIndices": [
+        0,
+        6
+      ],
+      "desktopMs": 77.97689997823909,
+      "groundTruthBaselineMeters": 0.30317046651085283,
+      "rotationErrorDegrees": 7.167401433691851,
+      "translationDirectionErrorDegrees": 28.470339408880548
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 61,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 52,
+      "medianParallaxDegrees": 25.034781061534993,
+      "medianReprojectionErrorPixels": 0.5080737098818753,
+      "frameIndices": [
+        8,
+        14
+      ],
+      "desktopMs": 81.74949995009229,
+      "groundTruthBaselineMeters": 0.31997649090397917,
+      "rotationErrorDegrees": 30.236175769417823,
+      "translationDirectionErrorDegrees": 91.35297239745775
+    },
+    {
+      "status": "observe_more",
+      "reason": "insufficient_translation_evidence",
+      "metricScaleKnown": false,
+      "matchedPoints": 37,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 25,
+      "frameIndices": [
+        16,
+        22
+      ],
+      "desktopMs": 89.93539999937639,
+      "groundTruthBaselineMeters": 0.2876269451665828
+    },
+    {
+      "status": "observe_more",
+      "reason": "insufficient_matches",
+      "metricScaleKnown": false,
+      "matchedPoints": 2,
+      "walkOrHeightGuidanceAllowed": false,
+      "frameIndices": [
+        24,
+        30
+      ],
+      "desktopMs": 76.83809997979552,
+      "groundTruthBaselineMeters": 0.2017406957677398
+    },
+    {
+      "status": "observe_more",
+      "reason": "insufficient_matches",
+      "metricScaleKnown": false,
+      "matchedPoints": 21,
+      "walkOrHeightGuidanceAllowed": false,
+      "frameIndices": [
+        32,
+        38
+      ],
+      "desktopMs": 92.76269999099895,
+      "groundTruthBaselineMeters": 0.13820158826684661
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 131,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 92,
+      "medianParallaxDegrees": 1.26208508415551,
+      "medianReprojectionErrorPixels": 0.3085054492440701,
+      "frameIndices": [
+        40,
+        46
+      ],
+      "desktopMs": 107.73270000936463,
+      "groundTruthBaselineMeters": 0.08424230733999348,
+      "rotationErrorDegrees": 8.482834240792325,
+      "translationDirectionErrorDegrees": 63.15453528665766
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 251,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 214,
+      "medianParallaxDegrees": 7.349453256478414,
+      "medianReprojectionErrorPixels": 0.2819499842020845,
+      "frameIndices": [
+        48,
+        54
+      ],
+      "desktopMs": 119.24740002723411,
+      "groundTruthBaselineMeters": 0.09443612436138538,
+      "rotationErrorDegrees": 0.3406093499534651,
+      "translationDirectionErrorDegrees": 1.6821591036663912
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 86,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 72,
+      "medianParallaxDegrees": 5.742451860796855,
+      "medianReprojectionErrorPixels": 0.453802545680962,
+      "frameIndices": [
+        56,
+        62
+      ],
+      "desktopMs": 110.34509999444708,
+      "groundTruthBaselineMeters": 0.12951351870857386,
+      "rotationErrorDegrees": 13.026255906930775,
+      "translationDirectionErrorDegrees": 67.25091370379005
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 77,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 55,
+      "medianParallaxDegrees": 6.244456404912723,
+      "medianReprojectionErrorPixels": 0.5568966800838303,
+      "frameIndices": [
+        64,
+        70
+      ],
+      "desktopMs": 109.99440000159666,
+      "groundTruthBaselineMeters": 0.1938139933452816,
+      "rotationErrorDegrees": 3.241771678556031,
+      "translationDirectionErrorDegrees": 12.847096453113979
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 53,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 40,
+      "medianParallaxDegrees": 16.621139718625177,
+      "medianReprojectionErrorPixels": 0.4774057169931979,
+      "frameIndices": [
+        72,
+        78
+      ],
+      "desktopMs": 109.65329996543005,
+      "groundTruthBaselineMeters": 0.16289561986928222,
+      "rotationErrorDegrees": 21.309845042891506,
+      "translationDirectionErrorDegrees": 80.22047362601145
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 79,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 75,
+      "medianParallaxDegrees": 6.58923402223801,
+      "medianReprojectionErrorPixels": 0.2707232135777203,
+      "frameIndices": [
+        80,
+        86
+      ],
+      "desktopMs": 107.57430002558976,
+      "groundTruthBaselineMeters": 0.13439001914328072,
+      "rotationErrorDegrees": 0.6634579188586212,
+      "translationDirectionErrorDegrees": 5.338484157063634
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 63,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 47,
+      "medianParallaxDegrees": 13.968539605659439,
+      "medianReprojectionErrorPixels": 0.38693280360987037,
+      "frameIndices": [
+        88,
+        94
+      ],
+      "desktopMs": 99.10669998498634,
+      "groundTruthBaselineMeters": 0.21017876903019664,
+      "rotationErrorDegrees": 7.826839524895201,
+      "translationDirectionErrorDegrees": 15.012694069009916
+    }
+  ]
+}

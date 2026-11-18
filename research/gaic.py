@@ -3,7 +3,7 @@
 MIT upstream: HuiZeng/Grid-Anchor-based-Image-Cropping-Pytorch at the revision in fetch_assets.py.
 The two gather operators implement the equations in its roi_align_kernel.cu and
 rod_align_kernel.cu. In particular, this is NOT torchvision's different ROIAlign.
-CUDA-to-CPU parity on actual GPU hardware remains untested. No weights ship in the app.
+CUDA-to-CPU parity on actual GPU hardware remains untested. Weights are private debug assets only.
 """
 from __future__ import annotations
 import importlib.util
@@ -29,7 +29,7 @@ def sample(features, h, w):
 
 
 def aligned_features(features, rois, discard=False):
-    n = len(rois)
+    n = rois.shape[0]
     if discard:
         height, width = features.shape[-2:]
         y = torch.arange(10, dtype=torch.float32) * ((height - 1.001) / 9)

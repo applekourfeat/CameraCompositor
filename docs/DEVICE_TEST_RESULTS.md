@@ -6,7 +6,9 @@ Version 0.2 owner feedback: the manual framing guide appeared to work; the AI sc
 
 Version 0.3 owner feedback: the local model ran on the Vivo, with 62 ms reported in text and 318 ms visible in a screenshot; it selected the full current view on the obstructed window scene. The owner found the flow confusing and the result poor. Cold/warm status was not established. The generated-image cloud test timed out in WAIT_RESPONSE at 30,189 ms, with client upload ending at 187 ms and no HTTP response code. See V031_USABILITY_FIX.md and the preserved sanitized report.
 
-Version 0.3.1 status: source and regression checks address the reported control-state and popup problems. Physical verification of this correction is pending. The Vivo remains unavailable for a debugging connection.
+After version 0.3.1 delivery, the owner supplied clear city screenshots with the status "No framing suggestion. Try another angle." The owner reports finding proposals only after moving and repeatedly pressing Find, with poor results. Exact build metadata, complete control-state testing and numerical measurements are absent from these new screenshots. [Environment research](ENVIRONMENT_COMPOSITION_RESEARCH.md) reproduces the full-view selection on their image. The Vivo remains unavailable for a debugging connection.
+
+Unreleased recording changes add image timestamps, image transforms, sensor timestamps and a camera-calibration/depth inventory for future spatial tests. No new recording or environment reconstruction has been run on the Vivo. Standard V30 ARCore compatibility is unconfirmed. Desktop ETH3D pose measurements are recorded separately and are not phone measurements.
 
 | Item | Result / notes |
 | --- | --- |

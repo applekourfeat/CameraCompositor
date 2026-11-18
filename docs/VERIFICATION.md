@@ -1,5 +1,7 @@
 # Version 0.3 research verification
 
+Latest unreleased investigation: [environment-composition evidence](ENVIRONMENT_COMPOSITION_RESEARCH.md). Android `assembleDebug`, `testDebugUnitTest` and `lintDebug` pass after timestamp/transform/capability-recording changes. The 35 Android tests and 17 Python research tests pass. No model or imagery from the new experiments is added to Android assets. No new photographic APK is delivered; versioned artifact results below describe their original builds. The real-image 3D backend fails accuracy expectations and remains disconnected from guidance. Vivo environment recording, calibration, tracking and speed remain untested.
+
 Version 0.3.1 corrects the reported usability/state failures. See [V031_USABILITY_FIX.md](V031_USABILITY_FIX.md) and `research/results/delivery-verification-v031.json` for the update. The version 0.3.0 measurements below are historical.
 
 Date: 18 November 2026. The [research report](COMPOSITION_RESEARCH.md) and `research/results/` separate measured desktop behavior from pending human/device evidence.

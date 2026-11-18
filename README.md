@@ -2,6 +2,8 @@
 
 Native Android camera research for useful composition guidance. Version **0.3.1** corrects the blocking reports and stale control state reported by the owner. The owner leads final UI/UX. [Usability correction and new Vivo evidence](docs/V031_USABILITY_FIX.md).
 
+Latest owner feedback exposes poor shot discovery in the city scene. The owner requires understanding the environment, viewpoints and perspective. [The new environment-composition investigation](docs/ENVIRONMENT_COMPOSITION_RESEARCH.md) reproduces that failure, tests a broader subject-proposal pipeline and measures an initial 3D geometry backend against real camera poses. Both remain below the product gates. Unreleased source adds recording geometry metadata; no improved photographic APK is delivered by this investigation.
+
 The local model requires **no API key or internet connection**. It is a research candidate whose photographic quality and Vivo performance still need acceptance testing. Read [the measured research results](docs/COMPOSITION_RESEARCH.md).
 
 ## Try the research build
@@ -27,7 +29,7 @@ The old Gemini path is under **Options > Developer tools > Cloud research scan (
 
 **Scan diagnostics** reports sanitized connection, upload, response and parsing events. A 35-second total deadline and cancellation bound each scene request. No request images, keys or provider error bodies are written to diagnostics. Quota errors do not trigger automatic retries.
 
-The owner's version 0.2 error was `Scene scan could not finish: timeout`. The network path timed out; its specific failing stage is still unknown until the instrumented request runs on the phone. [Diagnostic setup](docs/AI_SETUP.md).
+The owner's instrumented generated-image request reached WAIT_RESPONSE at 187 ms and timed out at 30,189 ms without an HTTP response code. The specific cause remains unresolved. [Diagnostic setup](docs/AI_SETUP.md).
 
 End users can eventually use managed online assistance without supplying credentials. [The Firebase evaluation](docs/CLOUD_GATEWAY.md) describes an unbilled Spark project, enforced App Check, limited shared free capacity and a local fallback. No managed service has been deployed.
 

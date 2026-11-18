@@ -32,6 +32,7 @@ class ResearchSweepRecorder(
     private val main = Handler(Looper.getMainLooper())
     private val sensors = context.getSystemService(SensorManager::class.java)
     private var quaternion: FloatArray? = null
+    private var quaternionTimestampNs: Long? = null
     private var active = false
     private var sequence = 0
     private var count = 0
@@ -53,6 +54,7 @@ class ResearchSweepRecorder(
         val zoomValue = zoom()
         val maxRelativeZoom = (maximumZoom() / zoomValue).coerceIn(1f, 1.8f)
         val rotation = quaternion?.clone()
+        val rotationTimestamp = quaternionTimestampNs
         val timestamp = SystemClock.elapsedRealtime()
         analyzer.requestSnapshot { frame -> main.post {
             if (!active || request != sequence) { frame?.image?.recycle(); return@post }
@@ -65,10 +67,17 @@ class ResearchSweepRecorder(
                     check(frame.image.compress(Bitmap.CompressFormat.JPEG, 92, archive!!))
                     archive!!.closeEntry()
                     val matrix = FloatArray(9); frame.bufferToView.getValues(matrix)
+                    val sensorMatrix = FloatArray(9); frame.sensorToBuffer.getValues(sensorMatrix)
                     frames.put(JSONObject().put("id", index).put("sampleRequestedMs", timestamp).put("zoom", zoomValue)
                         .put("maxRelativeZoom", maxRelativeZoom)
                         .put("width", frame.image.width).put("height", frame.image.height)
                         .put("deviceQuaternionWXYZ", rotation?.let { JSONArray(it.toList()) } ?: JSONObject.NULL)
+                        .put("deviceQuaternionTimestampNs", rotationTimestamp ?: JSONObject.NULL)
+                        .put("cameraTimestampNs", frame.cameraTimestampNs)
+                        .put("rawBufferSize", JSONArray(listOf(frame.width, frame.height)))
+                        .put("viewSize", JSONArray(listOf(frame.viewSize.width, frame.viewSize.height)))
+                        .put("sensorToBuffer", JSONArray(sensorMatrix.toList()))
+                        .put("cameraPose", JSONObject.NULL).put("depth", JSONObject.NULL)
                         .put("bufferToView", JSONArray(matrix.toList())))
                 }
                 frame.image.recycle()
@@ -89,8 +98,12 @@ class ResearchSweepRecorder(
                 val metadata = JSONObject().put("schema", 1).put("device", "${Build.MANUFACTURER} ${Build.MODEL}")
                     .put("androidApi", Build.VERSION.SDK_INT).put("appVersion", BuildConfig.VERSION_NAME)
                     .put("frontCamera", frontCamera).put("frames", frames)
-                    .put("notes", "Locally recorded observed views. Rotation is a relative device sensor reading, not camera-pose ground truth. No GPS, key or cloud upload.")
+                    .put("geometryMetadataVersion", 1)
+                    .put("notes", "Observed views only. Device rotation samples are unsynchronised with camera timestamps and are not calibrated camera poses. No metric depth or translation. Static camera calibration inventory requires independent alignment/zoom/distortion validation. No GPS, key or cloud upload.")
                 archive!!.putNextEntry(ZipEntry("observations.json")); archive!!.write(metadata.toString(2).toByteArray())
+                archive!!.closeEntry()
+                archive!!.putNextEntry(ZipEntry("camera-capabilities.txt"))
+                archive!!.write(runCatching { CameraCapabilityReport.collect(context) }.getOrDefault("Camera capability inventory unavailable").toByteArray())
                 archive!!.closeEntry(); archive!!.close(); file!!
             }.getOrNull()
             if (result == null) { runCatching { archive?.close() }; file?.delete() }
@@ -103,7 +116,10 @@ class ResearchSweepRecorder(
         io.execute { runCatching { archive?.close() }; file?.delete(); main.post { onFinished(null) } }
     }
     override fun onSensorChanged(event: SensorEvent) {
-        if (active) quaternion = FloatArray(4).also { SensorManager.getQuaternionFromVector(it, event.values) }
+        if (active) {
+            quaternion = FloatArray(4).also { SensorManager.getQuaternionFromVector(it, event.values) }
+            quaternionTimestampNs = event.timestamp
+        }
     }
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 }

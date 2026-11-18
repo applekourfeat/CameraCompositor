@@ -1,5 +1,7 @@
 # Composition research, 18 November 2026
 
+Follow-up: [environment-aware composition research](ENVIRONMENT_COMPOSITION_RESEARCH.md) reproduces the owner's city-scene failure, tests broader semantic shot proposals and records the new requirement for viewpoint/perspective understanding. Its initial scene-proposal and 3D backends both remain below the product gates. The crop-ranking results below retain their narrower interpretation.
+
 GAIC is the strongest candidate tested in this round. Its crop rankings agree substantially better with the dataset's human ratings than NIMA's rankings. This supports further GAIC research. It does not establish that people prefer its camera suggestions, that it discovers better physical angles, or that the Vivo meets the speed target.
 
 The primary button in version 0.3 is a local research comparison. It requires no API key. The owner reviews a proposed crop before choosing to use the framing guide. No model has release approval.
