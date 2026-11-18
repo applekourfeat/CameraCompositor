@@ -1,16 +1,16 @@
 # Camera Compositor
 
-Native Android camera research for useful composition guidance. Version **0.5.0-camera** compares real viewpoints using the ordinary CameraX stream. It runs offline and can add relative depth from RGB when overlapping views support it. The owner leads final UI/UX. [Compatibility experiment and evidence](docs/V050_CAMERA_COMPATIBILITY.md).
+Native Android camera research for composition guidance. Version **0.6.0-auto** adds an optional hands-free shutter, smoother zoom requests, subject-aware framing, and photo processing. Scans stay on the phone and compare real observations from the ordinary camera stream. The owner leads final UI/UX. [Auto capture and processing](docs/V060_AUTO_CAPTURE.md).
 
 The main camera and composition button require neither ARCore, a depth sensor, nor an account. ARCore and personal-key online scans are available under Developer tools. The managed cloud gateway, photographic preference study and Vivo performance checks remain pending.
 
 ## Try the research build
 
-Install `artifacts/CameraCompositor-0.5.0-camera-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype. The builds target Android 10 and later. The `armv7` APK is for Android phones that run 32-bit ARM apps.
+Install `artifacts/CameraCompositor-0.6.0-auto-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype. The builds target Android 10 and later. The `armv7` APK is for phones that run 32-bit ARM apps.
 
-1. Tap **Find a composition** once. Turn gently across a small area, then hold when the app says it is checking the views. Holding still scans the current angle.
-2. Review any suggestion and tap **Use this shot** to start the guide. The app can guide back through observed views and adjust zoom. Pinching takes over zoom. Taking a photo cancels a scan.
-3. **Options > Developer tools** contains camera capabilities, local sweep export, optional ARCore testing and the personal-key online experiment.
+1. Tap **Start Auto** once, point at a subject, and follow the on-screen frame. Auto zoom starts when the target is centered. A steady, aligned view begins a three-second countdown. Moving away restarts the countdown. **Stop Auto** and pinch zoom return control to you.
+2. After a photo, move to a different scene for the next shot. **Find a composition** and **Take photo** remain available in manual mode.
+3. **Options > Photo processing** offers Automatic processing, Standard JPEG and available manufacturer modes. The photo status reports which path saved the image. **Developer tools** contains camera capabilities, sweep export, optional ARCore testing and the personal-key online experiment.
 
 The framing guide expires after three seconds of lost tracking. Saved photographs use quality-priority full-resolution capture, with manufacturer processing when exposed. Photo quality compared with Vivo's stock camera remains unmeasured.
 
@@ -40,7 +40,7 @@ The project uses CameraX 1.6.2, optional ARCore 1.57.0, SDK 36 compilation, targ
 
 This runs `assembleDebug`, `testDebugUnitTest` and `lintDebug`. Android Studio can also open the project normally. `scripts/bootstrap_windows.py` provisions the local SDK/toolchain on another Windows computer; review the Android SDK terms first.
 
-To add the optional MIT-licensed depth model, run `research/export_software_depth.py` with the installed research dependencies and development images. The build picks up the result from `.local/software-depth-assets`. A fresh checkout without that file uses RGB-only composition. `includeLegacyResearch=true` is a Gradle property for private debug builds with the older GAIC asset. [Asset setup and provenance](research/README.md).
+To add the optional depth and subject models, run `research/export_software_depth.py` and `research/fetch_subject_model.py` with the installed research dependencies. A fresh checkout without those assets continues with the image-detail framing policy. `includeLegacyResearch=true` is a Gradle property for private debug builds with the older GAIC asset. [Asset setup and provenance](research/README.md).
 
 ## Code responsibilities
 

@@ -52,6 +52,8 @@ Model/data redistribution rights remain a separate gate. The code includes the u
 
 ### Camera-only software depth
 
+Run `research/fetch_subject_model.py` to download and verify the pinned Apache-licensed NanoDet checkpoint. The script writes the processed ONNX to `.local/subject-assets` for Android builds. The app can still plan from image cues when the subject model is absent or finds no subject.
+
 With the development images and research environment set up above, run `research/export_software_depth.py`. It fetches the pinned ZipDepth revision if needed, checks the checkpoint and MIT license, compares the converted output with PyTorch on the 20 development images, and writes the app asset to `.local/software-depth-assets`. It uses the learned global attention from the checkpoint and stores large weights as FP16 with FP32 CPU math.
 
 To rerun the depth-order comparison, download ETH3D `cables_2_mono.zip` and `cables_2_rgbd.zip` into `.local/composition-research`, then run `research/evaluate_software_depth.py`. The latter archive contains the matching depth files. The evaluator checks both archive hashes. [Official dataset downloads](https://www.eth3d.net/slam_datasets#training-datasets), [results](results/software-depth-eth3d.json).

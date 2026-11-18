@@ -63,6 +63,27 @@ class EnvironmentMap(val sceneId: Long) {
         return entries.subList(target,entries.size).asReversed().map { it.id }
     }
 
+    /** Direct hops are useful when enough of an earlier observation is still visible. */
+    fun guideRouteTo(viewId: Int): List<Int>? {
+        val chain = routeTo(viewId) ?: return null
+        if (chain.size <= 1) return chain
+        val full = SubjectBox(0f, 0f, 1f, 1f)
+        val route = mutableListOf<Int>()
+        var from = 0
+        while (from < chain.lastIndex) {
+            val next = (chain.lastIndex downTo from + 1).firstOrNull { index ->
+                val box = project(chain[index], chain[from], full) ?: return@firstOrNull false
+                val width = (minOf(box.right, 1f) - maxOf(box.left, 0f)).coerceAtLeast(0f)
+                val height = (minOf(box.bottom, 1f) - maxOf(box.top, 0f)).coerceAtLeast(0f)
+                val area = (box.right - box.left) * (box.bottom - box.top)
+                width * height >= .59f * maxOf(area, 1f)
+            } ?: (from + 1)
+            route.add(chain[next])
+            from = next
+        }
+        return route
+    }
+
     /** Map a visible region through connected views. A broken registration has no projection. */
     fun project(fromId: Int, toId: Int, box: SubjectBox): SubjectBox? {
         val corners = projectPoints(fromId, toId, ShotGeometry.corners(box)) ?: return null

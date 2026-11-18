@@ -1,5 +1,7 @@
 # Physical-device test results
 
+The owner reports that 0.5.0 composition scans now run consistently on the Vivo V30. Indoor suggestions were poor and auto zoom felt slow and stepped. The feedback supplies no measured zoom timing or matched saved photographs. Version [0.6.0-auto](V060_AUTO_CAPTURE.md) adds timed zoom, subject-aware framing, Auto countdown capture and a processing fallback. Its results on the Vivo are pending.
+
 The owner reported **Spatial tracking is temporarily unavailable** in the 0.4.1 build. The displayed message did not identify the failing ARCore operation. Their earlier 0.4 export reported successful pose, point and depth samples. Version [0.5.0-camera](V050_CAMERA_COMPATIBILITY.md) removes that session handoff from the main workflow. No 0.5.0 physical-device measurement is available yet.
 
 Version 0.1 owner feedback: the basic app ran, but detection sometimes stopped momentarily and the pan-left/right UX felt poor. No timing, camera-quality comparison, or manufacturer-capability measurements were supplied.

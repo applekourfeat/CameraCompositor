@@ -5,6 +5,14 @@
     <string name="options">Options</string>
     <string name="viewfinder">Camera viewfinder</string>
     <string name="find_shot">Find a composition</string>
+    <string name="auto_on">Start Auto</string>
+    <string name="auto_off">Stop Auto</string>
+    <string name="auto_observing">Looking for a shot. Turn slowly or hold your view.</string>
+    <string name="auto_waiting">Point at a different subject or angle.</string>
+    <string name="auto_next_scene">Photo saved. Move to a new scene for the next shot.</string>
+    <string name="auto_counting">Hold still. Photo in %1$d.</string>
+    <string name="auto_steady">Hold steady for the countdown.</string>
+    <string name="capturing_photo">Hold steady. Taking photo…</string>
     <string name="cancel">Cancel guide</string>
     <string name="cancel_scan">Cancel</string>
     <string name="flip">Flip</string>

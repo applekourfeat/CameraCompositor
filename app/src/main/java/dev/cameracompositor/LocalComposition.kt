@@ -5,13 +5,15 @@ import android.os.SystemClock
 import kotlin.math.hypot
 
 /** Works with a conventional CameraX stream. Depth is optional per view. */
-class LocalComposition(private val depth: SoftwareDepth) {
-    data class Result(val decision: EnvironmentDecision, val relativeDepth: Map<Int, RelativeDepth>)
+class LocalComposition(private val depth: SoftwareDepth, private val detector: SceneSubjectDetector) {
+    data class Result(val decision: EnvironmentDecision, val relativeDepth: Map<Int, RelativeDepth>,
+                      val currentSubjectReady: Boolean)
 
     fun evaluate(batch: EnvironmentBatch, remainingZoom: Float, isActive: () -> Boolean): Result {
         val start = SystemClock.elapsedRealtime()
         val eligible = batch.frames.filter { batch.map.routeTo(it.view.id) != null }.associateBy { it.view.id }
         val latest = batch.frames.last().view.id
+        val subject = if (isActive()) detector.detect(batch.frames.last().frame.image) else null
         val center = SubjectBox(.49f, .49f, .51f, .51f)
         val selected = batch.map.plannerViews().asReversed().filter { view ->
             if (view.id !in eligible) false
@@ -39,7 +41,8 @@ class LocalComposition(private val depth: SoftwareDepth) {
             }
             SceneLayout(pixels, layers[id])
         }
-        return Result(ObservedComposition.choose(batch.map, layouts, remainingZoom), layers)
+        val decision = ObservedComposition.choose(batch.map, layouts, remainingZoom, subject)
+        return Result(decision, layers, ObservedComposition.currentSubjectReady(layouts.getValue(latest), subject))
     }
 }
 
@@ -48,13 +51,15 @@ object ObservedComposition {
     private val full = SubjectBox(0f, 0f, 1f, 1f)
     private data class Option(val viewId: Int, val crop: SubjectBox, val improvement: Float, val foregroundRemoved: Float)
 
-    fun choose(map: EnvironmentMap, layouts: Map<Int, SceneLayout>, remainingZoom: Float): EnvironmentDecision {
+    fun choose(map: EnvironmentMap, layouts: Map<Int, SceneLayout>, remainingZoom: Float,
+               subject: DetectedSubject? = null): EnvironmentDecision {
         val current = map.views.last()
         val starting = layouts.getValue(current.id)
         val focus = starting.focus
-        if (!starting.hasSubject || focus == null) {
+        if (focus == null || !starting.hasSubject) {
             return EnvironmentDecision.ObserveMore("Point at a subject with some visible detail.")
         }
+        val protected = subject?.takeIf { it.confidence >= .52f }?.box
         val currentWithDepth = starting.rate(full, useDepth = true)
         val currentRgb = starting.rate(full, useDepth = false)
         val startingDetail = starting.subjectDetail(focus)
@@ -62,18 +67,24 @@ object ObservedComposition {
         for (view in map.views.asReversed()) {
             val layout = layouts[view.id] ?: continue
             if (map.routeTo(view.id) == null || !layout.hasSubject) continue
-            val visibleSubject = if (view.id == current.id) focus else map.project(current.id, view.id, focus) ?: continue
-            if (coverage(full, visibleSubject) < .87f || layout.subjectDetail(visibleSubject) < startingDetail * .55f) continue
+            val visibleDetail = if (view.id == current.id) focus else map.project(current.id, view.id, focus) ?: continue
+            if (coverage(full, visibleDetail) < .87f || layout.subjectDetail(visibleDetail) < startingDetail * .55f) continue
+            val visibleSubject = protected?.let { map.project(current.id, view.id, it) }
+            if (protected != null && (visibleSubject == null || coverage(full, visibleSubject) < .97f)) continue
             val comparedDepth = starting.depth != null && layout.depth != null
             val base = if (comparedDepth) currentWithDepth else currentRgb
             val movedCenter = map.project(view.id, current.id, full)?.let { center(it) }
             val measuredChange = movedCenter != null && hypot(movedCenter.x - .5f, movedCenter.y - .5f) > .045f
             if (view.id != current.id && !measuredChange) continue
-            for (box in boxes(minOf(remainingZoom, view.maxRelativeZoom, 2.2f), visibleSubject)) {
-                if (coverage(box, visibleSubject) < .90f) continue
+            val zoomLimit = minOf(remainingZoom, view.maxRelativeZoom, 2.2f)
+            val proposals = boxes(zoomLimit, visibleDetail)
+            for (box in proposals) {
                 val crop = box != full
+                if (coverage(box, visibleDetail) < .90f) continue
+                if (crop && visibleSubject != null && !hasRoom(box, visibleSubject, .024f)) continue
                 val rating = layout.rate(box, comparedDepth)
-                if (crop && rating.retained < (if (comparedDepth) .56f else .70f)) continue
+                val minimumRetained = if (comparedDepth) .56f else .70f
+                if (crop && rating.retained < minimumRetained) continue
                 val foregroundRemoved = base.foreground - rating.foreground
                 val zoomCost = if (crop) .04f + .10f * (1 - (box.right - box.left)) else 0f
                 val gain = rating.quality - base.quality - zoomCost
@@ -83,12 +94,39 @@ object ObservedComposition {
                 }
             }
         }
-        if (best == null) return EnvironmentDecision.Keep("The current framing keeps the visible subject and its surroundings.")
+        if (best == null) return EnvironmentDecision.Keep("Keep the current view or show another angle.")
         val label = if (best.viewId == current.id) "Suggested framing" else "Suggested angle"
         val explanation = if (best.foregroundRemoved >= .08f) "Less foreground clutter, with the main detail still in frame."
             else if (best.viewId != current.id) "This observed angle gives the visible detail more room."
             else "This framing gives the main detail more space in the photo."
         return EnvironmentDecision.Guide(best.viewId, best.crop, label, explanation)
+    }
+
+    // A "keep" with positive subject evidence can be used by the armed shutter.
+    fun currentSubjectReady(layout: SceneLayout, subject: DetectedSubject?): Boolean {
+        if (subject == null || subject.confidence < .54f || !hasRoom(full, subject.box, .07f)) return false
+        return layout.subjectDetail(subject.box) >= .023f && subjectFit(full, subject.box, subject.category) >= .76f
+    }
+
+    private fun subjectFit(frame: SubjectBox, subject: SubjectBox, category: Int): Float {
+        val width = frame.right - frame.left
+        val height = frame.bottom - frame.top
+        val subjectCenter = center(subject)
+        val x = (subjectCenter.x - frame.left) / width
+        val y = (subjectCenter.y - frame.top) / height
+        val extent = maxOf((subject.right - subject.left) / width, (subject.bottom - subject.top) / height)
+        val goal = if (category == 0 || category in 14..23) .66f else .53f
+        val horizontalError = minOf(kotlin.math.abs(x - .5f), kotlin.math.abs(x - .34f) + .03f,
+            kotlin.math.abs(x - .66f) + .03f)
+        return (1f - 1.85f * kotlin.math.abs(extent - goal) - horizontalError - .65f * kotlin.math.abs(y - .49f))
+            .coerceIn(0f, 1f)
+    }
+
+    private fun hasRoom(frame: SubjectBox, subject: SubjectBox, fraction: Float): Boolean {
+        val horizontal = (frame.right - frame.left) * fraction
+        val vertical = (frame.bottom - frame.top) * fraction
+        return subject.left >= frame.left + horizontal && subject.right <= frame.right - horizontal &&
+            subject.top >= frame.top + vertical && subject.bottom <= frame.bottom - vertical
     }
 
     private fun boxes(maxZoom: Float, subject: SubjectBox): List<SubjectBox> = buildList {

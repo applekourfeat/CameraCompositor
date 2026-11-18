@@ -14,6 +14,10 @@ MODEL_SHA = "0853d7468f78f391730ee39c07daf41e0f600caba3bc2731ee086e63fab766ee"
 DEPTH_ASSET = "zipdepth-192x256.onnx"
 DEPTH_SHA = "dad03af25e12af84feb7694e0b0182dd2811a0d2a47d4c009cd7bcb41b5b7d25"
 CAMERA_VERSION = "0.5.0-camera"
+AUTO_VERSION = "0.6.0-auto"
+DEPTH_BUILDS = {CAMERA_VERSION, AUTO_VERSION}
+SUBJECT_ASSET = "nanodet-416.onnx"
+SUBJECT_SHA = "d891b8c939ce062b13fc7440195d427eeecbec307c2417564d6908309b263e19"
 KEY_PATTERN = re.compile(rb"AIza[0-9A-Za-z_-]{35}|gh[pousr]_[0-9A-Za-z]{30,}|sk-proj-[0-9A-Za-z_-]{40,}")
 
 
@@ -31,6 +35,15 @@ def verify_arm64_segments(image):
     assert loads and all(s[7] >= 16384 and s[2] % 16384 == s[3] % 16384 for s in loads), "ELF load alignment failed"
 
 
+def shipped_models(version):
+    if version not in DEPTH_BUILDS:
+        return {"gaic-mobilenet.onnx": MODEL_SHA}
+    models = {DEPTH_ASSET: DEPTH_SHA}
+    if version == AUTO_VERSION:
+        models[SUBJECT_ASSET] = SUBJECT_SHA
+    return models
+
+
 def verify_apk(apk, abi, version):
     with zipfile.ZipFile(apk) as source:
         names = source.namelist()
@@ -38,17 +51,19 @@ def verify_apk(apk, abi, version):
         assert native and all(name.split("/")[1] == abi for name in native), "Unexpected native ABI"
         assert any("ONNX-Runtime-1.23.2-LICENSE" in name for name in names)
         assert not any(name.endswith((".tflite", ".litertlm", ".hdf5", ".pth")) for name in names)
-        if version in {"0.4.0-environment", "0.4.1-spatial", CAMERA_VERSION}:
+        if version in DEPTH_BUILDS | {"0.4.0-environment", "0.4.1-spatial"}:
             assert "assets/third-party/ARCore-NOTICE.txt" in names
             assert f"lib/{abi}/libarcore_sdk_jni.so" in native
-        verify_model = DEPTH_ASSET if version == CAMERA_VERSION else "gaic-mobilenet.onnx"
-        model_hash = DEPTH_SHA if version == CAMERA_VERSION else MODEL_SHA
-        weights = source.getinfo("assets/" + verify_model)
-        assert weights.compress_type == zipfile.ZIP_STORED
-        assert hashlib.sha256(source.read(weights)).hexdigest() == model_hash
-        if version == CAMERA_VERSION:
+        models = shipped_models(version)
+        for model, digest in models.items():
+            weights = source.getinfo("assets/" + model)
+            assert weights.compress_type == zipfile.ZIP_STORED
+            assert hashlib.sha256(source.read(weights)).hexdigest() == digest
+        if version in DEPTH_BUILDS:
             assert "assets/third-party/ZipDepth-LICENSE.txt" in names
-            assert {n for n in names if n.endswith(".onnx")} == {"assets/" + DEPTH_ASSET}
+            assert {n for n in names if n.endswith(".onnx")} == {"assets/" + model for model in models}
+            if version == AUTO_VERSION:
+                assert "assets/third-party/NanoDet-LICENSE.txt" in names
             if abi == "arm64-v8a":
                 for name in native:
                     verify_arm64_segments(source.read(name))
@@ -57,7 +72,7 @@ def verify_apk(apk, abi, version):
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument("--version",default=CAMERA_VERSION)
+    parser.add_argument("--version", default=AUTO_VERSION)
     args=parser.parse_args()
     version=args.version
     assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z]+)?",version), "Invalid delivery version"
@@ -69,12 +84,12 @@ def main():
         suite = ET.parse(path).getroot()
         count += int(suite.get("tests", "0"))
         failures += int(suite.get("failures", "0")) + int(suite.get("errors", "0"))
-    minimum = {CAMERA_VERSION: 63, "0.4.1-spatial": 55, "0.4.0-environment": 47}.get(version, 35)
+    minimum = {AUTO_VERSION: 71, CAMERA_VERSION: 63, "0.4.1-spatial": 55, "0.4.0-environment": 47}.get(version, 35)
     assert count >= minimum and failures == 0, "Unit checks are missing or failed"
     outputs = ROOT / "app/build/outputs/apk/debug"
     metadata = json.loads((outputs / "output-metadata.json").read_text())
     assert all(m["versionName"] == version for m in metadata["elements"]), "Build metadata is stale"
-    if version == CAMERA_VERSION:
+    if version in DEPTH_BUILDS:
         artifacts = {"arm64-v8a": apk, "armeabi-v7a": arm32}
         elements = {f["value"]: m for m in metadata["elements"] for f in m["filters"] if f["filterType"] == "ABI"}
         assert metadata["minSdkVersionForDexing"] == 29 and elements.keys() == artifacts.keys()
@@ -97,8 +112,9 @@ def main():
     release = ROOT / "app/build/intermediates/assets/release/mergeReleaseAssets"
     assert release.is_dir(), "Run mergeReleaseAssets first"
     release_weights = {p.name: p for p in release.rglob("*") if p.suffix in {".onnx", ".tflite", ".litertlm", ".pth", ".hdf5"}}
-    assert release_weights.keys() == ({DEPTH_ASSET} if version == CAMERA_VERSION else set()), "Unexpected model in release assets"
-    assert version != CAMERA_VERSION or file_sha(release_weights[DEPTH_ASSET]) == DEPTH_SHA
+    expected = shipped_models(version) if version in DEPTH_BUILDS else {}
+    assert release_weights.keys() == expected.keys(), "Unexpected model in release assets"
+    assert all(file_sha(release_weights[name]) == digest for name, digest in expected.items())
     result = {"build": version, "apkBytes": apk.stat().st_size,
         "apkSha256": file_sha(apk), "unitTests": count, "unitFailures": failures,
         "lintErrors": errors, "lintWarnings": sum(i.get("severity") == "Warning" for i in issues),
@@ -106,11 +122,15 @@ def main():
         "physicalVivoTests": "owner v0.4 export confirms ARCore pose/points/depth on Vivo V30; v0.4.1 capture alignment, photographic selection, provider inference and performance remain pending",
         "humanPreferenceGate": "pending",
         "liveProviderDiagnostic": "v0.3.0 owner report: WAIT_RESPONSE timeout after client upload; cause unresolved"}
-    if version == CAMERA_VERSION:
+    if version in DEPTH_BUILDS:
         result.update({"modelSha256": DEPTH_SHA, "releaseResearchAssets": "ZipDepth only, no legacy research weights",
             "armeabiV7aApkBytes": arm32.stat().st_size, "armeabiV7aApkSha256": file_sha(arm32),
             "arm64Elf16KiBLoadAlignment": "pass",
             "physicalVivoTests": "v0.5.0 pending; v0.4.1 owner reported spatial tracking temporarily unavailable"})
+    if version == AUTO_VERSION:
+        result.update({"subjectModelSha256": SUBJECT_SHA,
+            "releaseResearchAssets": "ZipDepth and NanoDet, no legacy research weights",
+            "physicalVivoTests": "v0.6.0 pending; owner reports consistent v0.5.0 scans, poor compositions, and slow, stepped auto zoom"})
     tag=version.replace(".","").replace("-","_")
     path = ROOT / f"research/results/delivery-verification-v{tag}.json"
     path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

@@ -1,6 +1,7 @@
 .tools/
 .local/
 .gradle/
+.kotlin/
 .idea/
 **/build/
 local.properties

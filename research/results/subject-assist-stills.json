@@ -1,0 +1,66 @@
+{
+  "modelSha256": "d891b8c939ce062b13fc7440195d427eeecbec307c2417564d6908309b263e19",
+  "scope": "Desktop stills only. Nearest GAIC annotation is a coarse proxy. No human or live camera preference measurement.",
+  "development": {
+    "photos": 20,
+    "detection": 12,
+    "changedCrop": 0,
+    "medianDesktopModelMs": 13.397799979429692,
+    "nearestAnnotationWins": 0,
+    "nearestAnnotationLosses": 0
+  },
+  "evaluation": {
+    "photos": 60,
+    "detection": 33,
+    "changedCrop": 0,
+    "medianDesktopModelMs": 13.93739998457022,
+    "nearestAnnotationWins": 0,
+    "nearestAnnotationLosses": 0
+  },
+  "reference": {
+    "photos": 2,
+    "detection": 1,
+    "changedCrop": 0,
+    "medianDesktopModelMs": 95.89684999082237,
+    "examples": [
+      {
+        "image": "window-city",
+        "split": "reference",
+        "category": -1,
+        "confidence": 0.0,
+        "baseline": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subjectGuided": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "desktopModelMs": 100.67299997899681
+      },
+      {
+        "image": "000000039769",
+        "split": "reference",
+        "category": 15,
+        "confidence": 0.6254457,
+        "baseline": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subjectGuided": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "desktopModelMs": 91.12070000264794
+      }
+    ]
+  }
+}

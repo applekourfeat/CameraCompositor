@@ -13,6 +13,7 @@ class EnvironmentBatch(val map: EnvironmentMap, val frames: List<EnvironmentFram
 /** Main-thread acquisition; a bounded in-memory scene observation, with no disk writes/uploads. */
 class EnvironmentSweep(private val analyzer: SceneFrameAnalyzer, private val zoom: () -> Float,
                        private val maxZoom: () -> Float,
+                       private val intervalMs: Long = 470,
                        private val onFinished: (EnvironmentBatch?) -> Unit) {
     private val main=Handler(Looper.getMainLooper())
     private val frames=mutableListOf<EnvironmentFrame>()
@@ -32,7 +33,7 @@ class EnvironmentSweep(private val analyzer: SceneFrameAnalyzer, private val zoo
             if (runCatching { map.add(view) }.isFailure) { frame.image.recycle(); cancel(); return@post }
             frames.add(EnvironmentFrame(view,frame))
             if (frames.size==6) { active=false; onFinished(EnvironmentBatch(map,frames.toList())); frames.clear() }
-            else main.postDelayed({ capture() },470)
+            else main.postDelayed({ capture() }, intervalMs)
         } }
         main.postDelayed({ if (active && sequence==request) cancel() },1500)
     }

@@ -19,16 +19,25 @@ object FrameSignature {
     }
 
     fun sameAngle(reference: IntArray, current: IntArray): Boolean {
+        return similar(reference, current, maxLightChange = 20, maxDifference = 6, maxChanged = 4, changedThreshold = 22)
+    }
+
+    fun sameScene(reference: IntArray, current: IntArray): Boolean {
+        return similar(reference, current, maxLightChange = 45, maxDifference = 12, maxChanged = 15, changedThreshold = 30)
+    }
+
+    private fun similar(reference: IntArray, current: IntArray, maxLightChange: Int, maxDifference: Int,
+                        maxChanged: Int, changedThreshold: Int): Boolean {
         if (reference.size != 96 || current.size != 96) return false
         val lightChange = current.average() - reference.average()
-        if (abs(lightChange) > 20) return false
+        if (abs(lightChange) > maxLightChange) return false
         var difference = 0.0
         var changedTiles = 0
         for (i in reference.indices) {
             val residual = abs(current[i] - reference[i] - lightChange)
             difference += residual
-            if (residual > 22) changedTiles++
+            if (residual > changedThreshold) changedTiles++
         }
-        return difference / reference.size < 6 && changedTiles <= 4
+        return difference / reference.size < maxDifference && changedTiles <= maxChanged
     }
 }

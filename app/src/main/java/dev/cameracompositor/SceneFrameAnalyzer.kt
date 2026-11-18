@@ -22,8 +22,11 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
     private val environment = EnvironmentMotionTracker()
     @Volatile private var environmentActive = false
     val observingEnvironment get() = environmentActive
+    @Volatile var trackingGuide = false
     @Volatile private var environmentReset = false
     @Volatile private var environmentTrackedAt = 0L
+    @Volatile var liveScene: LiveScene? = null
+        private set
     private var checkpointSignature: IntArray? = null
     private var missedEnvironmentFrames = 0
     fun beginEnvironment() { environmentTrackedAt=0; environmentMotion=Float.POSITIVE_INFINITY; environmentReset=true; environmentActive=true }
@@ -60,6 +63,8 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
                     gray[y * image.width + x] = buffer.get(base + y * plane.rowStride + x * plane.pixelStride)
                 }
             }
+            val signature = FrameSignature.sample(gray, image.width, image.height)
+            liveScene = LiveScene(SystemClock.elapsedRealtime(), signature)
             if (environmentReset) {
                 environment.close(); checkpointSignature = null; missedEnvironmentFrames = 0; environmentReset=false
             }
@@ -69,7 +74,7 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
                     environment.update(gray,image.width,image.height,bufferToView,size.width,size.height)
                     environment.registration
                 }.onFailure { environment.close() }.getOrNull()?.takeIf { it.reliable }
-                val sameAngle = checkpointSignature?.let { FrameSignature.sameAngle(it,FrameSignature.sample(gray,image.width,image.height)) } == true
+                val sameAngle = checkpointSignature?.let { FrameSignature.sameAngle(it, signature) } == true
                 if (sameAngle || link != null) {
                     missedEnvironmentFrames = 0
                     environmentTrackedAt=SystemClock.elapsedRealtime()
@@ -91,7 +96,7 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
                     catch (error: Exception) { visible.recycle(); throw error }
                     finally { raw.recycle() }
                     val registration = if (environmentActive) {
-                        checkpointSignature = FrameSignature.sample(gray,image.width,image.height)
+                        checkpointSignature = signature
                         environmentTrackedAt = SystemClock.elapsedRealtime()
                         environmentMotion = 0f
                         missedEnvironmentFrames = 0

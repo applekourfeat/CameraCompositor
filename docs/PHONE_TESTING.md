@@ -4,12 +4,12 @@ Use the standard Vivo V30. A cable or mirroring session is optional. Transfer th
 
 ## Short first session
 
-Install `artifacts/CameraCompositor-0.5.0-camera-debug.apk`. This is the ARM64 test build for the Vivo V30. Android 10 or later is required. The ARMv7 file is for 32-bit ARM phones.
+Install `artifacts/CameraCompositor-0.6.0-auto-debug.apk`. This is the ARM64 test build for the Vivo V30. Android 10 or later is required. The ARMv7 file is for 32-bit ARM phones.
 
-1. Turn on airplane mode. Open the app and tap **Find a composition** once while slowly turning across a small scene with a clear subject. Hold when it says **Checking the views. Hold this angle.** The regular camera preview stays open. The scan should work without an AR screen, sign-in or key prompt.
-2. Repeat once while holding still. If a shot appears, try **Use this shot**. Test pinch zoom, cancel and taking a photo. In a separate run, point away while the app checks the views to verify that it discards the old target.
-3. For useful timing feedback, open **Options > Developer tools > Camera and scan details**. The last scan time covers analysis after observation. Also record whether the selected shot is worth taking and how the preview feels. Android model speed and alignment need phone measurements.
-4. If testing camera quality, **Camera capability report** inventories cameras, JPEG sizes, calibration, depth formats and vendor processing. The optional ARCore test and personal-key online experiment have their own entries.
+1. Turn on airplane mode and tap **Start Auto** once. Pick a clear subject, such as a pet, a person, or an object on a desk. Follow the outline and hold steady through **3, 2, 1**. Note whether framing was worth taking and whether zoom felt continuous.
+2. Repeat and move slightly as the countdown runs. Check that the countdown clears. Tap **Stop Auto** during another countdown, then verify pinch zoom and the manual shutter. Backgrounding the app should also exit Auto.
+3. After a successful Auto photo, keep the phone pointed at the same subject through the next few seconds. Then change the scene and check that search resumes. Inspect **Camera and scan details** for saved resolution and actual processing path.
+4. Use **Options > Photo processing** to take a pair with Automatic processing and Standard JPEG. Compare with a third photo from Vivo's camera app using matched lens, composition and light. **Camera capability report** lists Android's exposed camera and vendor modes.
 
 ## Composition acceptance
 

@@ -1,5 +1,9 @@
 # Verification
 
+## Auto capture build
+
+Version **0.6.0-auto** passes `assembleDebug`, `testDebugUnitTest`, `lintDebug`, and `mergeReleaseAssets`. Both ARM packages pass signature, archive-alignment and model hash checks. See [the recorded results](../research/results/delivery-verification-v060_auto.json) and [Auto capture and processing](V060_AUTO_CAPTURE.md). The owner-confirmed consistent Vivo scans apply to version 0.5.0. The new countdown, zoom and saved-photo paths still require physical checks.
+
 ## Camera-only compatibility build
 
 Version **0.5.0-camera** passes `assembleDebug`, `testDebugUnitTest`, `lintDebug` and `mergeReleaseAssets`. All 63 Android unit tests pass. Lint reports zero errors and 70 warnings. Both ARM APKs pass signature and archive-alignment checks. `scripts/check_delivery.py` verifies the packaged assets, credential patterns, and 16 KB ARM64 native load-segment alignment. [Recorded checks](../research/results/delivery-verification-v050_camera.json), [model and compatibility experiment](V050_CAMERA_COMPATIBILITY.md).

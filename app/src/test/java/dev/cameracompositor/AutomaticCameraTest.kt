@@ -1,0 +1,77 @@
+package dev.cameracompositor
+
+import org.junit.Assert.*
+import org.junit.Test
+
+class AutomaticCameraTest {
+    private val corners = ShotGeometry.corners(SubjectBox(0f, 0f, 1f, 1f))
+
+    @Test fun `three second countdown fires once after steady framing`() {
+        val shutter = AutomaticShutter()
+        fun at(time: Long) = shutter.update(time, time + 15, corners, true)
+        for (time in 0L..400L step 100) assertEquals(ShutterUpdate.Waiting, at(time))
+        assertEquals(ShutterUpdate.Counting(3), at(500))
+        for (time in 600L..1400L step 100) assertEquals(ShutterUpdate.Counting(3), at(time))
+        for (time in 1500L..2400L step 100) assertEquals(ShutterUpdate.Counting(2), at(time))
+        for (time in 2500L..3400L step 100) assertEquals(ShutterUpdate.Counting(1), at(time))
+        assertEquals(ShutterUpdate.Capture, at(3500))
+        assertEquals(ShutterUpdate.Waiting, at(3600))
+    }
+
+    @Test fun `motion and dropped observations reset the countdown`() {
+        val shutter = AutomaticShutter()
+        for (time in 0L..700L step 100) shutter.update(time, time, corners, true)
+        val moved = corners.map { ScenePoint(it.x + .027f, it.y) }
+        assertEquals(ShutterUpdate.Waiting, shutter.update(800, 800, moved, true))
+        assertEquals(ShutterUpdate.Waiting, shutter.update(900, 1300, moved, true))
+        assertEquals(ShutterUpdate.Waiting, shutter.update(3600, 3600, moved, true))
+        assertEquals(ShutterUpdate.Waiting, shutter.update(3700, 3700, moved, false))
+        assertEquals(ShutterUpdate.Waiting, shutter.update(3800, 3800, corners, true))
+    }
+
+    @Test fun `same scene and a quick blur cannot rearm scan`() {
+        val used = IntArray(96) { if (it % 12 < 6) 50 else 155 }
+        val other = IntArray(96) { if (it / 12 < 4) 180 else 25 }
+        val gate = AutomaticScanGate()
+        gate.waitForChange(100, true, LiveScene(100, used))
+        assertFalse(gate.ready(LiveScene(500, other), 500))
+        assertFalse(gate.ready(LiveScene(800, IntArray(96) { used[it] + 22 }), 800))
+        assertFalse(gate.ready(LiveScene(900, other), 900))
+        assertFalse(gate.ready(LiveScene(1100, used), 1100))
+        assertFalse(gate.ready(LiveScene(1250, other), 1250))
+        assertFalse(gate.ready(LiveScene(1400, other), 1400))
+        assertTrue(gate.ready(LiveScene(1800, other), 1800))
+    }
+
+    @Test fun `zoom ramps quickly with bounded jumps after a camera stall`() {
+        val ramp = ZoomRamp(1f, 2.2f)
+        var last = 1f
+        for (ms in 32L..1000L step 32) {
+            val next = ramp.next(last, ms)
+            assertTrue(next >= last - .0001f)
+            assertTrue(next <= 2.2f + .0001f && next / last < 1.069f)
+            last = next
+        }
+        assertEquals(2.2f, last, .005f)
+        assertTrue(ramp.next(1.05f, 1600) < 1.125f)
+        val out = ZoomRamp(2.2f, 1f)
+        assertTrue(out.next(2.2f, 300) < 2.2f)
+        assertTrue(out.next(2.2f, 900) > 2.05f)
+    }
+
+    @Test fun `dark finish preserves highlights and shadow edges`() {
+        val curve = ShadowTone.curve(47)!!
+        assertEquals(0, curve[0])
+        assertTrue(curve[55] > 55)
+        assertEquals(255, curve[255])
+        for (i in 1..255) assertTrue(curve[i] >= curve[i - 1])
+        assertNull(ShadowTone.curve(140))
+        val mid = 0x323232
+        val noisy = 0x383838
+        val trimmed = ShadowTone.finish(noisy, mid, mid, mid, mid, curve)
+        val untouched = ShadowTone.finish(noisy, 0xaaaaaa, mid, mid, mid, curve)
+        assertTrue(ShadowTone.luminance(trimmed) < ShadowTone.luminance(untouched))
+        assertEquals(curve[56], ShadowTone.luminance(untouched))
+        assertEquals(0xfff4f4f4.toInt(), ShadowTone.finish(0xf4f4f4, mid, mid, mid, mid, curve))
+    }
+}

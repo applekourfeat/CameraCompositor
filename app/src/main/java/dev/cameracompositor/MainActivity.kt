@@ -2,14 +2,11 @@ package dev.cameracompositor
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.*
-import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Size
 import android.view.*
@@ -39,12 +36,15 @@ class MainActivity : ComponentActivity() {
     private lateinit var access: Button
     private lateinit var gallery: Button
     private lateinit var find: Button
+    private lateinit var automatic: Button
+    private lateinit var countdown: TextView
     private lateinit var cancel: Button
     private lateinit var flip: Button
     private lateinit var plannerSettings: PlannerSettings
     private lateinit var planner: CloudShotPlanner
     private lateinit var localScorer: LocalResearchScorer
     private lateinit var softwareDepth: SoftwareDepth
+    private lateinit var subjectDetector: SceneSubjectDetector
     private lateinit var localComposition: LocalComposition
     private lateinit var quality: CameraQuality
     private var sweepRecorder: ResearchSweepRecorder? = null
@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
     private var environmentDialog: AlertDialog? = null
     private var activeEnvironmentBatch: EnvironmentBatch? = null
     private val environmentRoute=ArrayDeque<Pair<ScanFrame,ModelChoice>>()
-    private var planZoomLimit = 1.8f
+    private var plannedZoom = 1f
     private var pendingSweep: java.io.File? = null
     private val exportSweep = registerForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         val file = pendingSweep
@@ -70,8 +70,16 @@ class MainActivity : ComponentActivity() {
     private val modelExecutor = Executors.newSingleThreadExecutor()
     private val main by lazy { ContextCompat.getMainExecutor(this) }
     private val handler = Handler(Looper.getMainLooper())
+    private val zoomAnimator by lazy { CameraZoomAnimator(handler, main) }
+    private val photoCapture by lazy { PhotoCapturePipeline(this, handler, main) }
     private val hold = AlignmentHold()
+    private val waypointHold = AlignmentHold(250)
     private val guideLifetime = GuideLifetime()
+    private val automaticShutter = AutomaticShutter()
+    private val automaticScan = AutomaticScanGate()
+    private var automaticMode = false
+    private var automaticGuideAt = 0L
+    private var scanReference: LiveScene? = null
     @Volatile private var lastDiagnostic = "No scene request recorded in this build."
     private var controller: LifecycleCameraController? = null
     private var baseSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -91,7 +99,6 @@ class MainActivity : ComponentActivity() {
     private var activePlanId = 0L
     @Volatile private var generation = 0
     private var autoZoom = true
-    private var zoomBusy = false
     private var baselineZoom = 1f
     private var lastGood: TrackedFrame? = null
     private var lastPhoto: Uri? = null
@@ -106,8 +113,17 @@ class MainActivity : ComponentActivity() {
 
     private val tick = object : Runnable {
         override fun run() {
-            if (activePlan && !saving && lastGood?.let { SystemClock.elapsedRealtime() - it.timeMs > 350 } != false) trackingLost()
-            handler.postDelayed(this, 250)
+            val now = SystemClock.elapsedRealtime()
+            if (activePlan && !saving) {
+                if (automaticGuideAt != 0L && now - automaticGuideAt > 15_000) abandonAutomaticGuide()
+                else if (lastGood?.let { now - it.timeMs > 300 } != false) trackingLost()
+            }
+            if (automaticMode && cameraReady && !scanning && !activePlan && !saving &&
+                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                preview.previewStreamState.value == PreviewView.StreamState.STREAMING && automaticScan.ready(analyzer.liveScene, now)) {
+                scanEnvironment(autoScan = true)
+            }
+            handler.postDelayed(this, 150)
         }
     }
 
@@ -124,10 +140,12 @@ class MainActivity : ComponentActivity() {
         guidance = findViewById(R.id.guidance); telemetry = findViewById(R.id.telemetry)
         capture = findViewById(R.id.capture); access = findViewById(R.id.access); gallery = findViewById(R.id.gallery)
         find = findViewById(R.id.find_shot); cancel = findViewById(R.id.cancel); flip = findViewById(R.id.flip)
+        automatic = findViewById(R.id.automatic); countdown = findViewById(R.id.shutter_countdown)
         plannerSettings = PlannerSettings(this)
         localScorer = LocalResearchScorer(this)
         softwareDepth = SoftwareDepth(this)
-        localComposition = LocalComposition(softwareDepth)
+        subjectDetector = SceneSubjectDetector(this)
+        localComposition = LocalComposition(softwareDepth, subjectDetector)
         lastDiagnostic = runCatching { java.io.File(filesDir, "last-scan-diagnostic.json").readText() }.getOrDefault(lastDiagnostic)
         planner = CloudShotPlanner(plannerSettings) { report ->
             lastDiagnostic = report
@@ -141,12 +159,18 @@ class MainActivity : ComponentActivity() {
         preview.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
         preview.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> analyzer.viewSize = Size(preview.width, preview.height) }
         preview.setOnTouchListener { _, event ->
-            if (event.pointerCount > 1 && scanning) cancelGuide(false)
-            if (event.pointerCount > 1 && activeEnvironmentBatch!=null) {
-                cancelGuide(false); guidance.text="Zoom is yours. Find a composition when ready."
+            if (saving) true else {
+                if (event.pointerCount > 1) {
+                    zoomAnimator.stop()
+                    if (automaticMode) setAutomaticMode(false)
+                    else if (scanning || activeEnvironmentBatch != null) cancelGuide(false)
+                    else if (activePlan) {
+                        autoZoom = false
+                        telemetry.text = "Zoom is yours. Cancel guide to reset."
+                    }
+                }
+                false
             }
-            if (event.pointerCount > 1 && activePlan) { autoZoom = false; telemetry.text = "Zoom is yours. Cancel guide to reset." }
-            false
         }
         quality = CameraQuality(this) { if (!isDestroyed) updateCameraStatus() }
         lastPhoto = savedInstanceState?.getString("lastPhoto")?.let(Uri::parse)
@@ -156,7 +180,8 @@ class MainActivity : ComponentActivity() {
         find.setOnClickListener {
             scanEnvironment()
         }
-        cancel.setOnClickListener { cancelGuide(true) }
+        automatic.setOnClickListener { setAutomaticMode(!automaticMode) }
+        cancel.setOnClickListener { if (automaticMode) setAutomaticMode(false) else cancelGuide(true) }
         flip.setOnClickListener { flipCamera() }
         findViewById<Button>(R.id.settings).setOnClickListener { showOptions() }
         if (hasPermission()) startCamera() else permissionRequest.launch(Manifest.permission.CAMERA)
@@ -168,7 +193,9 @@ class MainActivity : ComponentActivity() {
     }
     override fun onPause() {
         handler.removeCallbacks(tick)
-        if (::analyzer.isInitialized) cancelGuide(false)
+        if (::analyzer.isInitialized) {
+            if (automaticMode) setAutomaticMode(false) else cancelGuide(false)
+        }
         super.onPause()
     }
     private fun hasPermission() = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
@@ -193,7 +220,13 @@ class MainActivity : ComponentActivity() {
             camera.imageAnalysisResolutionSelector=ResolutionSelector.Builder().setResolutionStrategy(
                 ResolutionStrategy(Size(640,480),ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)).build()
             camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.IMAGE_ANALYSIS)
-            camera.setImageAnalysisAnalyzer(analysisExecutor, ThrottledAnalyzer(analyzer) { if (analyzer.observingEnvironment) 33L else 100L })
+            camera.setImageAnalysisAnalyzer(analysisExecutor, ThrottledAnalyzer(analyzer) {
+                when {
+                    analyzer.observingEnvironment -> 33L
+                    analyzer.trackingGuide -> 50L
+                    else -> 100L
+                }
+            })
             preview.controller = camera; camera.cameraSelector = baseSelector; camera.bindToLifecycle(this)
             camera.initializationFuture.addListener({
                 if (controller !== camera || isDestroyed) return@addListener
@@ -206,8 +239,27 @@ class MainActivity : ComponentActivity() {
         } catch (_: Exception) { cameraFailed(camera) }
     }
     private fun cameraFailed(camera: LifecycleCameraController) {
+        if (automaticMode) setAutomaticMode(false)
         camera.clearImageAnalysisAnalyzer(); camera.unbind(); if (controller === camera) controller = null
         cameraReady = false; refreshButtons(); guidance.setText(R.string.camera_error); access.visibility = View.VISIBLE
+    }
+
+    private fun setAutomaticMode(enabled: Boolean) {
+        if (enabled && (!cameraReady || saving)) return
+        automaticMode = enabled
+        automaticScan.reset()
+        cancelGuide(false)
+        guidance.setText(if (enabled) R.string.auto_observing else R.string.ready_to_frame)
+    }
+
+    private fun waitForAnotherScene(saved: Boolean = false, reference: LiveScene? = analyzer.liveScene) {
+        automaticScan.waitForChange(SystemClock.elapsedRealtime(), saved, reference, scanReference)
+        guidance.setText(if (saved) R.string.auto_next_scene else R.string.auto_waiting)
+    }
+
+    private fun abandonAutomaticGuide() {
+        cancelGuide(false)
+        waitForAnotherScene()
     }
 
     private fun requestOnlineEnvironmentScan() {
@@ -222,31 +274,32 @@ class MainActivity : ComponentActivity() {
             .setNegativeButton(R.string.dismiss,null).show()
     }
 
-    private fun scanEnvironment(online: Boolean = false) {
+    private fun scanEnvironment(online: Boolean = false, autoScan: Boolean = false) {
         if (!cameraReady || scanning || saving) return
         cancelGuide(false)
         val token = generation
         val requestId = if (online) planner.beginRequest() else null
         baselineZoom = controller?.zoomState?.value?.zoomRatio ?: 1f
+        if (autoScan) scanReference = analyzer.liveScene
         scanning = true
-        guidance.setText(R.string.sweep_instruction)
+        guidance.setText(if (autoScan) R.string.auto_observing else R.string.sweep_instruction)
         environmentSweep = EnvironmentSweep(analyzer,
             { controller?.zoomState?.value?.zoomRatio ?: 1f }, { controller?.zoomState?.value?.maxZoomRatio ?: 1f },
-            { batch ->
+            intervalMs = if (autoScan) 295 else 470) { batch ->
                 environmentSweep = null
                 when {
                     generation != token || isDestroyed -> batch?.close()
                     batch == null -> {
                         analyzer.endEnvironment()
                         scanning = false
-                        guidance.setText(R.string.sweep_no_frame)
+                        if (autoScan) waitForAnotherScene() else guidance.setText(R.string.sweep_no_frame)
                     }
-                    else -> runEnvironmentPlanner(batch, token, requestId)
+                    else -> runEnvironmentPlanner(batch, token, requestId, autoScan)
                 }
-            })
+            }
         environmentSweep!!.start()
     }
-    private fun runEnvironmentPlanner(batch: EnvironmentBatch, token: Int, requestId: Long?) {
+    private fun runEnvironmentPlanner(batch: EnvironmentBatch, token: Int, requestId: Long?, autoScan: Boolean) {
         guidance.setText(R.string.sweep_assessing)
         val started = SystemClock.elapsedRealtime()
         val availableZoom = ((controller?.zoomState?.value?.maxZoomRatio ?: baselineZoom) / baselineZoom).coerceIn(1f, 3.2f)
@@ -264,6 +317,20 @@ class MainActivity : ComponentActivity() {
                 modelReason = "Observed ${batch.frames.size} views, ${batch.map.registeredLinks} overlap links, " +
                     "${local?.relativeDepth?.size ?: 0} relative depth estimates. " +
                     (if (optionalOnline != null) "Online assessment." else "On-device assessment.")
+                if (autoScan) {
+                    val target = when {
+                        decision is EnvironmentDecision.Guide -> decision
+                        decision is EnvironmentDecision.Keep && local?.currentSubjectReady == true ->
+                            EnvironmentDecision.Guide(batch.map.views.last().id, SubjectBox(0f, 0f, 1f, 1f), "Current view", decision.reason)
+                        else -> null
+                    }
+                    if (target != null && analyzer.environmentFresh(SystemClock.elapsedRealtime()) &&
+                        startEnvironmentGuide(batch, target, autoGuide = true)) return@post
+                    analyzer.endEnvironment()
+                    batch.close()
+                    waitForAnotherScene()
+                    return@post
+                }
                 if (decision == null) {
                     guidance.setText(R.string.framing_unavailable)
                 } else if (!analyzer.environmentFresh(SystemClock.elapsedRealtime())) {
@@ -290,8 +357,7 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun showEnvironmentChoice(batch: EnvironmentBatch, decision: EnvironmentDecision.Guide, token: Int) {
-        val route=batch.map.routeTo(decision.viewId)
-        if(route==null) {
+        if (batch.map.guideRouteTo(decision.viewId) == null) {
             analyzer.endEnvironment(); batch.close(); guidance.text="The views have insufficient overlap for a reliable return guide. Use a shorter sweep."
             return
         }
@@ -315,14 +381,7 @@ class MainActivity : ComponentActivity() {
         val dialog=AlertDialog.Builder(this).setTitle("Suggested shot").setView(panel)
             .setPositiveButton("Use this shot") { _, _ ->
                 if (token==generation && SystemClock.elapsedRealtime()-shownAt<15_000 && analyzer.environmentFresh(SystemClock.elapsedRealtime())) {
-                    applied=true; analyzer.endEnvironment()
-                    activeEnvironmentBatch=batch
-                    for(id in route) {
-                        val entry=batch.frames.single { it.view.id==id }
-                        val crop=if(id==decision.viewId) decision.crop else SubjectBox(0f,0f,1f,1f)
-                        environmentRoute.addLast(entry.frame to ModelChoice(-1,decision.reason,crop))
-                    }
-                    advanceEnvironmentRoute()
+                    applied = startEnvironmentGuide(batch, decision, autoGuide = false)
                 } else { stale=true; guidance.text="The observation is stale. Scan the surroundings again." }
             }.setNegativeButton("Dismiss",null).create()
         dialog.setOnDismissListener {
@@ -337,11 +396,26 @@ class MainActivity : ComponentActivity() {
             }
         },15000)
     }
+
+    private fun startEnvironmentGuide(batch: EnvironmentBatch, decision: EnvironmentDecision.Guide, autoGuide: Boolean): Boolean {
+        val route = batch.map.guideRouteTo(decision.viewId) ?: return false
+        analyzer.endEnvironment()
+        activeEnvironmentBatch = batch
+        if (autoGuide) automaticGuideAt = SystemClock.elapsedRealtime()
+        for (id in route) {
+            val entry = batch.frames.single { it.view.id == id }
+            val crop = if (id == decision.viewId) decision.crop else SubjectBox(0f, 0f, 1f, 1f)
+            environmentRoute.addLast(entry.frame to ModelChoice(-1, decision.reason, crop))
+        }
+        advanceEnvironmentRoute()
+        return true
+    }
+
     private fun advanceEnvironmentRoute() {
         val next=environmentRoute.removeFirstOrNull() ?: return
         applyChoice(next.first,next.second)
         if(environmentRoute.isNotEmpty()) {
-            autoZoom=false; guidance.text="Follow the recorded views toward the selected shot."
+            guidance.text="Follow the outline toward the shot."
         }
     }
 
@@ -438,10 +512,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applyChoice(frame: ScanFrame, choice: ModelChoice) {
-        hold.reset(); overlay.aligned=false; overlay.fresh=false; overlay.frame=null
+        hold.reset(); waypointHold.reset(); automaticShutter.reset(); zoomAnimator.stop()
+        updateCountdown(null)
+        overlay.aligned=false; overlay.fresh=false; overlay.frame=null
         val crop = choice.customCrop?.let { CropOption(-1, it) } ?: ShotGeometry.options[choice.cropId]
         val b = crop.box
-        planZoomLimit = maxOf(1.8f,crop.zoom*1.03f).coerceAtMost(3.2f)
+        plannedZoom = baselineZoom * crop.zoom.coerceIn(1f, 3.2f)
         overlay.targetPreview?.recycle()
         val selected = Bitmap.createBitmap(frame.image, (b.left * frame.image.width).toInt(),
             (b.top * frame.image.height).toInt(), ((b.right - b.left) * frame.image.width).toInt(),
@@ -449,6 +525,7 @@ class MainActivity : ComponentActivity() {
         overlay.targetPreview = Bitmap.createScaledBitmap(selected, 180, 240, true)
         if (selected !== frame.image && selected !== overlay.targetPreview) selected.recycle()
         activePlanId = tracker.select(frame, crop)
+        analyzer.trackingGuide = true
         modelReason = choice.explanation; activePlan = true; autoZoom = true; lastGood = null
         guideLifetime.start(SystemClock.elapsedRealtime())
         guidance.text = "Move toward the outlined frame."
@@ -457,54 +534,84 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showTrack(tracked: TrackedFrame) {
-        if (SystemClock.elapsedRealtime() - tracked.timeMs > 350) { trackingLost(); return }
+        val now = SystemClock.elapsedRealtime()
+        if (now - tracked.timeMs > 300) { trackingLost(); return }
         lastGood = tracked; guideLifetime.observed(tracked.timeMs)
+        val waypoint = environmentRoute.isNotEmpty()
+        val aiming = ShotGeometry.aimReady(tracked.corners)
+        val camera = controller
+        if (autoZoom && !waypoint && camera != null) {
+            val point = ShotGeometry.center(tracked.corners)
+            if (abs(point.x - .5f) > .11f || abs(point.y - .5f) > .11f) zoomAnimator.stop()
+            if (aiming) zoomAnimator.moveTo(camera, plannedZoom) { autoZoom = false }
+        }
+        val zoomRatio = camera?.zoomState?.value?.zoomRatio ?: plannedZoom
+        val zoomReady = !zoomAnimator.moving && tracked.timeMs - zoomAnimator.settledAt >= 80 &&
+            (!autoZoom || waypoint || abs(zoomRatio / plannedZoom - 1f) < .026f)
+        val framingReady = tracked.confidence >= .68f && zoomReady && ShotGeometry.framingReady(tracked.corners)
         overlay.frame = tracked.corners; overlay.fresh = true
-        val aligned = hold.update(ShotGeometry.framingReady(tracked.corners), tracked.timeMs)
-        if(aligned && environmentRoute.isNotEmpty()) { advanceEnvironmentRoute(); return }
+        val aligned = (if (waypoint) waypointHold else hold).update(framingReady, tracked.timeMs)
+        if (aligned && waypoint) { advanceEnvironmentRoute(); return }
         if (aligned && !overlay.aligned) overlay.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         overlay.aligned = aligned; overlay.invalidate()
+        if (automaticGuideAt != 0L && automaticMode && !waypoint) {
+            when (val state = automaticShutter.update(tracked.timeMs, now, tracked.corners, framingReady)) {
+                is ShutterUpdate.Counting -> { updateCountdown(state.seconds); return }
+                ShutterUpdate.Capture -> { takePhoto(autoShot = true); return }
+                ShutterUpdate.Waiting -> updateCountdown(null)
+            }
+        }
         guidance.text = when {
+            framingReady && automaticGuideAt != 0L -> getString(R.string.auto_steady)
             aligned -> "That's the frame. Hold steady and take the photo."
-            ShotGeometry.aimReady(tracked.corners) && !autoZoom -> "Pinch to match the outlined frame."
-            ShotGeometry.aimReady(tracked.corners) && autoZoom -> "Framing your shot…"
+            aiming && !waypoint && !autoZoom -> "Pinch to match the outlined frame."
+            aiming && zoomAnimator.moving -> "Framing your shot…"
             else -> "Move toward the outlined frame."
         }
-        if (autoZoom && !zoomBusy) {
-            val camera = controller ?: return
-            val zoom = camera.zoomState.value ?: return
-            val desired = ShotGeometry.desiredZoom(zoom.zoomRatio, tracked.corners, baselineZoom, zoom.maxZoomRatio,planZoomLimit) ?: return
-            if (abs(desired - zoom.zoomRatio) > .025f) {
-                val next = zoom.zoomRatio + (desired - zoom.zoomRatio).coerceIn(-.04f, .04f)
-                zoomBusy = true
-                val future = camera.setZoomRatio(next)
-                future.addListener({ zoomBusy = false; runCatching { future.get() }.onFailure { autoZoom = false } }, main)
+    }
+
+    private fun updateCountdown(seconds: Int?) {
+        if (seconds == null) {
+            countdown.visibility = View.GONE
+        } else {
+            val label = seconds.toString()
+            if (countdown.visibility != View.VISIBLE || countdown.text != label) {
+                countdown.text = label
+                countdown.visibility = View.VISIBLE
+                guidance.text = getString(R.string.auto_counting, seconds)
             }
         }
     }
     private fun trackingLost() {
+        automaticShutter.interrupt(); updateCountdown(null)
         if (guideLifetime.expired(SystemClock.elapsedRealtime())) {
-            cancelGuide(false)
-            guidance.text = "The scene changed or tracking was lost. Find a new composition."
+            if (automaticMode && automaticGuideAt != 0L) abandonAutomaticGuide() else {
+                cancelGuide(false)
+                guidance.text = "The scene changed or tracking was lost. Find a new composition."
+            }
             return
         }
-        hold.reset(); overlay.aligned = false; overlay.fresh = false
+        hold.reset(); waypointHold.reset(); overlay.aligned = false; overlay.fresh = false
         val age = lastGood?.let { SystemClock.elapsedRealtime() - it.timeMs } ?: Long.MAX_VALUE
+        if (age > 300) zoomAnimator.stop()
         if (age > 600) overlay.frame = null
         overlay.invalidate()
         guidance.text = if (age < 600) "Holding your shot plan…" else "Return to the scanned scene, or find another shot."
     }
     private fun cancelGuide(resetZoom: Boolean) {
         generation++
+        automaticGuideAt = 0
+        automaticShutter.reset(); updateCountdown(null); zoomAnimator.stop()
         environmentDialog?.dismiss(); environmentDialog=null
         environmentRoute.clear(); activeEnvironmentBatch?.close(); activeEnvironmentBatch=null
         environmentSweep?.cancel(); environmentSweep=null; analyzer.endEnvironment()
         sweepRecorder?.cancel(); sweepRecorder = null
         planner.cancel(); analyzer.cancelSnapshot(); tracker.reset()
-        scanning = false; activePlan = false; lastGood = null; hold.reset()
+        analyzer.trackingGuide = false
+        scanning = false; activePlan = false; lastGood = null; hold.reset(); waypointHold.reset()
         overlay.frame = null; overlay.aligned = false; overlay.fresh = false
         overlay.targetPreview?.recycle(); overlay.targetPreview = null; overlay.invalidate()
-        if (resetZoom) { controller?.setZoomRatio(baselineZoom); guidance.setText(R.string.ready_to_frame) }
+        if (resetZoom) { controller?.let { zoomAnimator.moveTo(it, baselineZoom) {} }; guidance.setText(R.string.ready_to_frame) }
         refreshButtons()
     }
 
@@ -568,7 +675,8 @@ class MainActivity : ComponentActivity() {
     }
     private fun showOptions() {
         if (saving) return
-        if (scanning) { cancelGuide(false); guidance.setText(R.string.ready_to_frame) }
+        if (automaticMode) setAutomaticMode(false)
+        else if (scanning) { cancelGuide(false); guidance.setText(R.string.ready_to_frame) }
         AlertDialog.Builder(this).setTitle(R.string.options)
             .setItems(arrayOf(getString(R.string.photo_processing), getString(R.string.about_build), getString(R.string.developer_tools))) { _, index ->
                 when (index) {
@@ -704,7 +812,8 @@ class MainActivity : ComponentActivity() {
             val result = try { runCatching { planner.testService(chart, requestId) } } finally { chart.recycle() }
             handler.post {
                 if (!isDestroyed && generation == token) {
-                    scanning = false; refreshButtons()
+                    scanning = false
+                    refreshButtons()
                     guidance.text = if (result.isSuccess) "Test-image request succeeded. Review the scan diagnostics." else "Test-image request failed. Review the scan diagnostics."
                     showReport("Test-image result", (result.exceptionOrNull()?.message ?: "Connectivity and composition-response parsing succeeded.") + "\n\n$lastDiagnostic")
                 }
@@ -712,7 +821,7 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun chooseProcessing() {
-        val modes = listOf(null to "Automatic manufacturer processing", ExtensionMode.NONE to "Standard quality capture") + quality.supported(baseSelector)
+        val modes = listOf(null to "Automatic processing", ExtensionMode.NONE to "Standard JPEG") + quality.supported(baseSelector)
         AlertDialog.Builder(this).setTitle("Photo processing").setItems(modes.map { it.second }.toTypedArray()) { _, index ->
             processingMode = modes[index].first; updateCameraStatus()
         }.show()
@@ -720,10 +829,11 @@ class MainActivity : ComponentActivity() {
     private fun updateCameraStatus() {
         if (!::telemetry.isInitialized || activePlan || scanning) return
         val extension = captureExtension()
-        telemetry.text = "${extension?.second ?: "Standard quality"} · 4:3 · tap to focus · pinch to zoom"
+        val method = extension?.second ?: if (processingMode == ExtensionMode.NONE) "Standard JPEG" else "Automatic processing"
+        telemetry.text = "$method · 4:3 · tap to focus · pinch to zoom"
     }
     private fun captureExtension(): Pair<CameraSelector, String>? = when (val mode = processingMode) {
-        null -> quality.automatic(baseSelector)
+        null -> quality.automatic(baseSelector, dim = analyzer.liveScene?.signature?.average()?.let { it < 64 } == true)
         ExtensionMode.NONE -> null
         else -> quality.selector(baseSelector, mode)?.let { it to "Manufacturer ${quality.supported(baseSelector).firstOrNull { entry -> entry.first == mode }?.second}" }
     }
@@ -733,86 +843,44 @@ class MainActivity : ComponentActivity() {
         if (!cameraReady || saving || scanning) return
         val next = if (baseSelector != CameraSelector.DEFAULT_FRONT_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
         if (!camera.hasCamera(next)) { toast(R.string.no_other_camera); return }
-        cancelGuide(false)
+        if (automaticMode) setAutomaticMode(false) else cancelGuide(false)
         val previous = baseSelector
         try { camera.cameraSelector = next; baseSelector = next; updateCameraStatus() }
         catch (_: Exception) { camera.cameraSelector = previous; toast(R.string.no_other_camera) }
     }
 
-    private fun takePhoto() {
+    private fun takePhoto(autoShot: Boolean = false) {
         val camera = controller ?: return
-        if (!cameraReady || saving) return
-        // A photograph takes priority over any background scan, even an online timeout.
-        if (scanning) cancelGuide(false)
-        saving = true; refreshButtons()
-        val zoom = camera.zoomState.value?.zoomRatio ?: 1f
-        val extension = captureExtension()
-        var used = extension?.second ?: "Standard quality"
-        var zoomRequest: com.google.common.util.concurrent.ListenableFuture<Void>? = null
-        if (extension != null) {
-            try {
-                // Extensions cannot reliably run ImageAnalysis. Switch only for the still capture.
-                camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE)
-                camera.cameraSelector = extension.first; zoomRequest = camera.setZoomRatio(zoom)
-                guidance.text = "Capturing with ${extension.second}…"
-            } catch (_: Exception) {
-                camera.cameraSelector = baseSelector
-                camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.IMAGE_ANALYSIS)
-                zoomRequest = camera.setZoomRatio(zoom)
-                used = "Standard quality (manufacturer processing failed)"
-            }
-        }
-        val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, "CC_${System.currentTimeMillis()}.jpg")
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/CameraCompositor")
-        }
-        val output = ImageCapture.OutputFileOptions.Builder(contentResolver, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values).build()
-        val usedProcessing = used
-        fun restore() {
-            if (!isDestroyed) {
-                runCatching { camera.cameraSelector = baseSelector; camera.setEnabledUseCases(CameraController.IMAGE_CAPTURE or CameraController.IMAGE_ANALYSIS); camera.setZoomRatio(zoom) }
-                    .onFailure { cameraFailed(camera) }
-                saving = false; hold.reset(); refreshButtons()
-            }
-        }
-        fun performCapture() { try {
-            camera.takePicture(output, main, object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(result: ImageCapture.OutputFileResults) {
-                    restore(); if (isDestroyed) return
-                    lastPhoto = result.savedUri; gallery.isEnabled = lastPhoto != null
+        if (!cameraReady || saving || (autoShot && !automaticMode)) return
+        val frameAtShutter = analyzer.liveScene
+        val mode = captureExtension()
+        if (!autoShot && automaticMode) setAutomaticMode(false) else cancelGuide(false)
+        saving = true
+        guidance.setText(R.string.capturing_photo)
+        photoCapture.take(camera, baseSelector, mode, enhance = processingMode != ExtensionMode.NONE,
+            ownsCamera = { !isDestroyed && controller === camera },
+            canShoot = { !isDestroyed && controller === camera && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) },
+            progress = { if (!isDestroyed) guidance.text = it }) { outcome, restored ->
+                if (isDestroyed) return@take
+                saving = false
+                if (!restored && controller === camera) cameraFailed(camera)
+                outcome.onSuccess { saved ->
+                    lastPhoto = saved.uri; gallery.isEnabled = true
+                    lastPhotoDetails = "Last photo: ${saved.width} × ${saved.height} · ${saved.processing}"
+                    telemetry.text = lastPhotoDetails
                     toast(R.string.photo_saved)
-                    modelExecutor.execute {
-                        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                        runCatching { result.savedUri?.let { uri -> contentResolver.openInputStream(uri).use { BitmapFactory.decodeStream(it, null, bounds) } } }
-                        handler.post { if (!isDestroyed) {
-                            lastPhotoDetails = "Last photo: ${bounds.outWidth} × ${bounds.outHeight} · $usedProcessing"
-                            telemetry.text = lastPhotoDetails
-                        } }
-                    }
+                    if (automaticMode) waitForAnotherScene(saved = true, reference = frameAtShutter)
+                    else if (restored) guidance.setText(R.string.ready_to_frame)
+                }.onFailure {
+                    if (automaticMode) waitForAnotherScene(reference = frameAtShutter)
+                    else if (restored) guidance.setText(R.string.photo_failed)
+                    toast(R.string.photo_failed)
                 }
-                override fun onError(exception: ImageCaptureException) { restore(); toast(R.string.photo_failed) }
-            })
-        } catch (_: Exception) { restore(); toast(R.string.photo_failed) } }
-        val zoomFuture = zoomRequest
-        if (zoomFuture == null) performCapture() else {
-            var settled = false
-            zoomFuture.addListener({
-                if (!settled) {
-                    settled = true
-                    runCatching { zoomFuture.get() }.onSuccess { if (!isDestroyed) performCapture() }
-                        .onFailure { restore(); toast(R.string.photo_failed) }
-                }
-            }, main)
-            handler.postDelayed({
-                if (!settled && !isDestroyed) {
-                    settled = true; restore()
-                    guidance.text = "Camera zoom did not settle. Try Standard quality in Photo processing."
-                }
-            }, 3500)
-        }
+            }
     }
     private fun openLastPhoto() {
+        if (saving) return
+        if (automaticMode) setAutomaticMode(false)
         lastPhoto?.let { uri -> runCatching {
             startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "image/jpeg").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
         }.onFailure { toast(R.string.no_gallery) } }
@@ -823,20 +891,26 @@ class MainActivity : ComponentActivity() {
     private fun renderControls(controls: CameraControls) {
         if (!::find.isInitialized) return
         capture.isEnabled = controls.captureEnabled
+        gallery.isEnabled = !saving && lastPhoto != null
+        find.visibility = if (automaticMode) View.GONE else View.VISIBLE
         find.isEnabled = controls.findEnabled
         flip.isEnabled = controls.flipEnabled
+        automatic.isEnabled = cameraReady && !saving
+        automatic.visibility = if (automaticMode || (!scanning && !activePlan)) View.VISIBLE else View.GONE
+        automatic.setText(if (automaticMode) R.string.auto_off else R.string.auto_on)
         cancel.setText(if (interaction.scanning) R.string.cancel_scan else R.string.cancel)
-        cancel.visibility = if (controls.cancelVisible) View.VISIBLE else View.GONE
+        cancel.visibility = if (controls.cancelVisible && !automaticMode) View.VISIBLE else View.GONE
     }
     private fun toast(resource: Int) = Toast.makeText(this, resource, Toast.LENGTH_SHORT).show()
     override fun onSaveInstanceState(outState: Bundle) { outState.putString("lastPhoto", lastPhoto?.toString()); super.onSaveInstanceState(outState) }
     override fun onDestroy() {
+        zoomAnimator.stop()
         environmentRoute.clear(); activeEnvironmentBatch?.close(); activeEnvironmentBatch=null
         environmentSweep?.cancel(); environmentDialog?.dismiss(); analyzer.endEnvironment()
         generation++; handler.removeCallbacksAndMessages(null); analyzer.cancelSnapshot()
         controller?.clearImageAnalysisAnalyzer(); controller?.unbind(); planner.cancel()
         analysisExecutor.execute { tracker.close(); analyzer.closeEnvironment() }; analysisExecutor.shutdown()
-        modelExecutor.execute { planner.close(); localScorer.close(); softwareDepth.close() }; modelExecutor.shutdown()
+        modelExecutor.execute { planner.close(); localScorer.close(); softwareDepth.close(); subjectDetector.close() }; modelExecutor.shutdown()
         super.onDestroy()
     }
 }
