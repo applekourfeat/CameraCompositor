@@ -24,6 +24,8 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
     val observingEnvironment get() = environmentActive
     @Volatile private var environmentReset = false
     @Volatile private var environmentTrackedAt = 0L
+    private var checkpointSignature: IntArray? = null
+    private var missedEnvironmentFrames = 0
     fun beginEnvironment() { environmentTrackedAt=0; environmentMotion=Float.POSITIVE_INFINITY; environmentReset=true; environmentActive=true }
     fun endEnvironment() { environmentActive=false; environmentReset=true }
     fun environmentFresh(now: Long) = environmentTrackedAt > 0 && now-environmentTrackedAt < 750
@@ -58,11 +60,23 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
                     gray[y * image.width + x] = buffer.get(base + y * plane.rowStride + x * plane.pixelStride)
                 }
             }
-            if (environmentReset) { environment.close(); environmentReset=false }
+            if (environmentReset) {
+                environment.close(); checkpointSignature = null; missedEnvironmentFrames = 0; environmentReset=false
+            }
             if (environmentActive) {
-                environment.update(gray,image.width,image.height)
-                environment.registration?.takeIf { it.reliable }?.let {
-                    environmentTrackedAt=SystemClock.elapsedRealtime(); environmentMotion=it.centerMotion
+                // Observation remains useful if feature tracking fails or the subject is textureless.
+                val link = runCatching {
+                    environment.update(gray,image.width,image.height,bufferToView,size.width,size.height)
+                    environment.registration
+                }.onFailure { environment.close() }.getOrNull()?.takeIf { it.reliable }
+                val sameAngle = checkpointSignature?.let { FrameSignature.sameAngle(it,FrameSignature.sample(gray,image.width,image.height)) } == true
+                if (sameAngle || link != null) {
+                    missedEnvironmentFrames = 0
+                    environmentTrackedAt=SystemClock.elapsedRealtime()
+                    environmentMotion=if (sameAngle) 0f else link!!.centerMotion
+                } else if (++missedEnvironmentFrames >= 3) {
+                    environmentTrackedAt = 0
+                    environmentMotion = Float.POSITIVE_INFINITY
                 }
             }
             snapshotRequest.getAndSet(null)?.let { callback ->
@@ -73,11 +87,19 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
                     val visible = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                     val scale = Matrix().apply { setScale(width.toFloat() / size.width, height.toFloat() / size.height) }
                     val toBitmap = Matrix().apply { setConcat(scale, bufferToView) }
-                    Canvas(visible).drawBitmap(raw, toBitmap, null)
-                    raw.recycle()
-                    callback(ScanFrame(visible, gray.copyOf(), image.width, image.height, bufferToView, size,
+                    try { Canvas(visible).drawBitmap(raw, toBitmap, null) }
+                    catch (error: Exception) { visible.recycle(); throw error }
+                    finally { raw.recycle() }
+                    val registration = if (environmentActive) {
+                        checkpointSignature = FrameSignature.sample(gray,image.width,image.height)
+                        environmentTrackedAt = SystemClock.elapsedRealtime()
+                        environmentMotion = 0f
+                        missedEnvironmentFrames = 0
+                        runCatching { environment.checkpoint() }.getOrNull()
+                    } else null
+                    callback(ScanFrame(visible, gray, image.width, image.height, bufferToView, size,
                         image.imageInfo.timestamp, Matrix(image.imageInfo.sensorToBufferTransformMatrix),
-                        if (environmentActive) environment.checkpoint() else null))
+                        registration))
                 } catch (_: Exception) { callback(null) }
             }
             val tracked = tracker.update(gray, image.width, image.height, bufferToView, size, SystemClock.elapsedRealtime())

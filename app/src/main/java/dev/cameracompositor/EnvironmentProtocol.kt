@@ -3,7 +3,7 @@ package dev.cameracompositor
 import org.json.JSONArray
 import org.json.JSONObject
 
-data class EncodedEnvironmentView(val view: EnvironmentView, val jpegBase64: String)
+data class EncodedEnvironmentView(val view: EnvironmentView, val jpegBase64: String, val relativeDepth: RelativeDepth? = null)
 
 /** Multi-observation photographic planning. Image registration never masquerades as 3D pose. */
 object EnvironmentProtocol {
@@ -18,6 +18,7 @@ object EnvironmentProtocol {
             "For observations containing cameraPose/depth, use their ARCore SDK estimates to reason about perspective, foreground and occlusion. " +
             "Poses share one session-local frame (x right/y up/-z forward, quaternion XYZW). They are estimates, not physical ground truth. " +
             "Depth is a view-aligned 8x8 grid of camera-plane metres; null means unavailable. Depth is most useful near 0.5 to 5 metres; distant geometry is uncertain. " +
+            "relativeNearness is a separate model estimate normalized independently within an image; higher is nearer. Values are neither metres nor comparable across views. " +
             "Intrinsics refer to raw CPU image pixels. The row-major rawImageToViewNormalized 3x3 matrix maps raw pixels to the displayed image. " +
             "For null pose/depth, those quantities are UNKNOWN. A full mesh and hidden surfaces are always unknown. Image-registration overlap alone is only 2D evidence. " +
             "Compare actual visual observations; never invent camera coordinates or an unseen viewpoint. " +
@@ -48,6 +49,7 @@ object EnvironmentProtocol {
                     .put("metricDepth",evidence.depthGridViewAligned?.let { JSONArray(it.map { value -> value ?: JSONObject.NULL }) } ?: JSONObject.NULL)
                     .put("sparsePointCount",evidence.sparsePointCount)
             }
+            entry.relativeDepth?.let { details.put("relativeNearness",JSONArray(it.grid8x8())) }
             parts.put(JSONObject().put("text",details.toString()))
             parts.put(JSONObject().put("inlineData",JSONObject().put("mimeType","image/jpeg").put("data",entry.jpegBase64)))
         }

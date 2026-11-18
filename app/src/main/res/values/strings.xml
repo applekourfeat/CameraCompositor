@@ -35,5 +35,10 @@
     <string name="photo_processing">Photo processing</string>
     <string name="about_build">About this build</string>
     <string name="developer_tools">Developer tools</string>
-    <string name="about_framing">Spatial environment prototype. Supported rear cameras supply observed views, SDK camera poses and available depth to an experimental online planner. The photo camera is visually matched before planning. Other cameras use image overlap with unknown pose/depth. Photographic quality and physical accuracy remain under evaluation.</string>
+    <string name="about_framing">Find a composition compares views on this phone using the regular camera. When available, software depth helps separate foreground and background. Online planning and ARCore testing are separate tools.</string>
+    <string name="sweep_instruction">Turn slowly to show more angles, or hold still for this view.</string>
+    <string name="sweep_no_frame">The camera could not finish the scan. Hold the zoom steady and try again.</string>
+    <string name="sweep_assessing">Checking the views. Hold this angle.</string>
+    <string name="sweep_scene_changed">The view changed during the scan. Try a slower turn.</string>
+    <string name="sweep_keep">Keep this view, or turn a little for another angle.</string>
 </resources>

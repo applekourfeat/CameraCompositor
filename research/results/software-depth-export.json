@@ -1,0 +1,26 @@
+{
+  "source": "https://github.com/fabiotosi92/ZipDepth",
+  "revision": "91f3fd21e131641f51e8d35736d1958350180e3a",
+  "checkpointSha256": "627c04fda584133ead4310074884a4a037061b4c01ba86e73e492ea30fab570d",
+  "asset": "zipdepth-192x256.onnx",
+  "assetSha256": "dad03af25e12af84feb7694e0b0182dd2811a0d2a47d4c009cd7bcb41b5b7d25",
+  "assetBytes": 12332740,
+  "license": "MIT",
+  "inputNchwRgb01": [
+    1,
+    3,
+    256,
+    192
+  ],
+  "output": "relative inverse depth; affine scale unknown",
+  "encoding": "FP16 stored weights, FP32 CPU compute",
+  "developmentImages": 20,
+  "minimumOrdinalCorrelationAgainstPyTorch": 0.999461956666694,
+  "maximumNormalizedDifferenceAgainstPyTorch": 0.010325770825147629,
+  "conversionPassed": true,
+  "desktopCpuThreads": 2,
+  "desktopSessionInitMs": 387.7335999859497,
+  "desktopP50Ms": 122.08659999305382,
+  "desktopP95Ms": 150.72192000225186,
+  "phoneTiming": "pending"
+}

@@ -1,5 +1,7 @@
 # Physical-device test results
 
+The owner reported **Spatial tracking is temporarily unavailable** in the 0.4.1 build. The displayed message did not identify the failing ARCore operation. Their earlier 0.4 export reported successful pose, point and depth samples. Version [0.5.0-camera](V050_CAMERA_COMPATIBILITY.md) removes that session handoff from the main workflow. No 0.5.0 physical-device measurement is available yet.
+
 Version 0.1 owner feedback: the basic app ran, but detection sometimes stopped momentarily and the pan-left/right UX felt poor. No timing, camera-quality comparison, or manufacturer-capability measurements were supplied.
 
 Version 0.2 owner feedback: the manual framing guide appeared to work; the AI scan failed with `Scene scan could not finish: timeout`. No provider response, transport-stage timing, paired stock-camera photos or physical performance measurements were available. This is owner-reported behavior, not an automated device run.

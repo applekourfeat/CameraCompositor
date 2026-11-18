@@ -4,13 +4,12 @@ Use the standard Vivo V30. A cable or mirroring session is optional. Transfer th
 
 ## Short first session
 
-Install `artifacts/CameraCompositor-0.4.1-spatial-debug.apk`. This is an experimental implementation, with no physical photographic-quality approval. The owner's 0.4 export already confirms ARCore pose/point/depth output on the standard Vivo; the integrated spatial-photo flow remains to test.
+Install `artifacts/CameraCompositor-0.5.0-camera-debug.apk`. This is the ARM64 test build for the Vivo V30. Android 10 or later is required. The ARMv7 file is for 32-bit ARM phones.
 
-1. Tap **Find a composition**, allow the revised image/pose/depth upload only if desired, and turn gently across a small overlapping scene. Supported rear cameras collect six spatial observations in a separate ARCore view. Hold the final view while CameraX reopens, matches its field of view and requests assessment. The saved personal research key is reused. Record keep, observe-more, a selected view, alignment failure, timeout or another failure.
-2. For a selected view, test **Use this view** and **Dismiss**. A target outside the current field of view should guide through the recorded intermediate views. Pinching cancels the environment route. Cancel, photo capture, gallery/background and camera switching must restore controls. Tracking loss should clear a guide after three seconds.
-3. Open **Options > Developer tools > Test spatial tracking (ARCore)**. Report the actual support state for the standard Vivo V30. If supported, try a five-second recording near textured nearby objects. Pose/point/depth export is optional and contains no camera images. Returning must restore the normal camera. This isolated spatial test is not yet fused into the photographic planner.
-4. **Options > Developer tools > Camera capability report** inventories exposed cameras, JPEG sizes, calibration, depth formats and vendor processing. Record Android/Funtouch version too. Optional legacy local crop ranking and the manual guide remain under Developer tools.
-5. The explicit **Record a local evaluation sweep** still writes eight JPEGs and approximate relative device-rotation readings. Inspect before export. They are not calibrated camera pose or translation. The generated-chart cloud diagnostic uses the older single-image request and can investigate the still-unresolved timeout separately from multi-view inference.
+1. Turn on airplane mode. Open the app and tap **Find a composition** once while slowly turning across a small scene with a clear subject. Hold when it says **Checking the views. Hold this angle.** The regular camera preview stays open. The scan should work without an AR screen, sign-in or key prompt.
+2. Repeat once while holding still. If a shot appears, try **Use this shot**. Test pinch zoom, cancel and taking a photo. In a separate run, point away while the app checks the views to verify that it discards the old target.
+3. For useful timing feedback, open **Options > Developer tools > Camera and scan details**. The last scan time covers analysis after observation. Also record whether the selected shot is worth taking and how the preview feels. Android model speed and alignment need phone measurements.
+4. If testing camera quality, **Camera capability report** inventories cameras, JPEG sizes, calibration, depth formats and vendor processing. The optional ARCore test and personal-key online experiment have their own entries.
 
 ## Composition acceptance
 

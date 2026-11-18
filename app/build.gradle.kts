@@ -10,16 +10,26 @@ android {
         applicationId = "dev.cameracompositor"
         minSdk = 29
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.4.1-spatial"
-        ndk { abiFilters += "arm64-v8a" }
+        versionCode = 7
+        versionName = "0.5.0-camera"
+    }
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = false
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { buildConfig = true }
-    sourceSets.getByName("debug").assets.srcDir(rootProject.file(".local/research-assets"))
+    sourceSets.getByName("main").assets.srcDir(rootProject.file(".local/software-depth-assets"))
+    if (providers.gradleProperty("includeLegacyResearch").orNull == "true") {
+        sourceSets.getByName("debug").assets.srcDir(rootProject.file(".local/research-assets"))
+    }
     androidResources { noCompress += "onnx" }
 }
 

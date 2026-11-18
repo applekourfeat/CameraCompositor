@@ -50,6 +50,14 @@ Model/data redistribution rights remain a separate gate. The code includes the u
 
 ## Environment and subject-discovery experiments
 
+### Camera-only software depth
+
+With the development images and research environment set up above, run `research/export_software_depth.py`. It fetches the pinned ZipDepth revision if needed, checks the checkpoint and MIT license, compares the converted output with PyTorch on the 20 development images, and writes the app asset to `.local/software-depth-assets`. It uses the learned global attention from the checkpoint and stores large weights as FP16 with FP32 CPU math.
+
+To rerun the depth-order comparison, download ETH3D `cables_2_mono.zip` and `cables_2_rgbd.zip` into `.local/composition-research`, then run `research/evaluate_software_depth.py`. The latter archive contains the matching depth files. The evaluator checks both archive hashes. [Official dataset downloads](https://www.eth3d.net/slam_datasets#training-datasets), [results](results/software-depth-eth3d.json).
+
+### Earlier experiments
+
 Version [0.4 environment prototype](../docs/V040_ENVIRONMENT_PROTOTYPE.md) now contains a native observation/route pipeline and isolated optional ARCore test. The Python temporal experiment is reproduced with `evaluate_environment_geometry.py --feature temporal`. It tracks through all seven frames per window on the same development sequence; this is not independent phone VIO validation or Android numerical parity. The temporal experiment's recorded time includes loading/decoding its seven input frames.
 
 All of these commands run locally. Only the fetch commands download public model/dataset assets. Camera photos, reconstructed points and generated comparisons stay outside Git and Android assets.

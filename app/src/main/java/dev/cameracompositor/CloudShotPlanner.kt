@@ -49,7 +49,8 @@ class CloudShotPlanner(private val settings: PlannerSettings, private val saveDi
 
     fun testService(chart: Bitmap, requestId: Long): ModelChoice = chooseCore(chart, requestId, 1.8f, false) {}
 
-    fun chooseEnvironment(batch: EnvironmentBatch, requestId: Long, maxRelativeZoom: Float=3.2f): EnvironmentAssessment {
+    fun chooseEnvironment(batch: EnvironmentBatch, requestId: Long, maxRelativeZoom: Float=3.2f,
+                          relativeDepth: Map<Int, RelativeDepth> = emptyMap()): EnvironmentAssessment {
         val trace=ScanDiagnostics()
         fun active()=sequence.get()==requestId
         try {
@@ -65,7 +66,7 @@ class CloudShotPlanner(private val settings: PlannerSettings, private val saveDi
                 val bytes=ByteArrayOutputStream().use { output ->
                     check(frame.image.compress(Bitmap.CompressFormat.JPEG,84,output)); output.toByteArray()
                 }
-                EncodedEnvironmentView(view,Base64.encodeToString(bytes,Base64.NO_WRAP))
+                EncodedEnvironmentView(view,Base64.encodeToString(bytes,Base64.NO_WRAP),relativeDepth[view.id])
             }
             val current=batch.frames.last().view.id
             val body=transport.execute(EnvironmentProtocol.request(encoded,current,guideable),credential,settings.model,trace,::active)

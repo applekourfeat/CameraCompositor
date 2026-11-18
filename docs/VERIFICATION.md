@@ -1,8 +1,14 @@
 # Verification
 
-## Current environment prototype
+## Camera-only compatibility build
 
-Current version **0.4.1-spatial** passes the build, 55 Android tests, 20 Python research tests and lint with zero errors/90 warnings. Signature and artifact checks pass; see `research/results/delivery-verification-v041_spatial.json`. The owner's 0.4 export confirms the standard Vivo's pose/point/depth capability. Physical validation of the new spatial image/depth projection, photo-camera match and complete AI flow remains pending. [Current implementation and limits](V041_SPATIAL_PLANNING.md).
+Version **0.5.0-camera** passes `assembleDebug`, `testDebugUnitTest`, `lintDebug` and `mergeReleaseAssets`. All 63 Android unit tests pass. Lint reports zero errors and 70 warnings. Both ARM APKs pass signature and archive-alignment checks. `scripts/check_delivery.py` verifies the packaged assets, credential patterns, and 16 KB ARM64 native load-segment alignment. [Recorded checks](../research/results/delivery-verification-v050_camera.json), [model and compatibility experiment](V050_CAMERA_COMPATIBILITY.md).
+
+The 20 Python regression tests pass. The model export and ETH3D depth comparison are desktop checks. Physical timing, camera and guide behavior, and blind photographic preference remain pending.
+
+## Earlier environment prototypes
+
+Version **0.4.1-spatial** passed the build, 55 Android tests, 20 Python research tests and lint with zero errors and 90 warnings. Signature and artifact checks passed. The owner later reported temporary spatial tracking unavailability. [Implementation and limits](V041_SPATIAL_PLANNING.md), [recorded checks](../research/results/delivery-verification-v041_spatial.json).
 
 Version **0.4.0-environment** passes Android build, 48 unit tests and lint with zero errors/78 warnings, plus 20 Python research tests. The private APK signature matches earlier builds. `scripts/check_delivery.py` verifies the tested APK, credential-pattern checks, expected debug-only GAIC asset, included optional ARCore notices/libraries and absent release research weights. See `research/results/delivery-verification-v040_environment.json` and [the implementation report](V040_ENVIRONMENT_PROTOTYPE.md). Actual native camera/OpenCV/GL/ARCore behavior, provider inference, photographic quality and Vivo performance remain pending. Mock-server success is separate from the unresolved live service timeout.
 

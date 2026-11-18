@@ -1,19 +1,16 @@
 # Camera Compositor
 
-Native Android camera research for useful composition guidance. Version **0.4.1-spatial** connects SDK camera poses, intrinsics and available depth to multi-view planning, with visual registration back to the full-resolution photo camera. The owner's Vivo V30 export confirms ARCore pose/point/depth output. The owner leads final UI/UX. [Implementation, evidence and limits](docs/V041_SPATIAL_PLANNING.md).
+Native Android camera research for useful composition guidance. Version **0.5.0-camera** compares real viewpoints using the ordinary CameraX stream. It runs offline and can add relative depth from RGB when overlapping views support it. The owner leads final UI/UX. [Compatibility experiment and evidence](docs/V050_CAMERA_COMPATIBILITY.md).
 
-The owner's city-scene feedback requires understanding the environment, viewpoints and perspective. [The preceding investigation](docs/ENVIRONMENT_COMPOSITION_RESEARCH.md) explains the crop-only failure. The new flow observes several views and requests a subject/relationship graph before choosing a shot. Photographic quality and Vivo performance remain unqualified.
-
-Camera capture, the manual guide, legacy local ranking and supported-device spatial testing operate independently of the personal AI service. The new photographic planner uses the saved research key and explicit multi-view upload consent. The eventual public app's keyless gateway remains unimplemented.
+The main camera and composition button require neither ARCore, a depth sensor, nor an account. ARCore and personal-key online scans are available under Developer tools. The managed cloud gateway, photographic preference study and Vivo performance checks remain pending.
 
 ## Try the research build
 
-Install `artifacts/CameraCompositor-0.4.1-spatial-debug.apk` on the Vivo V30. Android 10+, ARM64. It uses this computer's existing debug signing key and can update the earlier prototype.
+Install `artifacts/CameraCompositor-0.5.0-camera-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype. The builds target Android 10 and later. The `armv7` APK is for Android phones that run 32-bit ARM apps.
 
-1. Tap **Find a composition**. After personal research setup and image/pose/depth consent, supported rear cameras collect six spatial views through ARCore; other paths use image overlap. Turn gently across a small scene, then hold the last view while the photo camera matches it. Up to four observations are sent for assessment.
-2. A suggestion references an actually observed viewpoint and subject. Review **Use this view** or **Dismiss**. A return guide follows measured intermediate views; missing overlap or stale tracking causes abstention. Pinching cancels an environment route and returns zoom control. Taking a photo cancels a scan.
-3. **Options > Developer tools > Test spatial tracking (ARCore)** retains the separate local pose/point/depth export without an AI key. The primary sweep now has its own spatial capture path feeding the photographic planner. Continuous world-pose guidance during CameraX capture remains unfinished.
-4. **Camera capability report**, the explicit eight-view research recorder and **Legacy local crop research** remain under Developer tools. These diagnostics are separate from proof of photographic quality.
+1. Tap **Find a composition** once. Turn gently across a small area, then hold when the app says it is checking the views. Holding still scans the current angle.
+2. Review any suggestion and tap **Use this shot** to start the guide. The app can guide back through observed views and adjust zoom. Pinching takes over zoom. Taking a photo cancels a scan.
+3. **Options > Developer tools** contains camera capabilities, local sweep export, optional ARCore testing and the personal-key online experiment.
 
 The framing guide expires after three seconds of lost tracking. Saved photographs use quality-priority full-resolution capture, with manufacturer processing when exposed. Photo quality compared with Vivo's stock camera remains unmeasured.
 
@@ -43,7 +40,7 @@ The project uses CameraX 1.6.2, optional ARCore 1.57.0, SDK 36 compilation, targ
 
 This runs `assembleDebug`, `testDebugUnitTest` and `lintDebug`. Android Studio can also open the project normally. `scripts/bootstrap_windows.py` provisions the local SDK/toolchain on another Windows computer; review the Android SDK terms first.
 
-The legacy model is injected into **debug assets only** from ignored `.local/research-assets`. A fresh checkout builds without that asset; multi-view observation/planning and spatial testing are separate from it. Release builds contain no research checkpoint. Public model/APK distribution remains gated on checkpoint permission and photographic/device acceptance.
+To add the optional MIT-licensed depth model, run `research/export_software_depth.py` with the installed research dependencies and development images. The build picks up the result from `.local/software-depth-assets`. A fresh checkout without that file uses RGB-only composition. `includeLegacyResearch=true` is a Gradle property for private debug builds with the older GAIC asset. [Asset setup and provenance](research/README.md).
 
 ## Code responsibilities
 
@@ -51,6 +48,7 @@ The legacy model is injected into **debug assets only** from ignored `.local/res
 | --- | --- |
 | `LocalResearchScorer` | Local GAIC preprocessing and inference, separate from camera control |
 | `EnvironmentMotionTracker`, `EnvironmentSweep`, `EnvironmentMap` | Continuous image tracking, bounded scene observations and measured return routes |
+| `SoftwareDepth`, `SceneLayout`, `LocalComposition` | Optional RGB depth, visible subject and framing cues, and on-device viewpoint selection |
 | `EnvironmentProtocol`, `CloudShotPlanner` | Structured subject/relationship assessment and constrained observed-view selection |
 | `SpatialProbeActivity` | Isolated optional ARCore camera pose, sparse point and depth sampling |
 | `CompositionDecision` | Experimental keep/observe/guide contract, view identities and subject/zoom constraints |

@@ -44,24 +44,13 @@ class MainActivity : ComponentActivity() {
     private lateinit var plannerSettings: PlannerSettings
     private lateinit var planner: CloudShotPlanner
     private lateinit var localScorer: LocalResearchScorer
+    private lateinit var softwareDepth: SoftwareDepth
+    private lateinit var localComposition: LocalComposition
     private lateinit var quality: CameraQuality
     private var sweepRecorder: ResearchSweepRecorder? = null
     private var environmentSweep: EnvironmentSweep? = null
     private var environmentDialog: AlertDialog? = null
     private var activeEnvironmentBatch: EnvironmentBatch? = null
-    private var pendingSpatialRequest: String? = null
-    private var pendingSpatialBatch: EnvironmentBatch? = null
-    private var spatialBridgePlanId=0L
-    private var spatialBridgeSeenAt=0L
-    private var spatialBridgeFrame: TrackedFrame?=null
-    private var spatialBridgeWaiting=false
-    private var spatialBridgeZoomBusy=false
-    private val spatialSweepResult=registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val expected=pendingSpatialRequest; pendingSpatialRequest=null
-        val batch=expected?.let { SpatialSweepTransfer.take(it) }
-        if(result.resultCode==RESULT_OK && result.data?.getStringExtra("requestId")==expected && batch!=null) adoptSpatialBatch(batch)
-        else { batch?.close(); guidance.text="Spatial observation stopped. The normal camera is ready." }
-    }
     private val environmentRoute=ArrayDeque<Pair<ScanFrame,ModelChoice>>()
     private var planZoomLimit = 1.8f
     private var pendingSweep: java.io.File? = null
@@ -137,35 +126,14 @@ class MainActivity : ComponentActivity() {
         find = findViewById(R.id.find_shot); cancel = findViewById(R.id.cancel); flip = findViewById(R.id.flip)
         plannerSettings = PlannerSettings(this)
         localScorer = LocalResearchScorer(this)
+        softwareDepth = SoftwareDepth(this)
+        localComposition = LocalComposition(softwareDepth)
         lastDiagnostic = runCatching { java.io.File(filesDir, "last-scan-diagnostic.json").readText() }.getOrDefault(lastDiagnostic)
         planner = CloudShotPlanner(plannerSettings) { report ->
             lastDiagnostic = report
             runCatching { java.io.File(filesDir, "last-scan-diagnostic.json").writeText(report) }
         }
         analyzer = SceneFrameAnalyzer(tracker) { event -> handler.post {
-            if(!isDestroyed && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && spatialBridgePlanId!=0L &&
-                event.planId==spatialBridgePlanId && event.frame!=null && SystemClock.elapsedRealtime()-event.frame.timeMs<350) {
-                spatialBridgeSeenAt=event.frame.timeMs; spatialBridgeFrame=event.frame
-                if(spatialBridgeWaiting) {
-                    overlay.frame=event.frame.corners; overlay.fresh=true; overlay.invalidate()
-                    val camera=controller; val z=camera?.zoomState?.value
-                    if(z!=null && ShotGeometry.aimReady(event.frame.corners) && !spatialBridgeZoomBusy) {
-                        val scale=ShotGeometry.width(event.frame.corners)
-                        val desired=(z.zoomRatio/scale).coerceIn(z.minZoomRatio,z.maxZoomRatio)
-                        if(abs(desired-z.zoomRatio)>.015f) {
-                            spatialBridgeZoomBusy=true; val token=generation
-                            val future=camera.setZoomRatio(desired)
-                            future.addListener({ if(token==generation) spatialBridgeZoomBusy=false },main)
-                        }
-                    }
-                    if(hold.update(ShotGeometry.framingReady(event.frame.corners) && !spatialBridgeZoomBusy,event.frame.timeMs)) {
-                        baselineZoom=z?.zoomRatio ?: 1f
-                        spatialBridgeWaiting=false; overlay.frame=null; overlay.fresh=false; overlay.invalidate()
-                        val batch=pendingSpatialBatch; pendingSpatialBatch=null
-                        if(batch!=null) runEnvironmentPlanner(batch,generation,planner.beginRequest())
-                    }
-                }
-            }
             if (!isDestroyed && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && activePlan && !saving && event.planId == activePlanId) {
                 if (event.frame == null) trackingLost() else showTrack(event.frame)
             }
@@ -186,7 +154,7 @@ class MainActivity : ComponentActivity() {
         access.setOnClickListener { requestCameraAccess() }
         capture.setOnClickListener { takePhoto() }; gallery.setOnClickListener { openLastPhoto() }
         find.setOnClickListener {
-            requestEnvironmentScan()
+            scanEnvironment()
         }
         cancel.setOnClickListener { cancelGuide(true) }
         flip.setOnClickListener { flipCamera() }
@@ -233,142 +201,98 @@ class MainActivity : ComponentActivity() {
                     camera.initializationFuture.get(); cameraReady = true; access.visibility = View.GONE
                     guidance.setText(R.string.ready_to_frame)
                     refreshButtons(); updateCameraStatus()
-                    if(pendingSpatialBatch!=null) prepareSpatialBridge()
                 } catch (_: Exception) { cameraFailed(camera) }
             }, main)
         } catch (_: Exception) { cameraFailed(camera) }
     }
     private fun cameraFailed(camera: LifecycleCameraController) {
-        val spatialSelection=pendingSpatialBatch!=null
-        pendingSpatialBatch?.close(); pendingSpatialBatch=null
-        if(spatialSelection) { baseSelector=CameraSelector.DEFAULT_BACK_CAMERA; scanning=false; endSceneEvidence() }
         camera.clearImageAnalysisAnalyzer(); camera.unbind(); if (controller === camera) controller = null
         cameraReady = false; refreshButtons(); guidance.setText(R.string.camera_error); access.visibility = View.VISIBLE
-        if(spatialSelection) handler.post { if(controller==null && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) startCamera() }
     }
 
-    private fun requestEnvironmentScan() {
+    private fun requestOnlineEnvironmentScan() {
         if (!cameraReady || scanning || saving) return
         if (plannerSettings.key()==null) { showAiSetup(); return }
-        if (plannerSettings.environmentConsent) { startPreferredEnvironmentScan(); return }
+        if (plannerSettings.environmentConsent) { scanEnvironment(online = true); return }
         AlertDialog.Builder(this).setTitle("Observe the scene for AI planning?")
             .setMessage("A short sweep collects six reduced views locally. Up to four views are sent to Google for scene and viewpoint assessment using your saved research key. " +
                 "Google's free tier may use submitted images to improve its products. Your project's quota applies. " +
-                "On supported devices, Google Play Services for AR supplies estimated camera poses and depth samples, which are included with the selected views. Google's Terms of Service and Privacy Policy apply. " +
-                "Physical accuracy and photographic quality remain experimental.")
-            .setPositiveButton("Allow and scan") { _, _ -> plannerSettings.consentToEnvironmentUpload(); startPreferredEnvironmentScan() }
-            .setNegativeButton("Cancel",null).show()
+                "Relative depth estimates may be included with those images.")
+            .setPositiveButton("Allow and scan") { _, _ -> plannerSettings.consentToEnvironmentUpload(); scanEnvironment(online = true) }
+            .setNegativeButton(R.string.dismiss,null).show()
     }
-    private fun startPreferredEnvironmentScan() {
-        val supported=runCatching { com.google.ar.core.ArCoreApk.getInstance().checkAvailability(this).isSupported }.getOrDefault(false)
-        if(!supported || baseSelector==CameraSelector.DEFAULT_FRONT_CAMERA) { scanEnvironment(); return }
-        cancelGuide(false)
-        val request=java.util.UUID.randomUUID().toString(); pendingSpatialRequest=request
-        val maximum=(controller?.zoomState?.value?.maxZoomRatio ?: 1f).coerceIn(1f,3.2f)
-        handoffCamera {
-            spatialSweepResult.launch(Intent(this,SpatialProbeActivity::class.java).putExtra("sceneSweep",true)
-                .putExtra("requestId",request).putExtra("maxZoom",maximum))
-        }
-    }
-    @androidx.annotation.OptIn(markerClass=[androidx.camera.camera2.interop.ExperimentalCamera2Interop::class])
-    private fun adoptSpatialBatch(batch: EnvironmentBatch) {
-        pendingSpatialBatch?.close(); pendingSpatialBatch=batch
-        batch.cameraId?.let { id -> baseSelector=CameraSelector.Builder().addCameraFilter { cameras ->
-            cameras.filter { androidx.camera.camera2.interop.Camera2CameraInfo.from(it).cameraId==id }
-        }.build() }
-        generation++; scanning=true; baselineZoom=1f
-        controller?.let { it.clearImageAnalysisAnalyzer(); it.unbind() }
-        controller=null; preview.controller=null; cameraReady=false; startCamera()
-    }
-    private fun prepareSpatialBridge() {
-        val batch=pendingSpatialBatch ?: return
-        val camera=controller ?: return
-        val token=generation
-        guidance.text="Matching the photo camera to the spatial scan. Hold this view."
-        val zoom=camera.setZoomRatio(1f)
-        zoom.addListener({
-            if(token!=generation || isDestroyed || pendingSpatialBatch!==batch) return@addListener
-            if(runCatching { zoom.get() }.isFailure) { cancelGuide(false); return@addListener }
-            spatialBridgeSeenAt=0; spatialBridgeWaiting=true; spatialBridgeZoomBusy=false; hold.reset()
-            spatialBridgePlanId=tracker.select(batch.frames.last().frame,CropOption(-1,SubjectBox(0f,0f,1f,1f)))
-            handler.postDelayed({
-                if(token==generation && spatialBridgeWaiting) {
-                    cancelGuide(false); guidance.text="The photo camera could not match the spatial scan. Hold the last view and try again."
-                }
-            },5000)
-        },main)
-    }
-    private fun environmentEvidenceFresh(): Boolean = if(spatialBridgePlanId!=0L)
-        spatialBridgeSeenAt>0 && SystemClock.elapsedRealtime()-spatialBridgeSeenAt<750 else analyzer.environmentFresh(SystemClock.elapsedRealtime())
-    private fun atLastEnvironmentView() = if(spatialBridgePlanId!=0L) spatialBridgeFrame?.let { ShotGeometry.framingReady(it.corners) }==true else analyzer.atEnvironmentCheckpoint()
-    private fun endSceneEvidence() {
-        spatialBridgePlanId=0; spatialBridgeSeenAt=0; spatialBridgeFrame=null; spatialBridgeWaiting=false; spatialBridgeZoomBusy=false
-        analyzer.endEnvironment()
-        if(!activePlan) tracker.reset()
-    }
-    private fun scanEnvironment() {
+
+    private fun scanEnvironment(online: Boolean = false) {
         if (!cameraReady || scanning || saving) return
         cancelGuide(false)
-        val token=++generation; val requestId=planner.beginRequest()
-        baselineZoom=controller?.zoomState?.value?.zoomRatio ?: 1f
-        scanning=true
-        guidance.text="Turn slowly across the scene. Keep the zoom fixed."
-        environmentSweep=EnvironmentSweep(analyzer,
+        val token = generation
+        val requestId = if (online) planner.beginRequest() else null
+        baselineZoom = controller?.zoomState?.value?.zoomRatio ?: 1f
+        scanning = true
+        guidance.setText(R.string.sweep_instruction)
+        environmentSweep = EnvironmentSweep(analyzer,
             { controller?.zoomState?.value?.zoomRatio ?: 1f }, { controller?.zoomState?.value?.maxZoomRatio ?: 1f },
-            { count -> if (generation==token && !isDestroyed) guidance.text="Observing the surroundings: $count of 6 views" },
             { batch ->
-                environmentSweep=null
-                if (generation!=token || isDestroyed) { batch?.close() }
-                else if (batch==null) { endSceneEvidence(); scanning=false; guidance.text="Observation stopped. Keep the camera visible and zoom fixed." }
-                else {
-                    runEnvironmentPlanner(batch,token,requestId)
+                environmentSweep = null
+                when {
+                    generation != token || isDestroyed -> batch?.close()
+                    batch == null -> {
+                        analyzer.endEnvironment()
+                        scanning = false
+                        guidance.setText(R.string.sweep_no_frame)
+                    }
+                    else -> runEnvironmentPlanner(batch, token, requestId)
                 }
             })
         environmentSweep!!.start()
     }
-    private fun runEnvironmentPlanner(batch: EnvironmentBatch,token: Int,requestId: Long) {
-        guidance.text="Assessing the observed scene. Hold this view."
-        val started=SystemClock.elapsedRealtime()
-        val availableZoom=((controller?.zoomState?.value?.maxZoomRatio ?: baselineZoom)/baselineZoom).coerceIn(1f,3.2f)
+    private fun runEnvironmentPlanner(batch: EnvironmentBatch, token: Int, requestId: Long?) {
+        guidance.setText(R.string.sweep_assessing)
+        val started = SystemClock.elapsedRealtime()
+        val availableZoom = ((controller?.zoomState?.value?.maxZoomRatio ?: baselineZoom) / baselineZoom).coerceIn(1f, 3.2f)
         modelExecutor.execute {
-            val result=runCatching { planner.chooseEnvironment(batch,requestId,availableZoom) }
+            val result = runCatching { localComposition.evaluate(batch, availableZoom) { generation == token } }
+            val optionalOnline = if (requestId != null && generation == token) runCatching {
+                planner.chooseEnvironment(batch, requestId, availableZoom, result.getOrNull()?.relativeDepth.orEmpty())
+            }.getOrNull() else null
             handler.post {
-                if (generation!=token || isDestroyed) { batch.close(); return@post }
-                scanning=false; lastScanMs=SystemClock.elapsedRealtime()-started
-                modelReason="Environment: ${batch.frames.size} views; ${batch.map.registeredLinks} measured overlap links; " +
-                    "${batch.frames.count { it.view.spatial!=null }} SDK pose views; ${batch.frames.count { it.view.spatial?.depthGridViewAligned!=null }} depth grids"
-                result.onSuccess { assessment ->
-                    val decision=assessment.decision
-                    modelReason+="; ${assessment.subjects.size} subject hypotheses; ${assessment.relationships.size} inferred relationships"
-                    if (!environmentEvidenceFresh()) {
-                        endSceneEvidence(); batch.close(); guidance.text="Scene tracking changed during assessment. Observe the scene again."
-                    } else when(decision) {
-                        is EnvironmentDecision.Keep -> {
-                            if (atLastEnvironmentView()) {
-                                endSceneEvidence(); batch.close(); guidance.text="Keep this view. ${decision.reason}"
-                            } else showEnvironmentChoice(batch,EnvironmentDecision.Guide(batch.frames.last().view.id,
-                                SubjectBox(0f,0f,1f,1f),"Observed view",decision.reason),token)
+                if (generation != token || isDestroyed) { batch.close(); return@post }
+                scanning = false
+                lastScanMs = SystemClock.elapsedRealtime() - started
+                val local = result.getOrNull()
+                val decision = optionalOnline?.decision ?: local?.decision
+                modelReason = "Observed ${batch.frames.size} views, ${batch.map.registeredLinks} overlap links, " +
+                    "${local?.relativeDepth?.size ?: 0} relative depth estimates. " +
+                    (if (optionalOnline != null) "Online assessment." else "On-device assessment.")
+                if (decision == null) {
+                    guidance.setText(R.string.framing_unavailable)
+                } else if (!analyzer.environmentFresh(SystemClock.elapsedRealtime())) {
+                    guidance.setText(R.string.sweep_scene_changed)
+                } else when (decision) {
+                    is EnvironmentDecision.Keep -> {
+                        if (analyzer.atEnvironmentCheckpoint()) {
+                            guidance.setText(R.string.sweep_keep)
+                        } else {
+                            showEnvironmentChoice(batch, EnvironmentDecision.Guide(batch.frames.last().view.id,
+                                SubjectBox(0f, 0f, 1f, 1f), "Observed view", decision.reason), token)
+                            return@post
                         }
-                        is EnvironmentDecision.ObserveMore -> {
-                            endSceneEvidence(); batch.close(); guidance.text="More observations needed. ${decision.reason}"
-                        }
-                        is EnvironmentDecision.Guide -> showEnvironmentChoice(batch,decision,token)
                     }
-                }.onFailure { error ->
-                    endSceneEvidence(); batch.close()
-                    guidance.text=when((error as? SceneServiceException)?.category) {
-                        "timeout" -> "The scene service timed out. Camera controls are ready."
-                        "http_429" -> "Online quota is exhausted. You can still take photos and use the manual guide."
-                        else -> "Scene planning is unavailable. Camera controls are ready."
+                    is EnvironmentDecision.ObserveMore -> guidance.text = decision.reason
+                    is EnvironmentDecision.Guide -> {
+                        showEnvironmentChoice(batch, decision, token)
+                        return@post
                     }
                 }
+                analyzer.endEnvironment()
+                batch.close()
             }
         }
     }
     private fun showEnvironmentChoice(batch: EnvironmentBatch, decision: EnvironmentDecision.Guide, token: Int) {
         val route=batch.map.routeTo(decision.viewId)
         if(route==null) {
-            endSceneEvidence(); batch.close(); guidance.text="The views have insufficient overlap for a reliable return guide. Use a shorter sweep."
+            analyzer.endEnvironment(); batch.close(); guidance.text="The views have insufficient overlap for a reliable return guide. Use a shorter sweep."
             return
         }
         val selected=batch.frames.single { it.view.id==decision.viewId }.frame
@@ -380,7 +304,7 @@ class MainActivity : ComponentActivity() {
         val after=Bitmap.createScaledBitmap(region,180,240,true)
         if (region!==after && region!==selected.image) region.recycle()
         val panel=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(16,8,16,8) }
-        panel.addView(TextView(this).apply { text="${decision.subject}: ${decision.reason}\nCurrent observation on the left. Selected observed view on the right." })
+        panel.addView(TextView(this).apply { text="${decision.reason}\nScanned view on the left. Suggested shot on the right." })
         panel.addView(LinearLayout(this).apply {
             addView(ImageView(this@MainActivity).apply { setImageBitmap(before); adjustViewBounds=true; contentDescription="Current observation" },LinearLayout.LayoutParams(0,-2,1f))
             addView(ImageView(this@MainActivity).apply { setImageBitmap(after); adjustViewBounds=true; contentDescription="Selected observed view" },LinearLayout.LayoutParams(0,-2,1f))
@@ -388,10 +312,10 @@ class MainActivity : ComponentActivity() {
         val shownAt=SystemClock.elapsedRealtime()
         var applied=false
         var stale=false
-        val dialog=AlertDialog.Builder(this).setTitle("Suggested observed view").setView(panel)
-            .setPositiveButton("Use this view") { _, _ ->
-                if (token==generation && SystemClock.elapsedRealtime()-shownAt<15_000 && environmentEvidenceFresh()) {
-                    applied=true; endSceneEvidence()
+        val dialog=AlertDialog.Builder(this).setTitle("Suggested shot").setView(panel)
+            .setPositiveButton("Use this shot") { _, _ ->
+                if (token==generation && SystemClock.elapsedRealtime()-shownAt<15_000 && analyzer.environmentFresh(SystemClock.elapsedRealtime())) {
+                    applied=true; analyzer.endEnvironment()
                     activeEnvironmentBatch=batch
                     for(id in route) {
                         val entry=batch.frames.single { it.view.id==id }
@@ -404,7 +328,7 @@ class MainActivity : ComponentActivity() {
         dialog.setOnDismissListener {
             before.recycle(); after.recycle(); if(!applied) batch.close()
             if (environmentDialog===dialog) environmentDialog=null
-            if (token==generation) { endSceneEvidence(); if (!applied && !stale) guidance.setText(R.string.ready_to_frame) }
+            if (token==generation) { analyzer.endEnvironment(); if (!applied && !stale) guidance.setText(R.string.ready_to_frame) }
         }
         environmentDialog=dialog; dialog.show()
         handler.postDelayed({
@@ -574,8 +498,7 @@ class MainActivity : ComponentActivity() {
         generation++
         environmentDialog?.dismiss(); environmentDialog=null
         environmentRoute.clear(); activeEnvironmentBatch?.close(); activeEnvironmentBatch=null
-        pendingSpatialBatch?.close(); pendingSpatialBatch=null
-        environmentSweep?.cancel(); environmentSweep=null; endSceneEvidence()
+        environmentSweep?.cancel(); environmentSweep=null; analyzer.endEnvironment()
         sweepRecorder?.cancel(); sweepRecorder = null
         planner.cancel(); analyzer.cancelSnapshot(); tracker.reset()
         scanning = false; activePlan = false; lastGood = null; hold.reset()
@@ -637,7 +560,7 @@ class MainActivity : ComponentActivity() {
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 runCatching { plannerSettings.save(keyInput.text.toString().ifBlank { plannerSettings.key().orEmpty() }, modelInput.text.toString().trim()) }
-                    .onSuccess { keyInput.text.clear(); dialog.dismiss(); guidance.text = "Setup saved. Tap Find a composition." }
+                    .onSuccess { keyInput.text.clear(); dialog.dismiss(); guidance.text = "Setup saved for the online tools." }
                     .onFailure { keyInput.error = it.message }
             }
         }
@@ -660,7 +583,8 @@ class MainActivity : ComponentActivity() {
         AlertDialog.Builder(this).setTitle("Camera options").setItems(arrayOf("AI setup", "Try the framing guide without AI",
             "Photo processing", "Camera and scan details", "Google privacy and pricing", "Forget saved API key",
             "Scan diagnostics", "Test service with a generated image", "Camera capability report",
-            "Cloud research scan (personal key)", "Record a local evaluation sweep", "Export last evaluation sweep", "Legacy local crop research", "Test spatial tracking (ARCore)")) { _, index ->
+            "Cloud research scan (personal key)", "Record a local evaluation sweep", "Export last evaluation sweep", "Legacy local crop research",
+            "Test spatial tracking (ARCore)", "Online sweep (personal key)")) { _, index ->
             when (index) {
                 0 -> showAiSetup()
                 1 -> scan(true)
@@ -687,6 +611,7 @@ class MainActivity : ComponentActivity() {
                     else showReport("Evaluation sweep", "Record a local evaluation sweep first.")
                 12 -> if (localScorer.available) scan(false,local=true) else guidance.setText(R.string.framing_unavailable)
                 13 -> launchSpatialProbe()
+                14 -> requestOnlineEnvironmentScan()
             }
         }.show()
     }
@@ -906,13 +831,12 @@ class MainActivity : ComponentActivity() {
     private fun toast(resource: Int) = Toast.makeText(this, resource, Toast.LENGTH_SHORT).show()
     override fun onSaveInstanceState(outState: Bundle) { outState.putString("lastPhoto", lastPhoto?.toString()); super.onSaveInstanceState(outState) }
     override fun onDestroy() {
-        pendingSpatialRequest?.let { SpatialSweepTransfer.discard(it) }; pendingSpatialBatch?.close(); pendingSpatialBatch=null
         environmentRoute.clear(); activeEnvironmentBatch?.close(); activeEnvironmentBatch=null
-        environmentSweep?.cancel(); environmentDialog?.dismiss(); endSceneEvidence()
+        environmentSweep?.cancel(); environmentDialog?.dismiss(); analyzer.endEnvironment()
         generation++; handler.removeCallbacksAndMessages(null); analyzer.cancelSnapshot()
         controller?.clearImageAnalysisAnalyzer(); controller?.unbind(); planner.cancel()
         analysisExecutor.execute { tracker.close(); analyzer.closeEnvironment() }; analysisExecutor.shutdown()
-        modelExecutor.execute { planner.close(); localScorer.close() }; modelExecutor.shutdown()
+        modelExecutor.execute { planner.close(); localScorer.close(); softwareDepth.close() }; modelExecutor.shutdown()
         super.onDestroy()
     }
 }
