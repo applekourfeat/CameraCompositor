@@ -1,5 +1,7 @@
 # Environment-aware composition: diagnosis and next architecture
 
+Follow-up implementation: [version 0.4 environment prototype](V040_ENVIRONMENT_PROTOTYPE.md) adds multi-view planning, native temporal image tracking, measured return routes and an isolated optional ARCore spatial backend. The investigation below records the earlier candidate failures. The main planner still lacks verified metric pose/depth, and photographic/device gates remain open.
+
 Updated 2026-11-18. The owner clarified that the assistant must understand the surrounding scene, viewpoint and perspective. Choosing a crop from one image is an intermediate experiment. It does not fulfill the product requirement.
 
 ## What is implemented in this iteration

@@ -37,7 +37,7 @@ def dataset():
 
 
 def main():
-    parser=argparse.ArgumentParser(); parser.add_argument("--feature",choices=["orb","sift"],default="orb")
+    parser=argparse.ArgumentParser(); parser.add_argument("--feature",choices=["orb","sift","temporal"],default="orb")
     args=parser.parse_args()
     cv2.setNumThreads(2)
     with dataset() as source:
@@ -59,7 +59,12 @@ def main():
         # Fixed before running: every eighth start, six-frame baseline, no best-pair search.
         for index in range(0,len(rows)-6,8):
             a,b=frame(index),frame(index+6); cv2.setRNGSeed(82)
-            started=time.perf_counter(); result=reconstruct_images(a,b,k,args.feature); elapsed=(time.perf_counter()-started)*1000
+            started=time.perf_counter()
+            if args.feature=="temporal":
+                from temporal_geometry import track_sequence
+                result=track_sequence([frame(i) for i in range(index,index+7)],k)
+            else: result=reconstruct_images(a,b,k,args.feature)
+            elapsed=(time.perf_counter()-started)*1000
             ca,ra=pose(index); cb,rb=pose(index+6)
             expected_r=rb.T@ra; expected_t=rb.T@(ca-cb)
             row={name:value for name,value in result.items() if name not in ["pointsCameraAUnitScale","rotationCameraAToB","translationCameraAToBUnitScale","limitations"]}
@@ -79,7 +84,8 @@ def main():
         "medianTranslationDirectionErrorDegrees":float(np.median([r["translationDirectionErrorDegrees"] for r in accepted])) if accepted else None,
         "desktopMedianMs":float(np.median([r["desktopMs"] for r in results])),
         "scope":"real images from a calibrated global-shutter laboratory rig; pair geometry only; not live mapping, phone performance or photographic selection",
-        "guidanceAssessment":"rejected: substantial pose errors remain despite low reprojection errors",
+        "guidanceAssessment":("development improvement only; independent tracking validation, calibrated phone geometry and metric scale remain absent"
+            if args.feature=="temporal" else "rejected: substantial pose errors remain despite low reprojection errors"),
         "metricScaleRecovered":False,"vivoValidated":False,"releaseApproved":False,"results":results}
     Path(f"research/results/environment-geometry-eth3d-{args.feature}.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
     print(json.dumps({k:v for k,v in report.items() if k!="results"},indent=2))

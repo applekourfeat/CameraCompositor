@@ -4,7 +4,7 @@
     <string name="prototype">Camera</string>
     <string name="options">Options</string>
     <string name="viewfinder">Camera viewfinder</string>
-    <string name="find_shot">Find a frame</string>
+    <string name="find_shot">Find a composition</string>
     <string name="cancel">Cancel guide</string>
     <string name="cancel_scan">Cancel</string>
     <string name="flip">Flip</string>
@@ -19,7 +19,7 @@
     <string name="photo_saved">Saved to Pictures/CameraCompositor</string>
     <string name="no_gallery">No photo viewer is available.</string>
     <string name="no_other_camera">The other camera is unavailable.</string>
-    <string name="ready_to_frame">Point at a scene. Tap Find a frame.</string>
+    <string name="ready_to_frame">Point at a scene. Tap Find a composition.</string>
     <string name="finding_frame">Finding a frame…</string>
     <string name="finding_online_frame">Waiting for an online suggestion…</string>
     <string name="no_framing_suggestion">No framing suggestion. Try another angle.</string>
@@ -35,5 +35,5 @@
     <string name="photo_processing">Photo processing</string>
     <string name="about_build">About this build</string>
     <string name="developer_tools">Developer tools</string>
-    <string name="about_framing">Early prototype. Suggestions compare crops of the current view. Finding subjects and better camera angles is still in development.</string>
+    <string name="about_framing">Environment prototype. A short sweep supplies observed viewpoints and measured image overlap to an experimental online planner. This camera path has no verified translation or depth. Photographic quality and Vivo performance remain under evaluation.</string>
 </resources>

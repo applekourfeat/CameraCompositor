@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 data class ScanFrame(val image: Bitmap, val gray: ByteArray, val width: Int, val height: Int,
     val bufferToView: Matrix, val viewSize: Size, val cameraTimestampNs: Long,
-    val sensorToBuffer: Matrix)
+    val sensorToBuffer: Matrix, val registration: ViewRegistration? = null)
 
 /** Shared analysis frames feed both the one-shot scan and scene tracking. */
 class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack: (TrackingEvent) -> Unit) : ImageAnalysis.Analyzer {
@@ -19,6 +19,17 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
     @Volatile private var sensorToView: Matrix? = null
     @Volatile var viewSize = Size(0, 0)
     private val snapshotRequest = AtomicReference<((ScanFrame?) -> Unit)?>(null)
+    private val environment = EnvironmentMotionTracker()
+    @Volatile private var environmentActive = false
+    val observingEnvironment get() = environmentActive
+    @Volatile private var environmentReset = false
+    @Volatile private var environmentTrackedAt = 0L
+    fun beginEnvironment() { environmentTrackedAt=0; environmentMotion=Float.POSITIVE_INFINITY; environmentReset=true; environmentActive=true }
+    fun endEnvironment() { environmentActive=false; environmentReset=true }
+    fun environmentFresh(now: Long) = environmentTrackedAt > 0 && now-environmentTrackedAt < 750
+    @Volatile private var environmentMotion = Float.POSITIVE_INFINITY
+    fun atEnvironmentCheckpoint() = environmentMotion < .04f
+    fun closeEnvironment() { environment.close() }
     fun requestSnapshot(callback: (ScanFrame?) -> Unit) { snapshotRequest.getAndSet(callback)?.invoke(null) }
     fun cancelSnapshot() { snapshotRequest.getAndSet(null)?.invoke(null) }
     override fun getTargetCoordinateSystem() = ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED
@@ -47,6 +58,13 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
                     gray[y * image.width + x] = buffer.get(base + y * plane.rowStride + x * plane.pixelStride)
                 }
             }
+            if (environmentReset) { environment.close(); environmentReset=false }
+            if (environmentActive) {
+                environment.update(gray,image.width,image.height)
+                environment.registration?.takeIf { it.reliable }?.let {
+                    environmentTrackedAt=SystemClock.elapsedRealtime(); environmentMotion=it.centerMotion
+                }
+            }
             snapshotRequest.getAndSet(null)?.let { callback ->
                 try {
                     val raw = image.toBitmap()
@@ -58,7 +76,8 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
                     Canvas(visible).drawBitmap(raw, toBitmap, null)
                     raw.recycle()
                     callback(ScanFrame(visible, gray.copyOf(), image.width, image.height, bufferToView, size,
-                        image.imageInfo.timestamp, Matrix(image.imageInfo.sensorToBufferTransformMatrix)))
+                        image.imageInfo.timestamp, Matrix(image.imageInfo.sensorToBufferTransformMatrix),
+                        if (environmentActive) environment.checkpoint() else null))
                 } catch (_: Exception) { callback(null) }
             }
             val tracked = tracker.update(gray, image.width, image.height, bufferToView, size, SystemClock.elapsedRealtime())

@@ -50,6 +50,8 @@ Model/data redistribution rights remain a separate gate. The code includes the u
 
 ## Environment and subject-discovery experiments
 
+Version [0.4 environment prototype](../docs/V040_ENVIRONMENT_PROTOTYPE.md) now contains a native observation/route pipeline and isolated optional ARCore test. The Python temporal experiment is reproduced with `evaluate_environment_geometry.py --feature temporal`. It tracks through all seven frames per window on the same development sequence; this is not independent phone VIO validation or Android numerical parity. The temporal experiment's recorded time includes loading/decoding its seven input frames.
+
 All of these commands run locally. Only the fetch commands download public model/dataset assets. Camera photos, reconstructed points and generated comparisons stay outside Git and Android assets.
 
 ```powershell

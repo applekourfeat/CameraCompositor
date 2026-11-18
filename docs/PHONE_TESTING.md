@@ -4,11 +4,13 @@ Use the standard Vivo V30. A cable or mirroring session is optional. Transfer th
 
 ## Short first session
 
-1. Open Options > Camera capability report and copy it. Record Android/Funtouch version and exposed cameras, JPEG sizes, vendor Auto/HDR/Night modes and Ultra HDR support.
-2. Use Test local composition on a few daylight scenes. It needs no key/network. Record the first cold timing and later warm timings from the result dialogs. Judge the framing before choosing Use guide.
-3. Check a kept full view, an unwanted proposal, Cancel, manual pinch, tracking loss, and returning from the gallery/background. A stale target should clear after three seconds of lost tracking. Manual camera controls must remain usable.
-4. Record and export a small local evaluation sweep. Keep zoom fixed. Inspect the eight JPEGs and metadata before using it as evidence. The rotation samples are approximate relative device readings, not calibrated camera pose or translation.
-5. Optionally run the generated-chart service diagnostic and copy Scan diagnostics to investigate the old timeout. Camera-upload consent is separate.
+Install `artifacts/CameraCompositor-0.4.0-environment-debug.apk`. This is an experimental implementation, with no physical photographic-quality approval.
+
+1. Tap **Find a composition**, allow multi-image upload only if desired, and turn slowly across a small overlapping scene for about four seconds with fixed zoom. Hold the last view during assessment. The saved personal research key is reused. Record whether the service returns keep, observe-more, a selected view, timeout or another failure.
+2. For a selected view, test **Use this view** and **Dismiss**. A target outside the current field of view should guide through the recorded intermediate views. Pinching cancels the environment route. Cancel, photo capture, gallery/background and camera switching must restore controls. Tracking loss should clear a guide after three seconds.
+3. Open **Options > Developer tools > Test spatial tracking (ARCore)**. Report the actual support state for the standard Vivo V30. If supported, try a five-second recording near textured nearby objects. Pose/point/depth export is optional and contains no camera images. Returning must restore the normal camera. This isolated spatial test is not yet fused into the photographic planner.
+4. **Options > Developer tools > Camera capability report** inventories exposed cameras, JPEG sizes, calibration, depth formats and vendor processing. Record Android/Funtouch version too. Optional legacy local crop ranking and the manual guide remain under Developer tools.
+5. The explicit **Record a local evaluation sweep** still writes eight JPEGs and approximate relative device-rotation readings. Inspect before export. They are not calibrated camera pose or translation. The generated-chart cloud diagnostic uses the older single-image request and can investigate the still-unresolved timeout separately from multi-view inference.
 
 ## Composition acceptance
 

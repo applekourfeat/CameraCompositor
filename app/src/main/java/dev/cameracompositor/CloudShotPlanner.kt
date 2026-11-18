@@ -49,6 +49,37 @@ class CloudShotPlanner(private val settings: PlannerSettings, private val saveDi
 
     fun testService(chart: Bitmap, requestId: Long): ModelChoice = chooseCore(chart, requestId, 1.8f, false) {}
 
+    fun chooseEnvironment(batch: EnvironmentBatch, requestId: Long): EnvironmentAssessment {
+        val trace=ScanDiagnostics()
+        fun active()=sequence.get()==requestId
+        try {
+            check(settings.environmentConsent) { "Allow environment uploads before requesting online planning." }
+            val credential=settings.key() ?: error("Configure the personal research service first.")
+            if (!active()) throw SceneServiceException("cancelled","Scan cancelled.")
+            settings.reserveScan()
+            val chosen=batch.map.plannerViews()
+            val encoded=chosen.map { view ->
+                if (!active()) throw SceneServiceException("cancelled","Scan cancelled.")
+                val frame=batch.frames.single { it.view.id==view.id }.frame
+                val bytes=ByteArrayOutputStream().use { output ->
+                    check(frame.image.compress(Bitmap.CompressFormat.JPEG,84,output)); output.toByteArray()
+                }
+                EncodedEnvironmentView(view,Base64.encodeToString(bytes,Base64.NO_WRAP))
+            }
+            val current=batch.frames.last().view.id
+            val body=transport.execute(EnvironmentProtocol.request(encoded,current),credential,settings.model,trace,::active)
+            if (!active()) throw SceneServiceException("cancelled","Scan cancelled.")
+            trace.mark(ScanDiagnostics.Stage.PARSE)
+            val decision=try { EnvironmentProtocol.assessment(body,chosen,current) } catch (_: RuntimeException) {
+                throw SceneServiceException("format","The service returned an invalid environment plan.")
+            }
+            trace.outcome="success"; trace.mark(ScanDiagnostics.Stage.COMPLETE); return decision
+        } catch (error: Exception) {
+            if (trace.outcome=="running") trace.outcome=(error as? SceneServiceException)?.category ?: "setup"
+            throw error
+        } finally { saveDiagnostic(trace.report()) }
+    }
+
     private fun chooseCore(frame: Bitmap, requestId: Long, maxRelativeZoom: Float,
                            requireSceneConsent: Boolean, onStage: (String) -> Unit): ModelChoice {
         val trace = ScanDiagnostics()

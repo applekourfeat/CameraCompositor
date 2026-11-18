@@ -67,11 +67,12 @@ object ShotGeometry {
     fun framingReady(points: List<ScenePoint>) = aimReady(points) && abs(width(points) - 1f) < .09f &&
         abs(points[1].y - points[0].y) < .07f
 
-    fun desiredZoom(current: Float, points: List<ScenePoint>, baseline: Float, deviceMax: Float): Float? {
+    fun desiredZoom(current: Float, points: List<ScenePoint>, baseline: Float, deviceMax: Float, relativeLimit: Float = 1.8f): Float? {
+        require(relativeLimit.isFinite() && relativeLimit in 1f..3.2f)
         if (!aimReady(points)) return null
         val scale = width(points)
         if (!scale.isFinite() || scale < .15f) return null
-        return (current / scale).coerceIn(baseline, minOf(deviceMax, baseline * 1.8f).coerceAtLeast(baseline))
+        return (current / scale).coerceIn(baseline, minOf(deviceMax, baseline * relativeLimit).coerceAtLeast(baseline))
     }
 
     fun valid(points: List<ScenePoint>): Boolean {

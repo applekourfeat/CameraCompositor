@@ -6,12 +6,13 @@ import android.util.Size
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 
-/** Bound analysis work to at most 10 frames per second. Preview runs independently. */
-class ThrottledAnalyzer(private val delegate: ImageAnalysis.Analyzer) : ImageAnalysis.Analyzer {
+/** Target 10 Hz normally and up to 30 Hz during temporal observation. Preview is independent. */
+class ThrottledAnalyzer(private val delegate: ImageAnalysis.Analyzer,
+                        private val intervalMs: () -> Long = { 100 }) : ImageAnalysis.Analyzer {
     private var lastFrameMs = Long.MIN_VALUE
     override fun analyze(image: ImageProxy) {
         val now = SystemClock.elapsedRealtime()
-        if (lastFrameMs != Long.MIN_VALUE && now - lastFrameMs < 100) {
+        if (lastFrameMs != Long.MIN_VALUE && now - lastFrameMs < intervalMs()) {
             image.close()
             return
         }

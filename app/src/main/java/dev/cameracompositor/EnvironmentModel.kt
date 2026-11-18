@@ -1,0 +1,65 @@
+package dev.cameracompositor
+
+import kotlin.math.abs
+
+/** Measured image overlap. A projective registration is explicitly distinct from a 3D pose. */
+data class ViewRegistration(val inliers: Int, val tracks: Int, val centerMotion: Float,
+                            val reprojectionErrorPx: Float, val spatialCoverage: Float) {
+    val reliable get() = inliers >= 24 && tracks >= inliers && inliers.toFloat() / tracks >= .7f &&
+        centerMotion.isFinite() && centerMotion in 0f..2f && reprojectionErrorPx.isFinite() &&
+        reprojectionErrorPx in 0f..1.5f && spatialCoverage.isFinite() && spatialCoverage in .15f..1f
+}
+
+data class EnvironmentView(val id: Int, val timeMs: Long, val zoom: Float, val maxRelativeZoom: Float,
+                           val registration: ViewRegistration?,val previousViewId: Int?=null)
+
+/** Bounded temporal scene graph. It records uncertainty instead of inventing camera translation. */
+class EnvironmentMap(val sceneId: Long) {
+    private val entries = mutableListOf<EnvironmentView>()
+    val views: List<EnvironmentView> get() = entries.toList()
+    fun add(view: EnvironmentView) {
+        require(entries.size < 8 && view.id >= 0 && entries.none { it.id == view.id })
+        require(view.zoom.isFinite() && view.zoom > 0 && view.maxRelativeZoom.isFinite() && view.maxRelativeZoom in 1f..3.2f)
+        require(entries.lastOrNull()?.let { view.timeMs > it.timeMs && abs(view.zoom/it.zoom-1) < .02f } != false)
+        require(view.previousViewId==null || view.previousViewId==entries.lastOrNull()?.id)
+        entries.add(view)
+    }
+    /** Keep the temporal endpoints and distinct intervening views, never fabricated views. */
+    fun plannerViews(): List<EnvironmentView> {
+        if (entries.isEmpty()) return emptyList()
+        val selected = mutableListOf(entries.first())
+        var movement = 0f
+        for (view in entries.drop(1)) {
+            val link = view.registration
+            if (link?.reliable == true) movement += link.centerMotion
+            if (link?.reliable == false || link == null || movement >= .12f) {
+                selected.add(view); movement = 0f
+            }
+        }
+        val last = entries.last()
+        if (selected.last().id != last.id && selected.size > 1) selected.add(last)
+        if (selected.size <= 4) return selected
+        return listOf(selected.first(), selected[selected.size/3], selected[2*selected.size/3], selected.last()).distinctBy { it.id }
+    }
+    val registeredLinks get() = entries.drop(1).count { it.registration?.reliable == true }
+    /** Reverse the measured observation chain so a target outside the current FOV remains reachable.
+     * This is an image/rotation route, not a path for walking through 3D space. */
+    fun routeTo(viewId: Int): List<Int>? {
+        val target=entries.indexOfFirst { it.id==viewId }
+        if(target<0) return null
+        if(entries.drop(target+1).any { it.registration?.reliable!=true }) return null
+        return entries.subList(target,entries.size).asReversed().map { it.id }
+    }
+}
+
+sealed interface EnvironmentDecision {
+    data class Keep(val reason: String): EnvironmentDecision
+    data class ObserveMore(val reason: String): EnvironmentDecision
+    data class Guide(val viewId: Int, val crop: SubjectBox, val subject: String, val reason: String): EnvironmentDecision
+}
+
+data class SceneSubjectEvidence(val id: String,val name: String,val observedViewIds: Set<Int>)
+/** These relationships are visual model inferences, never measured metric geometry. */
+data class SceneRelationship(val fromSubjectId: String,val toSubjectId: String,val type: String)
+data class EnvironmentAssessment(val summary: String,val subjects: List<SceneSubjectEvidence>,
+                                 val relationships: List<SceneRelationship>,val decision: EnvironmentDecision)

@@ -1,0 +1,9 @@
+Optional spatial research uses Google ARCore SDK 1.57.0.
+The SDK's published POM identifies the ARCore Additional Terms of Service:
+https://developers.google.com/ar/develop/terms
+Google API Terms: https://developers.google.com/terms/
+Google Privacy Policy: https://policies.google.com/privacy
+User privacy requirements: https://developers.google.com/ar/develop/privacy-requirements
+Google Play Services for AR may need installation or updates on supported devices.
+Cloud Anchors and Geospatial APIs are disabled in this application.
+The renderer and recorder in this project are original application code.

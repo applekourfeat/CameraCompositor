@@ -1,4 +1,10 @@
-# Version 0.3 research verification
+# Verification
+
+## Current environment prototype
+
+Version **0.4.0-environment** passes Android build, 48 unit tests and lint with zero errors/78 warnings, plus 20 Python research tests. The private APK signature matches earlier builds. `scripts/check_delivery.py` verifies the tested APK, credential-pattern checks, expected debug-only GAIC asset, included optional ARCore notices/libraries and absent release research weights. See `research/results/delivery-verification-v040_environment.json` and [the implementation report](V040_ENVIRONMENT_PROTOTYPE.md). Actual native camera/OpenCV/GL/ARCore behavior, provider inference, photographic quality and Vivo performance remain pending. Mock-server success is separate from the unresolved live service timeout.
+
+## Earlier research verification
 
 Latest unreleased investigation: [environment-composition evidence](ENVIRONMENT_COMPOSITION_RESEARCH.md). Android `assembleDebug`, `testDebugUnitTest` and `lintDebug` pass after timestamp/transform/capability-recording changes. The 35 Android tests and 17 Python research tests pass. No model or imagery from the new experiments is added to Android assets. No new photographic APK is delivered; versioned artifact results below describe their original builds. The real-image 3D backend fails accuracy expectations and remains disconnected from guidance. Vivo environment recording, calibration, tracking and speed remain untested.
 

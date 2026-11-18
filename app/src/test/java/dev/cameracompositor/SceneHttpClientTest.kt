@@ -9,6 +9,24 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 class SceneHttpClientTest {
+    @Test fun `multi view scene graph survives transport and parsing without entering diagnostics`() {
+        MockWebServer().use { server ->
+            val views=listOf(EnvironmentView(0,1000,1f,3.2f,null),EnvironmentView(1,1600,1f,3.2f,null))
+            val plan="""{"decision":"guide","viewId":0,"centerX":500,"centerY":500,"zoom":2,"subjectId":"bridge","reason":"Isolate the bridge from foreground clutter.","sceneSummary":"A bridge lies beyond foreground clutter.","subjects":[{"id":"bridge","name":"Bridge","viewIds":[0,1]}],"relationships":[]}"""
+            val response=org.json.JSONObject().put("candidates",org.json.JSONArray().put(org.json.JSONObject()
+                .put("finishReason","STOP").put("content",org.json.JSONObject().put("parts",org.json.JSONArray().put(org.json.JSONObject().put("text",plan))))))
+            server.enqueue(MockResponse().setBody(response.toString()))
+            SceneHttpClient(server.url("/")).use { transport ->
+                val trace=ScanDiagnostics()
+                val body=transport.execute(EnvironmentProtocol.request(views.map { EncodedEnvironmentView(it,"private-view-${it.id}") },1),"private-key","gemini-test",trace)
+                val assessment=EnvironmentProtocol.assessment(body,views,1)
+                assertEquals(0,(assessment.decision as EnvironmentDecision.Guide).viewId)
+                assertEquals("bridge",assessment.subjects.single().id)
+                assertFalse(trace.report().contains("private")); assertFalse(trace.report().contains("Bridge"))
+                assertEquals(1,server.requestCount)
+            }
+        }
+    }
     @Test fun `known request records stages without recording credentials or image content`() {
         MockWebServer().use { server ->
             server.enqueue(MockResponse().setBody("{\"ok\":true}"))

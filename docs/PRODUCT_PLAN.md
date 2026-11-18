@@ -12,6 +12,8 @@
 
 ## Current result
 
+Version [0.4.0-environment](V040_ENVIRONMENT_PROTOTYPE.md) now implements the first short-sweep observation graph and multi-view scene/subject planning request. A recorded-view route can guide back through measured overlap. The separate optional ARCore test can collect actual camera pose, sparse points and depth on supported devices; those measurements are not yet fused into the CameraX planner. The old online timeout, real provider results, 70% preference and physical speed remain open. The primary environment planner still needs the personal test key; a public keyless gateway is not deployed.
+
 Version 0.1 aligned a generic detected object to a chosen target. Owner feedback reported intermittent detection and poor directional-text UX. Version 0.2 added one-image cloud crop selection and feature tracking. The owner reported a timeout and correctly distinguished manual crop tracking from smart composition.
 
 Version 0.3 implements research infrastructure and an explicitly experimental local comparison. [COMPOSITION_RESEARCH.md](COMPOSITION_RESEARCH.md) records actual 20-development/60-evaluation results. GAIC is stronger than NIMA for rated crop ranking and synthetic stability on this dataset. Neither model selected the desired palm-crown shot from the owner's reference screenshot. Neither has human preference or physical-device acceptance.
@@ -32,6 +34,6 @@ The latest [environment investigation](ENVIRONMENT_COMPOSITION_RESEARCH.md) diag
 
 After photographic behavior passes, implement the owner's camera-screen design. Research before UI work identified common generated-interface patterns such as decorative purple/blue gradients, repeated rounded feature-card grids and decorative typography. The current engineering scaffolding uses plain native controls and the system font. The browser review tool is a local research utility.
 
-Local camera/suggestions/tracking work independently of a service. [CLOUD_GATEWAY.md](CLOUD_GATEWAY.md) evaluates optional Firebase AI Logic access with enforced App Check and an unbilled Spark project. No managed gateway has been deployed. Free cloud capacity is limited and can be exhausted; retain a local fallback.
+Camera capture, the manual guide, legacy local ranking and supported-device spatial testing work independently of the AI service. Current multi-view photographic assessment requires the personal research service. [CLOUD_GATEWAY.md](CLOUD_GATEWAY.md) evaluates eventual Firebase AI Logic access with enforced App Check and an unbilled Spark project. No managed gateway has been deployed. Free cloud capacity is limited and can be exhausted; a qualified automatic local planner remains a requirement.
 
 Public release also requires checkpoint/data permissions, more Android devices, release signing, final permissions/privacy disclosures and current store/distribution requirements. The debug model asset stays out of release builds. No paid infrastructure, store publication, provider-account changes or external messages are part of this research delivery.

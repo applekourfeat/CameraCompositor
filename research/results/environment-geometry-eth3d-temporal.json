@@ -1,0 +1,361 @@
+{
+  "dataset": "https://www.eth3d.net/data/slam/datasets/cables_2_mono.zip",
+  "archiveSha256": "cf6e2d74a606b021bb90d0426ad3fd651bf9efbc60220d7c462cf1c8836375ee",
+  "feature": "temporal",
+  "datasetFrames": 98,
+  "pairSelection": "start=0,8,16,...; end=start+6",
+  "pairs": 12,
+  "acceptedPairs": 12,
+  "cameraMatrix": [
+    [
+      726.28741455078,
+      0.0,
+      354.6496887207
+    ],
+    [
+      0.0,
+      726.28741455078,
+      186.46566772461
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "groundTruthSource": "ETH3D camera-to-world pose; nearest timestamp within 20ms",
+  "medianRotationErrorDegrees": 1.8657730552206488,
+  "medianTranslationDirectionErrorDegrees": 7.168701485219235,
+  "desktopMedianMs": 78.84205001755618,
+  "scope": "real images from a calibrated global-shutter laboratory rig; pair geometry only; not live mapping, phone performance or photographic selection",
+  "guidanceAssessment": "development improvement only; independent tracking validation, calibrated phone geometry and metric scale remain absent",
+  "metricScaleRecovered": false,
+  "vivoValidated": false,
+  "releaseApproved": false,
+  "results": [
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 122,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 101,
+      "medianParallaxDegrees": 9.266642690989643,
+      "medianReprojectionErrorPixels": 0.41656358353390904,
+      "trackCounts": [
+        137,
+        135,
+        134,
+        134,
+        132,
+        126,
+        122
+      ],
+      "frameIndices": [
+        0,
+        6
+      ],
+      "desktopMs": 69.21589997364208,
+      "groundTruthBaselineMeters": 0.30317046651085283,
+      "rotationErrorDegrees": 3.934228973744177,
+      "translationDirectionErrorDegrees": 15.66547361709124
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 113,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 86,
+      "medianParallaxDegrees": 6.567603500743505,
+      "medianReprojectionErrorPixels": 0.5324831565292728,
+      "trackCounts": [
+        190,
+        170,
+        165,
+        151,
+        137,
+        121,
+        113
+      ],
+      "frameIndices": [
+        8,
+        14
+      ],
+      "desktopMs": 65.36539999069646,
+      "groundTruthBaselineMeters": 0.31997649090397917,
+      "rotationErrorDegrees": 2.705972079118151,
+      "translationDirectionErrorDegrees": 9.757008023327087
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 127,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 73,
+      "medianParallaxDegrees": 17.327902122270903,
+      "medianReprojectionErrorPixels": 0.5805028373384262,
+      "trackCounts": [
+        272,
+        234,
+        222,
+        219,
+        194,
+        169,
+        127
+      ],
+      "frameIndices": [
+        16,
+        22
+      ],
+      "desktopMs": 76.54440001351759,
+      "groundTruthBaselineMeters": 0.2876269451665828,
+      "rotationErrorDegrees": 25.85161498765045,
+      "translationDirectionErrorDegrees": 85.60504197148313
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 199,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 132,
+      "medianParallaxDegrees": 15.315621382438682,
+      "medianReprojectionErrorPixels": 0.5153844353065401,
+      "trackCounts": [
+        393,
+        325,
+        308,
+        293,
+        277,
+        243,
+        199
+      ],
+      "frameIndices": [
+        24,
+        30
+      ],
+      "desktopMs": 80.07070003077388,
+      "groundTruthBaselineMeters": 0.2017406957677398,
+      "rotationErrorDegrees": 1.5328615090170201,
+      "translationDirectionErrorDegrees": 4.236497484087607
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 310,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 176,
+      "medianParallaxDegrees": 13.27151567312841,
+      "medianReprojectionErrorPixels": 0.42660388067875243,
+      "trackCounts": [
+        694,
+        438,
+        382,
+        353,
+        327,
+        319,
+        310
+      ],
+      "frameIndices": [
+        32,
+        38
+      ],
+      "desktopMs": 104.25900004338473,
+      "groundTruthBaselineMeters": 0.13820158826684661,
+      "rotationErrorDegrees": 1.0735866354174892,
+      "translationDirectionErrorDegrees": 4.379732952745748
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 486,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 313,
+      "medianParallaxDegrees": 6.604568374802532,
+      "medianReprojectionErrorPixels": 0.40058171482669114,
+      "trackCounts": [
+        671,
+        611,
+        598,
+        575,
+        552,
+        513,
+        486
+      ],
+      "frameIndices": [
+        40,
+        46
+      ],
+      "desktopMs": 100.96960002556443,
+      "groundTruthBaselineMeters": 0.08424230733999348,
+      "rotationErrorDegrees": 1.5894479646737643,
+      "translationDirectionErrorDegrees": 9.661936057380093
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 493,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 402,
+      "medianParallaxDegrees": 8.226318005358163,
+      "medianReprojectionErrorPixels": 0.36104127198439173,
+      "trackCounts": [
+        666,
+        587,
+        565,
+        546,
+        524,
+        494,
+        493
+      ],
+      "frameIndices": [
+        48,
+        54
+      ],
+      "desktopMs": 92.02049998566508,
+      "groundTruthBaselineMeters": 0.09443612436138538,
+      "rotationErrorDegrees": 0.6476997698138668,
+      "translationDirectionErrorDegrees": 2.8399116133018656
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 588,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 442,
+      "medianParallaxDegrees": 6.056585975721503,
+      "medianReprojectionErrorPixels": 0.3904009088210837,
+      "trackCounts": [
+        660,
+        645,
+        631,
+        620,
+        615,
+        608,
+        588
+      ],
+      "frameIndices": [
+        56,
+        62
+      ],
+      "desktopMs": 96.35900001740083,
+      "groundTruthBaselineMeters": 0.12951351870857386,
+      "rotationErrorDegrees": 1.356455392160691,
+      "translationDirectionErrorDegrees": 4.6754669130583775
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 401,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 318,
+      "medianParallaxDegrees": 8.96404632672665,
+      "medianReprojectionErrorPixels": 0.432173845765194,
+      "trackCounts": [
+        511,
+        461,
+        448,
+        416,
+        401,
+        401,
+        401
+      ],
+      "frameIndices": [
+        64,
+        70
+      ],
+      "desktopMs": 83.55089998804033,
+      "groundTruthBaselineMeters": 0.1938139933452816,
+      "rotationErrorDegrees": 0.5628349247581366,
+      "translationDirectionErrorDegrees": 0.37439385587864826
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 347,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 274,
+      "medianParallaxDegrees": 5.380679433125261,
+      "medianReprojectionErrorPixels": 0.4198642493404028,
+      "trackCounts": [
+        362,
+        355,
+        353,
+        349,
+        348,
+        348,
+        347
+      ],
+      "frameIndices": [
+        72,
+        78
+      ],
+      "desktopMs": 77.61340000433847,
+      "groundTruthBaselineMeters": 0.16289561986928222,
+      "rotationErrorDegrees": 12.940422920577213,
+      "translationDirectionErrorDegrees": 76.42757767735392
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 227,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 218,
+      "medianParallaxDegrees": 8.38206657274776,
+      "medianReprojectionErrorPixels": 0.2382952270296363,
+      "trackCounts": [
+        336,
+        239,
+        233,
+        228,
+        227,
+        227,
+        227
+      ],
+      "frameIndices": [
+        80,
+        86
+      ],
+      "desktopMs": 68.41210002312437,
+      "groundTruthBaselineMeters": 0.13439001914328072,
+      "rotationErrorDegrees": 2.1420981457675334,
+      "translationDirectionErrorDegrees": 4.328895749966549
+    },
+    {
+      "status": "sparse_3d_pair",
+      "reason": "reprojection_checked_correspondences",
+      "metricScaleKnown": false,
+      "matchedPoints": 297,
+      "walkOrHeightGuidanceAllowed": false,
+      "inlierPoints": 227,
+      "medianParallaxDegrees": 7.069718641540239,
+      "medianReprojectionErrorPixels": 0.36015580292455085,
+      "trackCounts": [
+        333,
+        322,
+        322,
+        320,
+        316,
+        310,
+        297
+      ],
+      "frameIndices": [
+        88,
+        94
+      ],
+      "desktopMs": 75.94110001809895,
+      "groundTruthBaselineMeters": 0.21017876903019664,
+      "rotationErrorDegrees": 3.176095162760282,
+      "translationDirectionErrorDegrees": 15.920246198319404
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "build": "0.4.0-environment",
+  "apkBytes": 75903787,
+  "apkSha256": "f0610945a9125543a3f8b434f334c2ae574cedbac6412bcb198fe13b9953eb40",
+  "unitTests": 48,
+  "unitFailures": 0,
+  "lintErrors": 0,
+  "lintWarnings": 81,
+  "modelSha256": "0853d7468f78f391730ee39c07daf41e0f600caba3bc2731ee086e63fab766ee",
+  "releaseResearchAssets": "absent",
+  "credentialPatternCheck": "pass",
+  "physicalVivoTests": "prior owner observations recorded; environment sweep, native flow, ARCore and provider inference remain pending on Vivo",
+  "humanPreferenceGate": "pending",
+  "liveProviderDiagnostic": "v0.3.0 owner report: WAIT_RESPONSE timeout after client upload; cause unresolved"
+}

@@ -1,0 +1,19 @@
+{
+  "source": "Owner-provided truncated ARCore export from the standard Vivo V30, 18 November 2026",
+  "build": "0.4.0-environment",
+  "initialArtifactSha256": "2df6c2c6dc65e4f701fe32854346ecf4e4e43422dad091595904d7591f9594a6",
+  "backend": "ARCore 1.57.0",
+  "reportedOutcome": "recorded",
+  "depthEnabled": true,
+  "posePresent": true,
+  "sparsePointsPresent": true,
+  "depthDataPresent": true,
+  "visibleSamples": 1,
+  "totalSamples": null,
+  "cameraImageSize": [640, 480],
+  "imageFocalLengthPixels": [434.1481, 433.74405],
+  "imagePrincipalPointPixels": [321.50836, 238.22931],
+  "depthImageSize": [160, 90],
+  "interpretation": "The owner report confirms that this phone ran an ARCore session and produced pose, sparse-point and depth observations. It does not validate physical accuracy, stability, native photo alignment or photographic quality.",
+  "privacy": "No session identifier, timestamp, room point cloud or full depth grid retained in this diagnostic summary."
+}

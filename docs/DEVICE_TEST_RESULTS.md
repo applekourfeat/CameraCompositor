@@ -8,12 +8,12 @@ Version 0.3 owner feedback: the local model ran on the Vivo, with 62 ms reported
 
 After version 0.3.1 delivery, the owner supplied clear city screenshots with the status "No framing suggestion. Try another angle." The owner reports finding proposals only after moving and repeatedly pressing Find, with poor results. Exact build metadata, complete control-state testing and numerical measurements are absent from these new screenshots. [Environment research](ENVIRONMENT_COMPOSITION_RESEARCH.md) reproduces the full-view selection on their image. The Vivo remains unavailable for a debugging connection.
 
-Unreleased recording changes add image timestamps, image transforms, sensor timestamps and a camera-calibration/depth inventory for future spatial tests. No new recording or environment reconstruction has been run on the Vivo. Standard V30 ARCore compatibility is unconfirmed. Desktop ETH3D pose measurements are recorded separately and are not phone measurements.
+Version 0.4.0-environment implements a primary six-view scene observation/planning flow and a separate optional ARCore spatial test. It includes the new image timestamps/transforms and camera-calibration/depth inventory. No new recording, environment-guidance session or spatial test has been measured on the Vivo. Standard V30 ARCore compatibility and the old provider timeout remain unconfirmed/unresolved respectively. Desktop ETH3D temporal motion estimates are separate development evidence, not phone measurements. [Build scope and remaining work](V040_ENVIRONMENT_PROTOTYPE.md).
 
 | Item | Result / notes |
 | --- | --- |
 | Phone / Android / Funtouch OS version | Vivo V30 / pending / pending |
-| Build version | Owner screenshots: 0.3.0-research; usability update: 0.3.1 |
+| Build version | Earlier owner screenshots recorded; 0.4.0-environment physical test pending |
 | Camera permission and recovery | Pending |
 | Rear preview / focus / zoom | Rear preview visible in owner screenshots; focus/zoom measurements pending |
 | Photo saving and gallery | Pending |
@@ -31,5 +31,8 @@ Unreleased recording changes add image timestamps, image transforms, sensor time
 | Generated-image diagnostic / failing network stage | Owner report: timeout waiting for response, 30,189 ms, no HTTP code; underlying cause unresolved |
 | Matched Vivo stock-camera quality comparison | Pending |
 | Human preference / old heuristic comparison | Pending |
+| Six-view planning / measured return route | Pending |
+| Native temporal tracker and observation throughput | Pending |
+| ARCore availability / camera handoff / actual pose and depth | Pending |
 
 Automated compilation and unit tests validate code and geometric rules. They do not establish camera quality, runtime model availability, coordinate alignment, or performance on the physical phone.

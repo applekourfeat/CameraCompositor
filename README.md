@@ -1,19 +1,19 @@
 # Camera Compositor
 
-Native Android camera research for useful composition guidance. Version **0.3.1** corrects the blocking reports and stale control state reported by the owner. The owner leads final UI/UX. [Usability correction and new Vivo evidence](docs/V031_USABILITY_FIX.md).
+Native Android camera research for useful composition guidance. Version **0.4.0-environment** implements a short scene-observation sweep, multi-view photographic planning and an optional real spatial-tracking test. The owner leads final UI/UX. [Implementation, evidence and limits](docs/V040_ENVIRONMENT_PROTOTYPE.md).
 
-Latest owner feedback exposes poor shot discovery in the city scene. The owner requires understanding the environment, viewpoints and perspective. [The new environment-composition investigation](docs/ENVIRONMENT_COMPOSITION_RESEARCH.md) reproduces that failure, tests a broader subject-proposal pipeline and measures an initial 3D geometry backend against real camera poses. Both remain below the product gates. Unreleased source adds recording geometry metadata; no improved photographic APK is delivered by this investigation.
+The owner's city-scene feedback requires understanding the environment, viewpoints and perspective. [The preceding investigation](docs/ENVIRONMENT_COMPOSITION_RESEARCH.md) explains the crop-only failure. The new flow observes several views and requests a subject/relationship graph before choosing a shot. Photographic quality and Vivo performance remain unqualified.
 
-The local model requires **no API key or internet connection**. It is a research candidate whose photographic quality and Vivo performance still need acceptance testing. Read [the measured research results](docs/COMPOSITION_RESEARCH.md).
+Camera capture, the manual guide, legacy local ranking and supported-device spatial testing operate independently of the personal AI service. The new photographic planner uses the saved research key and explicit multi-view upload consent. The eventual public app's keyless gateway remains unimplemented.
 
 ## Try the research build
 
-Install `artifacts/CameraCompositor-0.3.1-debug.apk` on the Vivo V30. Android 10+, ARM64. It uses this computer's existing debug signing key and can update the earlier prototype.
+Install `artifacts/CameraCompositor-0.4.0-environment-debug.apk` on the Vivo V30. Android 10+, ARM64. It uses this computer's existing debug signing key and can update the earlier prototype.
 
-1. Tap **Find a frame**. The model compares the current view with eight crops. If it selects the full view, a short status reports that no suggestion was found. This is abstention, not a rating of the photograph.
-2. For a crop suggestion, compare the two images. Choose **Use frame** or **Dismiss**. You can take a photo while a scan runs; that cancels the scan. Pinching takes manual zoom control during a guide.
-3. **Options > Developer tools > Record a local evaluation sweep** records eight reduced views and relative rotation samples in about four seconds. Nothing is uploaded. Export it through the file picker when convenient.
-4. **Options > Developer tools > Camera capability report** queries camera access on this actual phone.
+1. Tap **Find a composition**. After personal research setup and multi-view consent, turn slowly across a small scene with overlapping views and fixed zoom. Six views are collected; up to four are sent for assessment. Hold the final view while it responds.
+2. A suggestion references an actually observed viewpoint and subject. Review **Use this view** or **Dismiss**. A return guide follows measured intermediate views; missing overlap or stale tracking causes abstention. Pinching cancels an environment route and returns zoom control. Taking a photo cancels a scan.
+3. **Options > Developer tools > Test spatial tracking (ARCore)** checks actual support, then can record camera poses, sparse points and supported depth without an AI key. CameraX pauses for this separate test. Its data is not yet fused into the photographic planner.
+4. **Camera capability report**, the explicit eight-view research recorder and **Legacy local crop research** remain under Developer tools. These diagnostics are separate from proof of photographic quality.
 
 The framing guide expires after three seconds of lost tracking. Saved photographs use quality-priority full-resolution capture, with manufacturer processing when exposed. Photo quality compared with Vivo's stock camera remains unmeasured.
 
@@ -25,7 +25,7 @@ Open `artifacts/composition-research/review.html` in your desktop browser to com
 
 ## Optional cloud diagnostics
 
-The old Gemini path is under **Options > Developer tools > Cloud research scan (personal key)**. It retains encrypted phone-only key storage and explicit upload consent. It is separate from the default local feature. **Test service with a generated image** uploads a synthetic chart through the same composition request format without uploading the viewfinder or granting future camera-upload consent.
+The old single-image path is under **Options > Developer tools > Cloud research scan (personal key)**. It retains encrypted phone-only key storage and its original upload consent. **Test service with a generated image** uploads a synthetic chart through that older request format without uploading the viewfinder or granting multi-view consent.
 
 **Scan diagnostics** reports sanitized connection, upload, response and parsing events. A 35-second total deadline and cancellation bound each scene request. No request images, keys or provider error bodies are written to diagnostics. Quota errors do not trigger automatic retries.
 
@@ -35,7 +35,7 @@ End users can eventually use managed online assistance without supplying credent
 
 ## Build
 
-The project uses CameraX 1.6.2, SDK 36 compilation, target SDK 35, minimum SDK 29, AGP 8.10.1, Gradle 8.11.1 and Kotlin 2.3.20. The local Java toolchain is under ignored `.tools/`.
+The project uses CameraX 1.6.2, optional ARCore 1.57.0, SDK 36 compilation, target SDK 35, minimum SDK 29, AGP 8.10.1, Gradle 8.11.1 and Kotlin 2.3.20. The local Java toolchain is under ignored `.tools/`.
 
 ```powershell
 ./scripts/build.ps1
@@ -43,13 +43,16 @@ The project uses CameraX 1.6.2, SDK 36 compilation, target SDK 35, minimum SDK 2
 
 This runs `assembleDebug`, `testDebugUnitTest` and `lintDebug`. Android Studio can also open the project normally. `scripts/bootstrap_windows.py` provisions the local SDK/toolchain on another Windows computer; review the Android SDK terms first.
 
-The experimental model is injected into **debug assets only** from ignored `.local/research-assets`. Run the research export before building to include it. A fresh checkout builds without a model and explains the absent research asset. Release builds contain no research checkpoint. Public model/APK distribution remains gated on checkpoint permission and photographic/device acceptance.
+The legacy model is injected into **debug assets only** from ignored `.local/research-assets`. A fresh checkout builds without that asset; multi-view observation/planning and spatial testing are separate from it. Release builds contain no research checkpoint. Public model/APK distribution remains gated on checkpoint permission and photographic/device acceptance.
 
 ## Code responsibilities
 
 | Component | Responsibility |
 | --- | --- |
 | `LocalResearchScorer` | Local GAIC preprocessing and inference, separate from camera control |
+| `EnvironmentMotionTracker`, `EnvironmentSweep`, `EnvironmentMap` | Continuous image tracking, bounded scene observations and measured return routes |
+| `EnvironmentProtocol`, `CloudShotPlanner` | Structured subject/relationship assessment and constrained observed-view selection |
+| `SpatialProbeActivity` | Isolated optional ARCore camera pose, sparse point and depth sampling |
 | `CompositionDecision` | Experimental keep/observe/guide contract, view identities and subject/zoom constraints |
 | `SceneFrameAnalyzer`, `SceneTracker` | Camera-coordinate extraction and geometric feature tracking |
 | `ShotGeometry`, `GuideOverlay` | Framing rules and viewfinder drawing |
