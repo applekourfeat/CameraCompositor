@@ -23,12 +23,14 @@ object SceneRegions {
         SceneKind.PERSON, SceneKind.ANIMAL, SceneKind.OBJECTS, SceneKind.WALKWAY,
         SceneKind.BACKGROUND, SceneKind.BACKGROUND, SceneKind.OBSTRUCTION, SceneKind.BACKGROUND)
 
-    fun subjects(scores: FloatArray, layout: SceneLayout): List<SceneSubject> {
+    @JvmOverloads
+    fun subjects(scores: FloatArray, layout: SceneLayout, includeBuildingOutlines: Boolean = false): List<SceneSubject> {
         require(scores.size == GRID * GRID * PROMPT_GROUP.size && scores.all(Float::isFinite))
         val groups = IntArray(GRID * GRID) { -1 }
         val margins = FloatArray(groups.size)
         val peaks = FloatArray(SceneKind.entries.size)
         val skyByRow = IntArray(GRID)
+        val buildingEvidence = if (includeBuildingOutlines) FloatArray(groups.size) else null
         for (cell in groups.indices) {
             peaks.fill(-1f)
             for ((prompt, group) in PROMPT_GROUP.withIndex()) {
@@ -37,11 +39,16 @@ object SceneRegions {
             }
             val best = peaks.indices.maxBy { peaks[it] }
             val gap = peaks[best] - peaks.indices.filter { it != best }.maxOf { peaks[it] }
-            if (best == SceneKind.BACKGROUND.ordinal && gap >= .008f &&
-                scores[cell * PROMPT_GROUP.size + 12] == peaks[best]) skyByRow[cell / GRID]++
+            val sky = best == SceneKind.BACKGROUND.ordinal &&
+                scores[cell * PROMPT_GROUP.size + 12] == peaks[best]
+            if (sky && gap >= .008f) skyByRow[cell / GRID]++
             if (gap >= .010f && peaks[best] >= .118f) {
                 groups[cell] = best
                 margins[cell] = gap
+            }
+            val architecture = peaks[SceneKind.ARCHITECTURE.ordinal]
+            if (buildingEvidence != null && !sky && architecture >= .116f && peaks[best] - architecture <= .035f) {
+                buildingEvidence[cell] = architecture
             }
         }
         val found = regions(groups, margins, layout, openSky = skyByRow.sum() >= 14)
@@ -55,11 +62,39 @@ object SceneRegions {
             }
             regions(towers, margins, layout, skyline = true).filter { it.bounds.top <= (skyline - 1f) / GRID }
         } else emptyList()
-        return (found + silhouettes).sortedByDescending { it.strength }
+        val outlines = buildingEvidence?.let { buildingOutlines(it, skyByRow, layout) }.orEmpty()
+        return (outlines + found + silhouettes).sortedByDescending { it.strength }
+    }
+
+    /** Connect textured facade patches beneath a visible stretch of sky. */
+    private fun buildingOutlines(evidence: FloatArray, skyByRow: IntArray, layout: SceneLayout): List<SceneSubject> {
+        val skyline = (2 until GRID - 3).firstOrNull { row ->
+            skyByRow.take(row).count { it >= GRID / 3 } >= 2 &&
+                (row until row + 3).count { skyByRow[it] < GRID / 4 } >= 2
+        } ?: return emptyList()
+        val columns = IntArray(GRID)
+        val support = FloatArray(evidence.size)
+        for (i in 0 until (skyline + 1) * GRID) {
+            if (evidence[i] == 0f) continue
+            val x = i % GRID
+            val y = i / GRID
+            val cell = SubjectBox(x.toFloat() / GRID, y.toFloat() / GRID, (x + 1f) / GRID, (y + 1f) / GRID)
+            if (layout.subjectDetail(cell) >= .025f) {
+                columns[x]++
+                // Keep outline support on the same scale as the winning category margins.
+                support[i] = .018f + (evidence[i] - .116f).coerceIn(0f, .22f) * .08f
+            }
+        }
+        val facades = IntArray(evidence.size) { i ->
+            if (support[i] > 0f && columns[i % GRID] >= 2) SceneKind.ARCHITECTURE.ordinal else -1
+        }
+        val base = (skyline + 3.5f) / GRID
+        return regions(facades, support, layout, skyline = true, outlineBase = base)
+            .filter { it.bounds.top < (skyline - .5f) / GRID }
     }
 
     private fun regions(groups: IntArray, margins: FloatArray, layout: SceneLayout,
-                        skyline: Boolean = false, openSky: Boolean = false): List<SceneSubject> {
+                        skyline: Boolean = false, openSky: Boolean = false, outlineBase: Float? = null): List<SceneSubject> {
         val visited = BooleanArray(groups.size)
         val found = mutableListOf<SceneSubject>()
         for (cell in groups.indices) {
@@ -97,7 +132,20 @@ object SceneRegions {
             val kind = SceneKind.entries[group]
             val prominence = 2.8f * gap + .23f * sqrt(region.size.toFloat() / groups.size) + kind.subjectWeight -
                 .10f * hypot(x - .5f, y - .45f) + minOf(detail, .09f) * .7f + if (skyline) .14f else 0f
-            val box = if (skyline) regionBox.copy(bottom = minOf(1f, bottom + 1.5f / GRID)) else regionBox
+            val box = when {
+                outlineBase != null -> {
+                    val roofBand = minOf(bottom, top + .20f)
+                    val leftSky = left == 0f && layout.subjectDetail(SubjectBox(0f, top, .027f, roofBand)) < .015f
+                    val rightSky = right == 1f && layout.subjectDetail(SubjectBox(.973f, top, 1f, roofBand)) < .015f
+                    SubjectBox(
+                        if (leftSky) .034f else maxOf(0f, left - .35f / GRID), maxOf(0f, top - .55f / GRID),
+                        if (rightSky) .966f else minOf(1f, right + .35f / GRID),
+                        minOf(1f, maxOf(outlineBase, bottom + 1.5f / GRID))
+                    )
+                }
+                skyline -> regionBox.copy(bottom = minOf(1f, bottom + 1.5f / GRID))
+                else -> regionBox
+            }
             val lookHigher = skyline && box.bottom <= .64f &&
                 layout.subjectDetail(SubjectBox(0f, box.bottom, 1f, 1f)) >= maxOf(.027f, detail * .66f)
             // Branches can cross the frame boundary. Preserve the crown's core when its center has room.

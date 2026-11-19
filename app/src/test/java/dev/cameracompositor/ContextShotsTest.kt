@@ -54,4 +54,52 @@ class ContextShotsTest {
         assertTrue(shots.all { it.comparisonBox.left >= 0f && it.comparisonBox.right <= 1f &&
             it.comparisonBox.top >= 0f && it.comparisonBox.bottom <= 1f })
     }
+
+    @Test fun `connected facade evidence against the sky anchors a shot when patches disagree`() {
+        val grid = SceneRegions.GRID
+        val pixels = IntArray(SceneLayout.WIDTH * SceneLayout.HEIGHT) { i ->
+            val x = i % SceneLayout.WIDTH
+            val y = i / SceneLayout.WIDTH
+            val tower = x in 36 until 72 && y >= 32
+            if (tower || y >= 80) {
+                if ((x + y) % 4 < 2) 0x777777 else 0xA8A8A8
+            } else 0x7FA8CD
+        }
+        val city = SceneLayout(pixels, null)
+        val prompts = SceneRegions.PROMPT_GROUP.size
+        val scores = FloatArray(grid * grid * prompts) { .04f }
+        for (y in 0 until grid) for (x in 0 until grid) {
+            val cell = (y * grid + x) * prompts
+            when {
+                y in 2..3 && x in 3..5 -> {
+                    scores[cell + 3] = .144f
+                    scores[cell + 7] = .161f
+                }
+                y < 4 -> scores[cell + 12] = .25f
+                else -> scores[cell + 11] = .21f
+            }
+        }
+        val building = ContextShots.subjects(city, scores, null).first { it.kind == SceneKind.ARCHITECTURE }
+        assertTrue(building.framingBounds.top < .17f)
+        assertTrue(building.framingBounds.left < .25f && building.framingBounds.right > .50f)
+        val view = EnvironmentView(0, 1L, 1f, 1.85f, null)
+        val map = EnvironmentMap(1L).apply { add(view) }
+        val shots = ContextShots.candidates(map, listOf(ShotEvidence(view, city, listOf(building))),
+            CompositionStyle.THIRDS, 1.85f)
+        val chosen = ContextShots.choose(shots, FloatArray(shots.size) { 4f })!!.shot
+        assertTrue(chosen.crop.bottom >= building.framingBounds.bottom && chosen.crop.bottom < .89f)
+    }
+
+    @Test fun `a framing is compared against its own subject when nearby regions share a category`() {
+        val view = EnvironmentView(0, 1L, 1f, 2f, null)
+        val map = EnvironmentMap(1L).apply { add(view) }
+        val house = SceneSubject(SceneKind.ARCHITECTURE, SubjectBox(.21f, .21f, .57f, .64f),
+            ScenePoint(.39f, .42f), .31f)
+        val tower = SceneSubject(SceneKind.ARCHITECTURE, SubjectBox(.47f, .18f, .61f, .51f),
+            ScenePoint(.54f, .35f), .22f)
+        fun bestTowerGain(subjects: List<SceneSubject>) =
+            ContextShots.candidates(map, listOf(ShotEvidence(view, layout, subjects)), CompositionStyle.THIRDS, 2f)
+                .first { it.subject == tower }.framingGain
+        assertEquals(bestTowerGain(listOf(house, tower)), bestTowerGain(listOf(tower, house)), .0001f)
+    }
 }

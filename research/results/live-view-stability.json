@@ -1,0 +1,466 @@
+{
+  "scope": "Desktop stills using the Android candidate and ranking policy with the bundled weights. No live acquisition, tracking, or human preference in these rows.",
+  "style": "THIRDS",
+  "previousBuild": "3bd6383",
+  "skylineCases": [
+    "base.jpg",
+    "bright.jpg",
+    "dim.jpg",
+    "flat-color.jpg",
+    "slight-down.jpg",
+    "slight-left.jpg",
+    "slight-right.jpg",
+    "slight-up.jpg",
+    "small-preview.jpg"
+  ],
+  "summary": {
+    "0.9.0-vivo": {
+      "directGuides": 6,
+      "skylineViews": 9,
+      "desktopMedianMs": 392.08
+    },
+    "0.10.0-live": {
+      "directGuides": 8,
+      "skylineViews": 9,
+      "desktopMedianMs": 443.03
+    }
+  },
+  "vivoLive": "pending",
+  "humanPreference": "pending",
+  "previous": [
+    {
+      "input": "base.jpg",
+      "sourceZoom": 1.0,
+      "compared": 9,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.082377315,
+        0.02763769,
+        0.7023773,
+        0.6476377
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.5632,
+      "modelScore": 3.7346,
+      "wideScore": 4.405,
+      "desktopMs": 650.77
+    },
+    {
+      "input": "bright.jpg",
+      "sourceZoom": 1.0,
+      "compared": 9,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.102698535,
+        0.03493625,
+        0.72269857,
+        0.65493625
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.6861,
+      "modelScore": 3.8402,
+      "wideScore": 4.3519,
+      "desktopMs": 366.49
+    },
+    {
+      "input": "dim.jpg",
+      "sourceZoom": 1.0,
+      "compared": 9,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.09047043,
+        0.030715376,
+        0.71047044,
+        0.65071535
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.2045,
+      "modelScore": 4.007,
+      "wideScore": 4.3428,
+      "desktopMs": 357.18
+    },
+    {
+      "input": "flat-color.jpg",
+      "sourceZoom": 1.0,
+      "compared": 9,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 1.0,
+      "framingGain": 0.0,
+      "modelScore": 4.3789,
+      "wideScore": 4.3789,
+      "desktopMs": 369.48
+    },
+    {
+      "input": "framed.jpg",
+      "sourceZoom": 1.61,
+      "compared": 1,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 1.61,
+      "framingGain": 0.0,
+      "modelScore": 4.4836,
+      "wideScore": 4.4836,
+      "desktopMs": 422.36
+    },
+    {
+      "input": "slight-down.jpg",
+      "sourceZoom": 1.11,
+      "compared": 14,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.053730607,
+        0.0,
+        0.6737306,
+        0.62
+      ],
+      "chosenZoom": 1.79,
+      "framingGain": 0.3725,
+      "modelScore": 3.4312,
+      "wideScore": 3.9053,
+      "desktopMs": 296.34
+    },
+    {
+      "input": "slight-left.jpg",
+      "sourceZoom": 1.11,
+      "compared": 1,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 1.11,
+      "framingGain": 0.0,
+      "modelScore": 4.4193,
+      "wideScore": 4.4193,
+      "desktopMs": 392.08
+    },
+    {
+      "input": "slight-right.jpg",
+      "sourceZoom": 1.11,
+      "compared": 6,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 1.11,
+      "framingGain": 0.0,
+      "modelScore": 4.0012,
+      "wideScore": 4.0012,
+      "desktopMs": 459.97
+    },
+    {
+      "input": "slight-up.jpg",
+      "sourceZoom": 1.11,
+      "compared": 9,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.10366899,
+        0.09474057,
+        0.803669,
+        0.79474056
+      ],
+      "chosenZoom": 1.586,
+      "framingGain": 0.5078,
+      "modelScore": 4.1687,
+      "wideScore": 4.1686,
+      "desktopMs": 462.93
+    },
+    {
+      "input": "small-preview.jpg",
+      "sourceZoom": 1.0,
+      "compared": 9,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.10070461,
+        0.03425184,
+        0.7207046,
+        0.6542518
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.6042,
+      "modelScore": 3.5986,
+      "wideScore": 4.1799,
+      "desktopMs": 423.46
+    }
+  ],
+  "current": [
+    {
+      "input": "base.jpg",
+      "sourceZoom": 1.0,
+      "compared": 13,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.082377315,
+        0.02763769,
+        0.7023773,
+        0.6476377
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.7644,
+      "modelScore": 3.7346,
+      "wideScore": 4.405,
+      "desktopMs": 869.88
+    },
+    {
+      "input": "flat-color.jpg",
+      "sourceZoom": 1.0,
+      "compared": 15,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.0345366,
+        0.0,
+        0.7345366,
+        0.7
+      ],
+      "chosenZoom": 1.429,
+      "framingGain": 0.3354,
+      "modelScore": 4.0315,
+      "wideScore": 4.3789,
+      "desktopMs": 443.03
+    },
+    {
+      "input": "slight-left.jpg",
+      "sourceZoom": 1.11,
+      "compared": 6,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.06622803,
+        0.0,
+        0.766228,
+        0.7
+      ],
+      "chosenZoom": 1.586,
+      "framingGain": 0.5348,
+      "modelScore": 4.2054,
+      "wideScore": 4.4193,
+      "desktopMs": 403.64
+    },
+    {
+      "input": "slight-right.jpg",
+      "sourceZoom": 1.11,
+      "compared": 9,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 1.11,
+      "framingGain": 0.0,
+      "modelScore": 4.0012,
+      "wideScore": 4.0012,
+      "desktopMs": 281.3
+    },
+    {
+      "input": "framed.jpg",
+      "sourceZoom": 1.61,
+      "compared": 1,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 1.61,
+      "framingGain": 0.0,
+      "modelScore": 4.4836,
+      "wideScore": 4.4836,
+      "desktopMs": 396.94
+    },
+    {
+      "input": "bright.jpg",
+      "sourceZoom": 1.0,
+      "compared": 15,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.102698535,
+        0.03493625,
+        0.72269857,
+        0.65493625
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.8791,
+      "modelScore": 3.8402,
+      "wideScore": 4.3519,
+      "desktopMs": 301.82
+    },
+    {
+      "input": "dim.jpg",
+      "sourceZoom": 1.0,
+      "compared": 15,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.09047043,
+        0.030715376,
+        0.71047044,
+        0.65071535
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.4022,
+      "modelScore": 4.007,
+      "wideScore": 4.3428,
+      "desktopMs": 453.81
+    },
+    {
+      "input": "slight-up.jpg",
+      "sourceZoom": 1.11,
+      "compared": 5,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.024442166,
+        0.04601285,
+        0.7244421,
+        0.7460128
+      ],
+      "chosenZoom": 1.586,
+      "framingGain": 0.5085,
+      "modelScore": 3.7865,
+      "wideScore": 4.1686,
+      "desktopMs": 546.73
+    },
+    {
+      "input": "slight-down.jpg",
+      "sourceZoom": 1.11,
+      "compared": 14,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.1343306,
+        0.0,
+        0.75433064,
+        0.62
+      ],
+      "chosenZoom": 1.79,
+      "framingGain": 0.4111,
+      "modelScore": 3.2634,
+      "wideScore": 3.9053,
+      "desktopMs": 519.4
+    },
+    {
+      "input": "small-preview.jpg",
+      "sourceZoom": 1.0,
+      "compared": 15,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.10070461,
+        0.03425184,
+        0.7207046,
+        0.6542518
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.7842,
+      "modelScore": 3.5986,
+      "wideScore": 4.1799,
+      "desktopMs": 438.96
+    },
+    {
+      "input": "scene-clean.jpg",
+      "sourceZoom": 0.5,
+      "compared": 7,
+      "decision": "Guide",
+      "subject": "FOLIAGE",
+      "frame": [
+        0.4413189,
+        0.025541618,
+        0.99131894,
+        0.5755416
+      ],
+      "chosenZoom": 0.909,
+      "framingGain": 0.2343,
+      "modelScore": 2.5238,
+      "wideScore": 3.6529,
+      "desktopMs": 498.68
+    },
+    {
+      "input": "after-6.05.jpg",
+      "sourceZoom": 0.5,
+      "compared": 9,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 0.5,
+      "framingGain": 0.0,
+      "modelScore": 4.321,
+      "wideScore": 4.321,
+      "desktopMs": 365.19
+    },
+    {
+      "input": "flat-control.png",
+      "sourceZoom": 1.0,
+      "compared": 1,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 1.0,
+      "framingGain": 0.0,
+      "modelScore": 2.3171,
+      "wideScore": 2.3171,
+      "desktopMs": 522.76
+    },
+    {
+      "input": "window-city.png",
+      "sourceZoom": 1.0,
+      "compared": 13,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.08292964,
+        0.032581687,
+        0.7029296,
+        0.6525817
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.7108,
+      "modelScore": 3.9012,
+      "wideScore": 4.6318,
+      "desktopMs": 767.04
+    }
+  ]
+}

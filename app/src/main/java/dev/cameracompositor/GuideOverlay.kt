@@ -14,6 +14,7 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
     var aligned = false
     var aimPoint: ScenePoint? = null
     var targetPreview: Bitmap? = null
+    var targetVisible = true
     var compositionStyle = CompositionStyle.THIRDS
         set(value) { field = value; invalidate() }
     var subjectPin: ScenePoint? = null
@@ -26,7 +27,7 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         drawCompositionGrid(canvas)
-        drawTargetPreview(canvas)
+        if (targetVisible) drawTargetPreview(canvas)
         drawSubjectPin(canvas)
         val aim = aimPoint
         val points = frame

@@ -1,5 +1,9 @@
 # Verification
 
+## Vivo live guidance build
+
+Version **0.10.0-live** passed the Android build, 97 unit tests, lint with zero errors and 72 warnings, and 20 Python research tests. The ARM64 APK passed signing and alignment checks. The owner's 0.9.0 report describes rare proposals and repeated turning prompts. The new policy proposed building frames in eight of nine desktop variations of the owner's skyline. Live Vivo selection time, alignment, zoom and saved framing remain pending. [Live guidance and replay](V0100_LIVE_GUIDANCE.md), [delivery verification](../research/results/delivery-verification-v0100_live.json).
+
 ## Composition styles build
 
 Version **0.7.0-styles** passes `assembleDebug`, `testDebugUnitTest`, `lintDebug`, and `mergeReleaseAssets`. Both ARM APK signatures and 16 KB archive alignment checks pass. All 79 Android and 20 Python tests pass. Lint reports zero errors and 73 warnings. The 20/60 desktop replay verifies framing geometry. No phone or emulator was attached for the Vivo capture checks. [Delivery verification](../research/results/delivery-verification-v070_styles.json), [composition and camera results](V070_COMPOSITION_STYLES.md).

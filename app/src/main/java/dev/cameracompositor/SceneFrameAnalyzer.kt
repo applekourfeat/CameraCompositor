@@ -11,7 +11,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 data class ScanFrame(val image: Bitmap, val gray: ByteArray, val width: Int, val height: Int,
     val bufferToView: Matrix, val viewSize: Size, val cameraTimestampNs: Long,
-    val sensorToBuffer: Matrix?, val registration: ViewRegistration? = null, val attitude: ViewAttitude? = null)
+    val sensorToBuffer: Matrix?, val scene: LiveScene, val registration: ViewRegistration? = null,
+    val attitude: ViewAttitude? = null)
 
 /** Shared analysis frames feed both the one-shot scan and scene tracking. */
 class SceneFrameAnalyzer(private val tracker: SceneTracker, private val motion: MotionOrientation,
@@ -67,7 +68,8 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val motion: 
             val signature = FrameSignature.sample(gray, image.width, image.height)
             val now = SystemClock.elapsedRealtime()
             val attitude = motion.viewAttitude(size.width, size.height)
-            liveScene = LiveScene(now, signature)
+            val scene = LiveScene(now, signature)
+            liveScene = scene
             if (environmentReset) {
                 environment.close(); checkpointSignature = null; missedEnvironmentFrames = 0; environmentReset=false
             }
@@ -107,7 +109,7 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val motion: 
                     } else null
                     callback(ScanFrame(visible, gray, image.width, image.height, bufferToView, size,
                         image.imageInfo.timestamp, Matrix(image.imageInfo.sensorToBufferTransformMatrix),
-                        registration, attitude))
+                        scene, registration, attitude))
                 } catch (_: Exception) { callback(null) }
             }
             if (trackingGuide) {

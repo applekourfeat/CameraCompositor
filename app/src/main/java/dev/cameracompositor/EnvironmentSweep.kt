@@ -21,7 +21,11 @@ class EnvironmentSweep(private val analyzer: SceneFrameAnalyzer, private val zoo
     private val map=EnvironmentMap(SystemClock.elapsedRealtimeNanos())
     private var active=false
     private var sequence=0
-    fun start() { active=true; analyzer.beginEnvironment(); capture() }
+    fun start() {
+        active = true
+        if (frameLimit > 1) analyzer.beginEnvironment()
+        capture()
+    }
     private fun capture() {
         if (!active) return
         val request=++sequence

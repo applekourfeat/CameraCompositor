@@ -17,7 +17,7 @@ object ContextShots {
     private const val MIN_IMPROVEMENT = .18f
 
     fun subjects(layout: SceneLayout, scores: FloatArray?, detection: DetectedSubject?): List<SceneSubject> {
-        val semantic = scores?.let { SceneRegions.subjects(it, layout) }.orEmpty()
+        val semantic = scores?.let { SceneRegions.subjects(it, layout, includeBuildingOutlines = true) }.orEmpty()
         val found = detection?.takeIf { it.confidence >= .58f } ?: return semantic
         val kind = when (found.category) {
             0 -> SceneKind.PERSON
@@ -48,9 +48,9 @@ object ContextShots {
             for (subject in distinctSubjects) {
                 val projected = map.projectPoints(view.id, context, listOf(subject.point))?.singleOrNull() ?: continue
                 if (expected != null && (subject.kind != expected.kind || distance(projected, expected.point) > .31f)) continue
-                val baseline = current.subjects.firstOrNull {
-                    it.kind == subject.kind && distance(it.point, projected) < .20f
-                } ?: continue
+                val baseline = if (view.id == context) subject else current.subjects
+                    .filter { it.kind == subject.kind && distance(it.point, projected) < .20f }
+                    .minByOrNull { distance(it.point, projected) } ?: continue
                 val baselineQuality = framing(current.layout, full, baseline, current.subjects, style, placements)
                 val proposals = sizes.filter { 1 / it <= zoomLimit + .001f }.flatMap { size ->
                     placements.map { position -> boxAt(subject.point, position, size) }
@@ -105,7 +105,13 @@ object ContextShots {
                 (other.strength / subject.strength).coerceAtMost(1f) } ?: 0f
         val styleError = placements.minOf { distance(it, p) }
         val quiet = if (style == CompositionStyle.NEGATIVE_SPACE) layout.quietSide(crop, core, p.x < .5f) else 0f
-        return attention - .66f * competing - .63f * styleError + .46f * quiet + .60f * subject.strength
+        val excessBelow = (crop.bottom - core.bottom) / size - .16f
+        val lowerDetail = if (subject.skyline && style != CompositionStyle.WIDE && excessBelow > 0f) {
+            val strip = SubjectBox(crop.left, core.bottom, crop.right, crop.bottom)
+            excessBelow * ((layout.subjectDetail(strip) - .015f) / .055f).coerceIn(0f, 1f)
+        } else 0f
+        return attention - .66f * competing - .63f * styleError + .46f * quiet +
+            .60f * subject.strength - .7f * lowerDetail
     }
 
     private fun placements(style: CompositionStyle): List<ScenePoint> = when (style) {

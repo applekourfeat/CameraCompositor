@@ -18,7 +18,9 @@ AUTO_VERSION = "0.6.0-auto"
 STYLES_VERSION = "0.7.0-styles"
 DISCOVERY_VERSION = "0.8.0-discovery"
 VIVO_VERSION = "0.9.0-vivo"
-SEMANTICS_BUILDS = {DISCOVERY_VERSION, VIVO_VERSION}
+LIVE_VERSION = "0.10.0-live"
+VIVO_BUILDS = {VIVO_VERSION, LIVE_VERSION}
+SEMANTICS_BUILDS = {DISCOVERY_VERSION} | VIVO_BUILDS
 SUBJECT_BUILDS = {AUTO_VERSION, STYLES_VERSION} | SEMANTICS_BUILDS
 DEPTH_BUILDS = {CAMERA_VERSION} | SUBJECT_BUILDS
 SUBJECT_ASSET = "nanodet-416.onnx"
@@ -53,7 +55,7 @@ def shipped_models(version):
         models[SUBJECT_ASSET] = SUBJECT_SHA
     if version in SEMANTICS_BUILDS:
         models[SEMANTICS_ASSET] = SEMANTICS_SHA
-    if version == VIVO_VERSION:
+    if version in VIVO_BUILDS:
         models[CONTEXT_ASSET] = CONTEXT_SHA
     return models
 
@@ -81,7 +83,7 @@ def verify_apk(apk, abi, version):
             if version in SEMANTICS_BUILDS:
                 notice = source.read("assets/third-party/TinyCLIP-LICENSE.txt").replace(b"\r\n", b"\n")
                 assert hashlib.sha256(notice).hexdigest() == SEMANTICS_LICENSE_SHA
-            if version == VIVO_VERSION:
+            if version in VIVO_BUILDS:
                 notice = source.read("assets/GAIC-CODE-LICENSE.txt").replace(b"\r\n", b"\n")
                 assert notice == (ROOT / "research/GAIC-LICENSE.txt").read_bytes().replace(b"\r\n", b"\n")
             if abi == "arm64-v8a":
@@ -104,7 +106,7 @@ def main():
         suite = ET.parse(path).getroot()
         count += int(suite.get("tests", "0"))
         failures += int(suite.get("failures", "0")) + int(suite.get("errors", "0"))
-    minimum = {VIVO_VERSION: 91, DISCOVERY_VERSION: 88, STYLES_VERSION: 79, AUTO_VERSION: 71, CAMERA_VERSION: 63,
+    minimum = {LIVE_VERSION: 95, VIVO_VERSION: 91, DISCOVERY_VERSION: 88, STYLES_VERSION: 79, AUTO_VERSION: 71, CAMERA_VERSION: 63,
                "0.4.1-spatial": 55, "0.4.0-environment": 47}.get(version, 35)
     assert count >= minimum and failures == 0, "Unit checks are missing or failed"
     outputs = ROOT / "app/build/outputs/apk/debug"
@@ -112,7 +114,7 @@ def main():
     assert all(m["versionName"] == version for m in metadata["elements"]), "Build metadata is stale"
     if version in DEPTH_BUILDS:
         artifacts = {"arm64-v8a": apk, "armeabi-v7a": arm32}
-        if version == VIVO_VERSION:
+        if version in VIVO_BUILDS:
             artifacts.pop("armeabi-v7a")
         elements = {f["value"]: m for m in metadata["elements"] for f in m["filters"] if f["filterType"] == "ABI"}
         assert metadata["minSdkVersionForDexing"] == 29 and artifacts.keys() <= elements.keys()
@@ -135,7 +137,7 @@ def main():
     release = ROOT / "app/build/intermediates/assets/release/mergeReleaseAssets"
     assert release.is_dir(), "Run mergeReleaseAssets first"
     release_weights = {p.name: p for p in release.rglob("*") if p.suffix in {".onnx", ".tflite", ".litertlm", ".pth", ".hdf5"}}
-    release_version = DISCOVERY_VERSION if version == VIVO_VERSION else version
+    release_version = DISCOVERY_VERSION if version in VIVO_BUILDS else version
     expected = shipped_models(release_version) if release_version in DEPTH_BUILDS else {}
     assert release_weights.keys() == expected.keys(), "Unexpected model in release assets"
     assert all(file_sha(release_weights[name]) == digest for name, digest in expected.items())
@@ -150,7 +152,7 @@ def main():
         result.update({"modelSha256": DEPTH_SHA, "releaseResearchAssets": "ZipDepth only, no legacy research weights",
             "arm64Elf16KiBLoadAlignment": "pass",
             "physicalVivoTests": "v0.5.0 pending; v0.4.1 owner reported spatial tracking temporarily unavailable"})
-        if version != VIVO_VERSION:
+        if version not in VIVO_BUILDS:
             result.update({"armeabiV7aApkBytes": arm32.stat().st_size, "armeabiV7aApkSha256": file_sha(arm32)})
     if version == AUTO_VERSION:
         result.update({"subjectModelSha256": SUBJECT_SHA,
@@ -164,10 +166,12 @@ def main():
         result.update({"subjectModelSha256": SUBJECT_SHA, "sceneSemanticsSha256": SEMANTICS_SHA,
             "releaseResearchAssets": "ZipDepth, NanoDet and TinyCLIP image encoder",
             "physicalVivoTests": "v0.8.0 pending; owner reported weak subject choice and frequent loss of tracking on v0.7.0"})
-    if version == VIVO_VERSION:
+    if version in VIVO_BUILDS:
         result.update({"subjectModelSha256": SUBJECT_SHA, "sceneSemanticsSha256": SEMANTICS_SHA, "contextModelSha256": CONTEXT_SHA,
             "releaseResearchAssets": "ZipDepth, NanoDet and TinyCLIP image encoder. Private contextual ranker excluded.",
             "physicalVivoTests": "v0.9.0 lens access, guidance, saved framing and live selection time pending"})
+    if version == LIVE_VERSION:
+        result["physicalVivoTests"] = "v0.10.0 pending. Owner reported rare suggestions and repeated turning prompts on v0.9.0."
     tag=version.replace(".","").replace("-","_")
     path = ROOT / f"research/results/delivery-verification-v{tag}.json"
     path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

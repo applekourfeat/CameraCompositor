@@ -1,6 +1,6 @@
 # Camera Compositor
 
-The private [Vivo V30 rehearsal build](docs/V090_VIVO_REHEARSAL.md) compares several framings in the current wide view. Use it for the first live demonstration check.
+The private [Vivo V30 live build](docs/V0100_LIVE_GUIDANCE.md) checks the view you are already pointing at and shows a framing guide when it finds a shot. Use this build for the Vivo rehearsal.
 
 Native Android camera research for composition guidance. Version **0.8.0-discovery** looks for subjects as soon as the viewfinder opens. It can suggest a turn, then check the actual scene from the new angle before setting a frame. The owner leads final UI/UX. [Subject discovery and tracking results](docs/V080_SCENE_DISCOVERY.md).
 

@@ -38,10 +38,12 @@ class ContextComposition(private val recognition: SceneRecognition, private val 
             return LocalComposition.Result(shot, emptyMap(), ranked.gain >= .23f && subject.strength >= .21f,
                 subject.kind, shots.size)
         }
-        val observed = EnvironmentDecision.ObserveMore("Turn a little to show another angle.")
-        val main = latest.subjects.firstOrNull { it.kind != SceneKind.WALKWAY }
-        val next = if (allowExploration) NextView.suggest(viewId, style, null, main, observed) else null
-        val keep = if (main != null) EnvironmentDecision.Keep("Keep this frame, or try another angle.") else observed
+        val observed = EnvironmentDecision.ObserveMore("No clear shot yet. Aim at a subject or tap Find shot.")
+        val main = latest.subjects.firstOrNull { it.kind != SceneKind.WALKWAY && it.strength >= .21f }
+        val edge = main?.framingBounds
+        val clipped = edge != null && minOf(edge.left, edge.top, 1 - edge.right, 1 - edge.bottom) <= .055f
+        val next = if (allowExploration && clipped) NextView.suggest(viewId, style, null, main, observed) else null
+        val keep = if (main != null && !clipped) EnvironmentDecision.Keep("This framing works. Take the photo when ready.") else observed
         return LocalComposition.Result(next ?: keep, emptyMap(), false, main?.kind, shots.size)
     }
 
