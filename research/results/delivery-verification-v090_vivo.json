@@ -1,0 +1,19 @@
+{
+  "build": "0.9.0-vivo",
+  "apkBytes": 107314375,
+  "apkSha256": "d0b0fd6efe51abeb67294c4bba723f0c1dcfa35717d4a731a292168e7c6bbb68",
+  "unitTests": 91,
+  "unitFailures": 0,
+  "lintErrors": 0,
+  "lintWarnings": 71,
+  "modelSha256": "dad03af25e12af84feb7694e0b0182dd2811a0d2a47d4c009cd7bcb41b5b7d25",
+  "releaseResearchAssets": "ZipDepth, NanoDet and TinyCLIP image encoder. Private contextual ranker excluded.",
+  "credentialPatternCheck": "pass",
+  "physicalVivoTests": "v0.9.0 lens access, guidance, saved framing and live selection time pending",
+  "humanPreferenceGate": "pending",
+  "liveProviderDiagnostic": "v0.3.0 owner report: WAIT_RESPONSE timeout after client upload; cause unresolved",
+  "arm64Elf16KiBLoadAlignment": "pass",
+  "subjectModelSha256": "d891b8c939ce062b13fc7440195d427eeecbec307c2417564d6908309b263e19",
+  "sceneSemanticsSha256": "2fb0ea9ce371d5c6c64fec2c3ce6a354314d6e3f99f7489de81952f8ea2bdc3a",
+  "contextModelSha256": "4fc5e490e50a23f6c1f7326c3c797f0a17020747f8e3de66aa74f5a2e9c36a6d"
+}

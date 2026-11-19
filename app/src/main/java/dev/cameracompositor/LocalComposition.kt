@@ -19,7 +19,7 @@ data class SubjectTap(val point: ScenePoint, val view: LiveScene, val zoom: Floa
 class LocalComposition(private val depth: SoftwareDepth, private val detector: SceneSubjectDetector,
                        private val recognition: SceneRecognition) {
     data class Result(val decision: EnvironmentDecision, val relativeDepth: Map<Int, RelativeDepth>,
-                      val canAutoCapture: Boolean, val recognized: SceneKind? = null)
+                      val canAutoCapture: Boolean, val recognized: SceneKind? = null, val comparedShots: Int = 0)
 
     fun evaluate(batch: EnvironmentBatch, remainingZoom: Float, style: CompositionStyle, tap: SubjectTap?,
                  allowExploration: Boolean, expected: SubjectHint?, isActive: () -> Boolean): Result {

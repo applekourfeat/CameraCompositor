@@ -1,0 +1,75 @@
+{
+  "test": "Independently score rated crops as full images",
+  "scope": "Matched content, static crops, desktop CPU. Human ratings come from GAICv2.",
+  "maxCandidatesPerScene": 12,
+  "minimumRatingDifference": 0.5,
+  "settlingRotationAndPhoneLatency": "unmeasured",
+  "partitions": {
+    "development": {
+      "scenes": 20,
+      "methods": {
+        "gaicWithContext": {
+          "ratedPairs": 820,
+          "pairAgreement": 0.952,
+          "meanRankCorrelation": 0.792,
+          "averageGapToBest": 0.121,
+          "desktopMedianBatchMs": 94.62
+        },
+        "gaicIsolated": {
+          "ratedPairs": 820,
+          "pairAgreement": 0.69,
+          "meanRankCorrelation": 0.325,
+          "averageGapToBest": 0.613,
+          "desktopMedianBatchMs": 1193.88
+        },
+        "nimaIsolated": {
+          "ratedPairs": 820,
+          "pairAgreement": 0.638,
+          "meanRankCorrelation": 0.293,
+          "averageGapToBest": 0.602,
+          "desktopMedianBatchMs": 1086.21
+        },
+        "largestFrame": {
+          "ratedPairs": 820,
+          "pairAgreement": 0.679,
+          "meanRankCorrelation": 0.33,
+          "averageGapToBest": 0.462,
+          "desktopMedianBatchMs": 0.0
+        }
+      }
+    },
+    "evaluation": {
+      "scenes": 60,
+      "methods": {
+        "gaicWithContext": {
+          "ratedPairs": 2353,
+          "pairAgreement": 0.964,
+          "meanRankCorrelation": 0.847,
+          "averageGapToBest": 0.14,
+          "desktopMedianBatchMs": 11.13
+        },
+        "gaicIsolated": {
+          "ratedPairs": 2353,
+          "pairAgreement": 0.74,
+          "meanRankCorrelation": 0.437,
+          "averageGapToBest": 0.58,
+          "desktopMedianBatchMs": 120.73
+        },
+        "nimaIsolated": {
+          "ratedPairs": 2353,
+          "pairAgreement": 0.617,
+          "meanRankCorrelation": 0.214,
+          "averageGapToBest": 0.924,
+          "desktopMedianBatchMs": 197.42
+        },
+        "largestFrame": {
+          "ratedPairs": 2353,
+          "pairAgreement": 0.711,
+          "meanRankCorrelation": 0.444,
+          "averageGapToBest": 0.502,
+          "desktopMedianBatchMs": 0.0
+        }
+      }
+    }
+  }
+}

@@ -17,13 +17,17 @@ CAMERA_VERSION = "0.5.0-camera"
 AUTO_VERSION = "0.6.0-auto"
 STYLES_VERSION = "0.7.0-styles"
 DISCOVERY_VERSION = "0.8.0-discovery"
-SUBJECT_BUILDS = {AUTO_VERSION, STYLES_VERSION, DISCOVERY_VERSION}
+VIVO_VERSION = "0.9.0-vivo"
+SEMANTICS_BUILDS = {DISCOVERY_VERSION, VIVO_VERSION}
+SUBJECT_BUILDS = {AUTO_VERSION, STYLES_VERSION} | SEMANTICS_BUILDS
 DEPTH_BUILDS = {CAMERA_VERSION} | SUBJECT_BUILDS
 SUBJECT_ASSET = "nanodet-416.onnx"
 SUBJECT_SHA = "d891b8c939ce062b13fc7440195d427eeecbec307c2417564d6908309b263e19"
 SEMANTICS_ASSET = "scene-regions-192.onnx"
 SEMANTICS_SHA = "2fb0ea9ce371d5c6c64fec2c3ce6a354314d6e3f99f7489de81952f8ea2bdc3a"
 SEMANTICS_LICENSE_SHA = "583acc0d9c74def18ec24e56964421bf1fac1fa2d60451e75e6681d5ae58a3f6"
+CONTEXT_ASSET = "gaic-dynamic.onnx"
+CONTEXT_SHA = "4fc5e490e50a23f6c1f7326c3c797f0a17020747f8e3de66aa74f5a2e9c36a6d"
 KEY_PATTERN = re.compile(rb"AIza[0-9A-Za-z_-]{35}|gh[pousr]_[0-9A-Za-z]{30,}|sk-proj-[0-9A-Za-z_-]{40,}")
 
 
@@ -47,8 +51,10 @@ def shipped_models(version):
     models = {DEPTH_ASSET: DEPTH_SHA}
     if version in SUBJECT_BUILDS:
         models[SUBJECT_ASSET] = SUBJECT_SHA
-    if version == DISCOVERY_VERSION:
+    if version in SEMANTICS_BUILDS:
         models[SEMANTICS_ASSET] = SEMANTICS_SHA
+    if version == VIVO_VERSION:
+        models[CONTEXT_ASSET] = CONTEXT_SHA
     return models
 
 
@@ -72,9 +78,12 @@ def verify_apk(apk, abi, version):
             assert {n for n in names if n.endswith(".onnx")} == {"assets/" + model for model in models}
             if version in SUBJECT_BUILDS:
                 assert "assets/third-party/NanoDet-LICENSE.txt" in names
-            if version == DISCOVERY_VERSION:
+            if version in SEMANTICS_BUILDS:
                 notice = source.read("assets/third-party/TinyCLIP-LICENSE.txt").replace(b"\r\n", b"\n")
                 assert hashlib.sha256(notice).hexdigest() == SEMANTICS_LICENSE_SHA
+            if version == VIVO_VERSION:
+                notice = source.read("assets/GAIC-CODE-LICENSE.txt").replace(b"\r\n", b"\n")
+                assert notice == (ROOT / "research/GAIC-LICENSE.txt").read_bytes().replace(b"\r\n", b"\n")
             if abi == "arm64-v8a":
                 for name in native:
                     verify_arm64_segments(source.read(name))
@@ -95,7 +104,7 @@ def main():
         suite = ET.parse(path).getroot()
         count += int(suite.get("tests", "0"))
         failures += int(suite.get("failures", "0")) + int(suite.get("errors", "0"))
-    minimum = {DISCOVERY_VERSION: 88, STYLES_VERSION: 79, AUTO_VERSION: 71, CAMERA_VERSION: 63,
+    minimum = {VIVO_VERSION: 91, DISCOVERY_VERSION: 88, STYLES_VERSION: 79, AUTO_VERSION: 71, CAMERA_VERSION: 63,
                "0.4.1-spatial": 55, "0.4.0-environment": 47}.get(version, 35)
     assert count >= minimum and failures == 0, "Unit checks are missing or failed"
     outputs = ROOT / "app/build/outputs/apk/debug"
@@ -103,8 +112,10 @@ def main():
     assert all(m["versionName"] == version for m in metadata["elements"]), "Build metadata is stale"
     if version in DEPTH_BUILDS:
         artifacts = {"arm64-v8a": apk, "armeabi-v7a": arm32}
+        if version == VIVO_VERSION:
+            artifacts.pop("armeabi-v7a")
         elements = {f["value"]: m for m in metadata["elements"] for f in m["filters"] if f["filterType"] == "ABI"}
-        assert metadata["minSdkVersionForDexing"] == 29 and elements.keys() == artifacts.keys()
+        assert metadata["minSdkVersionForDexing"] == 29 and artifacts.keys() <= elements.keys()
         for abi, path in artifacts.items():
             assert file_sha(path) == file_sha(outputs / elements[abi]["outputFile"]), "Delivery does not match tested build"
             verify_apk(path, abi, version)
@@ -124,7 +135,8 @@ def main():
     release = ROOT / "app/build/intermediates/assets/release/mergeReleaseAssets"
     assert release.is_dir(), "Run mergeReleaseAssets first"
     release_weights = {p.name: p for p in release.rglob("*") if p.suffix in {".onnx", ".tflite", ".litertlm", ".pth", ".hdf5"}}
-    expected = shipped_models(version) if version in DEPTH_BUILDS else {}
+    release_version = DISCOVERY_VERSION if version == VIVO_VERSION else version
+    expected = shipped_models(release_version) if release_version in DEPTH_BUILDS else {}
     assert release_weights.keys() == expected.keys(), "Unexpected model in release assets"
     assert all(file_sha(release_weights[name]) == digest for name, digest in expected.items())
     result = {"build": version, "apkBytes": apk.stat().st_size,
@@ -136,9 +148,10 @@ def main():
         "liveProviderDiagnostic": "v0.3.0 owner report: WAIT_RESPONSE timeout after client upload; cause unresolved"}
     if version in DEPTH_BUILDS:
         result.update({"modelSha256": DEPTH_SHA, "releaseResearchAssets": "ZipDepth only, no legacy research weights",
-            "armeabiV7aApkBytes": arm32.stat().st_size, "armeabiV7aApkSha256": file_sha(arm32),
             "arm64Elf16KiBLoadAlignment": "pass",
             "physicalVivoTests": "v0.5.0 pending; v0.4.1 owner reported spatial tracking temporarily unavailable"})
+        if version != VIVO_VERSION:
+            result.update({"armeabiV7aApkBytes": arm32.stat().st_size, "armeabiV7aApkSha256": file_sha(arm32)})
     if version == AUTO_VERSION:
         result.update({"subjectModelSha256": SUBJECT_SHA,
             "releaseResearchAssets": "ZipDepth and NanoDet, no legacy research weights",
@@ -151,6 +164,10 @@ def main():
         result.update({"subjectModelSha256": SUBJECT_SHA, "sceneSemanticsSha256": SEMANTICS_SHA,
             "releaseResearchAssets": "ZipDepth, NanoDet and TinyCLIP image encoder",
             "physicalVivoTests": "v0.8.0 pending; owner reported weak subject choice and frequent loss of tracking on v0.7.0"})
+    if version == VIVO_VERSION:
+        result.update({"subjectModelSha256": SUBJECT_SHA, "sceneSemanticsSha256": SEMANTICS_SHA, "contextModelSha256": CONTEXT_SHA,
+            "releaseResearchAssets": "ZipDepth, NanoDet and TinyCLIP image encoder. Private contextual ranker excluded.",
+            "physicalVivoTests": "v0.9.0 lens access, guidance, saved framing and live selection time pending"})
     tag=version.replace(".","").replace("-","_")
     path = ROOT / f"research/results/delivery-verification-v{tag}.json"
     path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

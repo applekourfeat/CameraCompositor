@@ -50,6 +50,14 @@ Model/data redistribution rights remain a separate gate. The code includes the u
 
 ## Environment and subject-discovery experiments
 
+### Vivo rehearsal replay
+
+After building with `-PvivoDemo=true`, use `research/replay_context_shots.py` with the Java and classpath arguments below. Repeat `--frame IMAGE ZOOM` for each local capture. The replay runs the Android candidate and selection policy on recorded stills using the shipped model weights. Optional `--comparison` adds a local before-and-proposed sheet.
+
+### Compare isolated views with wider context
+
+With the frozen benchmark photos and model exports available, run `research/evaluate_isolated_views.py --output research/results/isolated-view-ranking.json`. It samples identical rated candidates for all scorers, then compares a learned crop model receiving the wide image with models receiving each candidate alone. The test measures a closer proxy for ranking views from a phone sweep. Optical viewpoint changes, subjective preferences on those changes, and device performance require separate checks.
+
 ### Automatic subject discovery
 
 Run `research/export_scene_semantics.py` with the locked environment to fetch the pinned TinyCLIP checkpoint, embed the fixed prompts, and check the 192×192 CPU export. It writes `.local/scene-semantics-assets/scene-regions-192.onnx`. Positional embeddings are interpolated and baked into the export. The packaged image encoder stores large constants in FP16 with FP32 math. The MIT notice accompanies the APK.

@@ -20,19 +20,30 @@ import kotlin.math.round
 data class LocalResearchResult(val crop: CropOption, val scores: List<Float>, val elapsedMs: Long)
 
 /** Debug research candidate. No confidence or semantic understanding is inferred from MOS. */
-class LocalResearchScorer(private val context: Context) : AutoCloseable {
+class LocalResearchScorer(private val context: Context, private val assetName: String = "gaic-mobilenet.onnx") : AutoCloseable {
     private val environment by lazy { OrtEnvironment.getEnvironment().also { it.setTelemetry(false) } }
     private var session: OrtSession? = null
-    val available get() = context.assets.list("")?.contains("gaic-mobilenet.onnx") == true
+    val available get() = context.assets.list("")?.contains(assetName) == true
 
     fun evaluate(image: Bitmap, maxRelativeZoom: Float, isActive: () -> Boolean): LocalResearchResult {
         val started = SystemClock.elapsedRealtime()
+        val output = score(image, ShotGeometry.options.map { it.box }, isActive)
+        val scores = output.mapIndexed { index, value ->
+            if (ShotGeometry.options[index].zoom <= maxRelativeZoom + .001f) value else Float.NEGATIVE_INFINITY
+        }
+        val index = scores.indices.maxBy { scores[it] }
+        return LocalResearchResult(ShotGeometry.options[index], scores, SystemClock.elapsedRealtime() - started)
+    }
+
+    fun score(image: Bitmap, crops: List<SubjectBox>, isActive: () -> Boolean): FloatArray {
+        require(crops.isNotEmpty())
         if (!isActive()) throw SceneServiceException("cancelled", "Research scan cancelled.")
-        val model = session ?: context.assets.openFd("gaic-mobilenet.onnx").use { asset ->
+        val model = session ?: context.assets.openFd(assetName).use { asset ->
             java.io.FileInputStream(asset.fileDescriptor).use { stream ->
                 val mapped = stream.channel.map(FileChannel.MapMode.READ_ONLY, asset.startOffset, asset.declaredLength)
                 OrtSession.SessionOptions().use { options ->
                     options.setIntraOpNumThreads(2); options.setInterOpNumThreads(1)
+                    options.addConfigEntry("session.intra_op.allow_spinning", "0")
                     environment.createSession(mapped, options).also { session = it }
                 }
             }
@@ -52,25 +63,20 @@ class LocalResearchScorer(private val context: Context) : AutoCloseable {
             for (channel in 0..2) for (pixel in 0 until width * height) {
                 pixels[channel * width * height + pixel] = (interleaved[pixel * 3 + channel] - mean[channel]) / deviation[channel]
             }
-            val boxes = ShotGeometry.options.flatMap { option ->
-                val b = option.box
+            val boxes = crops.flatMap { b ->
                 listOf(floor(b.left * width), floor(b.top * height), ceil(b.right * width), ceil(b.bottom * height))
             }.toFloatArray()
             if (!isActive()) throw SceneServiceException("cancelled", "Research scan cancelled.")
             val output = OnnxTensor.createTensor(environment, FloatBuffer.wrap(pixels), longArrayOf(1, 3, height.toLong(), width.toLong())).use { input ->
-                OnnxTensor.createTensor(environment, FloatBuffer.wrap(boxes), longArrayOf(9, 4)).use { rois ->
+                OnnxTensor.createTensor(environment, FloatBuffer.wrap(boxes), longArrayOf(crops.size.toLong(), 4)).use { rois ->
                     model.run(mapOf("image" to input, "boxes" to rois)).use { results ->
                         (results[0].value as FloatArray).clone()
                     }
                 }
             }
-            check(output.size == ShotGeometry.options.size && output.all { it.isFinite() })
+            check(output.size == crops.size && output.all { it.isFinite() })
             if (!isActive()) throw SceneServiceException("cancelled", "Research scan cancelled.")
-            val scores = output.mapIndexed { index, value ->
-                if (ShotGeometry.options[index].zoom <= maxRelativeZoom + .001f) value * .8f + 2.95f else Float.NEGATIVE_INFINITY
-            }
-            val index = scores.indices.maxBy { scores[it] }
-            return LocalResearchResult(ShotGeometry.options[index], scores, SystemClock.elapsedRealtime() - started)
+            return FloatArray(output.size) { output[it] * .8f + 2.95f }
         } finally { listOf(rgba, rgb, resized, normalized).forEach { it.release() } }
     }
     override fun close() { session?.close(); session = null }

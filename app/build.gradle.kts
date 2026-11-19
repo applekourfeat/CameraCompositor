@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val vivoDemo = providers.gradleProperty("vivoDemo").orNull == "true"
+
 android {
     namespace = "dev.cameracompositor"
     compileSdk = 36
@@ -10,8 +12,12 @@ android {
         applicationId = "dev.cameracompositor"
         minSdk = 29
         targetSdk = 35
-        versionCode = 10
-        versionName = "0.8.0-discovery"
+        versionCode = if (vivoDemo) 11 else 10
+        versionName = if (vivoDemo) "0.9.0-vivo" else "0.8.0-discovery"
+        buildConfigField("boolean", "VIVO_DEMO", "false")
+    }
+    buildTypes.getByName("debug") {
+        buildConfigField("boolean", "VIVO_DEMO", vivoDemo.toString())
     }
     splits {
         abi {
@@ -29,6 +35,9 @@ android {
     sourceSets.getByName("main").assets.srcDir(rootProject.file(".local/software-depth-assets"))
     sourceSets.getByName("main").assets.srcDir(rootProject.file(".local/subject-assets"))
     sourceSets.getByName("main").assets.srcDir(rootProject.file(".local/scene-semantics-assets"))
+    if (vivoDemo) {
+        sourceSets.getByName("debug").assets.srcDir(rootProject.file(".local/vivo-demo-assets"))
+    }
     if (providers.gradleProperty("includeLegacyResearch").orNull == "true") {
         sourceSets.getByName("debug").assets.srcDir(rootProject.file(".local/research-assets"))
     }

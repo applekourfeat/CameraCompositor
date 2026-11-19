@@ -1,5 +1,7 @@
 # Physical-device test results
 
+The owner reports that the 0.8.0 composition suggestions still look poor. No scored comparison or new tracking measurements accompanied this feedback. The [reference-app investigation](SHOT_SELECTION_INVESTIGATION.md) identifies the next shot-selection test.
+
 The owner reported that 0.7.0 chose weak subjects, appeared to crop the starting view, and dropped guidance too readily. Version [0.8.0-discovery](V080_SCENE_DISCOVERY.md) adds automatic subject selection, prompts to turn toward a fresh view, and image-based tracking recovery. Its live behavior and saved-photo comparisons on the Vivo are pending.
 
 The owner reported poor suggestions and post-processing in 0.6.0. No saved JPEG, selected capture mode or stock-camera comparison accompanied this feedback, so the affected path is unknown. Version [0.7.0-styles](V070_COMPOSITION_STYLES.md) adds explicit framing choices and preserves camera output.

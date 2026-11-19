@@ -47,6 +47,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var subjectDetector: SceneSubjectDetector
     private lateinit var sceneRecognition: SceneRecognition
     private lateinit var localComposition: LocalComposition
+    private val contextualScorer by lazy { LocalResearchScorer(this, "gaic-dynamic.onnx") }
+    private var contextComposition: ContextComposition? = null
     private lateinit var quality: CameraQuality
     private var sweepRecorder: ResearchSweepRecorder? = null
     private var environmentSweep: EnvironmentSweep? = null
@@ -116,6 +118,9 @@ class MainActivity : ComponentActivity() {
     private var photoMode = PhotoMode.JPEG
     private var compositionStyle = CompositionStyle.THIRDS
     private var pendingSubject: SubjectTap? = null
+    private var checkOpeningZoom = BuildConfig.VIVO_DEMO
+    private var framedRegion: String? = null
+    private var zoomTrimmed = false
 
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { allowed ->
         if (allowed) startCamera() else { guidance.setText(R.string.camera_permission); access.visibility = View.VISIBLE }
@@ -130,7 +135,7 @@ class MainActivity : ComponentActivity() {
             }
             if (cameraReady && !scanning && !activePlan && !saving && now >= autoPausedUntil && cameraForeground() &&
                 preview.previewStreamState.value == PreviewView.StreamState.STREAMING && automaticScan.ready(analyzer.liveScene, now)) {
-                scanEnvironment(autoScan = true)
+                if (!openWideIfSupported(now)) scanEnvironment(autoScan = true)
             }
             handler.postDelayed(this, 150)
         }
@@ -164,6 +169,7 @@ class MainActivity : ComponentActivity() {
         subjectDetector = SceneSubjectDetector(this)
         sceneRecognition = SceneRecognition(this)
         localComposition = LocalComposition(softwareDepth, subjectDetector, sceneRecognition)
+        if (BuildConfig.VIVO_DEMO) contextComposition = ContextComposition(sceneRecognition, subjectDetector, contextualScorer)
         lastDiagnostic = runCatching { java.io.File(filesDir, "last-scan-diagnostic.json").readText() }.getOrDefault(lastDiagnostic)
         planner = CloudShotPlanner(plannerSettings) { report ->
             lastDiagnostic = report
@@ -191,6 +197,7 @@ class MainActivity : ComponentActivity() {
             if (saving) true else {
                 if (event.actionMasked == MotionEvent.ACTION_DOWN) pinch = false
                 if (event.pointerCount > 1) {
+                    checkOpeningZoom = false
                     if (!pinch) {
                         clearSubjectTap()
                         cancelGuide()
@@ -248,6 +255,24 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun cameraForeground() = !isDestroyed && hasWindowFocus() && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+
+    private fun openWideIfSupported(now: Long): Boolean {
+        if (!checkOpeningZoom) return false
+        checkOpeningZoom = false
+        if (baseSelector != CameraSelector.DEFAULT_BACK_CAMERA) return false
+        val camera = controller ?: return false
+        val zoom = camera.zoomState.value ?: return false
+        if (zoom.minZoomRatio !in .42f.. .94f || zoom.zoomRatio <= zoom.minZoomRatio + .02f) return false
+        val change = runCatching { camera.setZoomRatio(zoom.minZoomRatio) }.getOrNull() ?: return false
+        autoPausedUntil = now + 750
+        guidance.setText(R.string.opening_wide)
+        change.addListener({
+            if (controller === camera && !isDestroyed && runCatching { change.get() }.isSuccess) {
+                autoPausedUntil = maxOf(autoPausedUntil, SystemClock.elapsedRealtime() + 260)
+            }
+        }, main)
+        return true
+    }
     private fun hasPermission() = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
     private fun requestCameraAccess() {
         when {
@@ -350,14 +375,20 @@ class MainActivity : ComponentActivity() {
         val requestId = if (online) planner.beginRequest() else null
         val style = compositionStyle
         val tap = pendingSubject.takeUnless { online }
+        val contextual = contextComposition != null && autoScan && tap == null
         clearSubjectTap()
         baselineZoom = controller?.zoomState?.value?.zoomRatio ?: 1f
         if (autoScan) scanReference = analyzer.liveScene
         scanning = true
-        guidance.setText(if (autoScan) R.string.auto_observing else R.string.sweep_instruction)
+        guidance.setText(when {
+            contextual && completedTurn == null -> R.string.demo_sweep
+            autoScan -> R.string.auto_observing
+            else -> R.string.sweep_instruction
+        })
         environmentSweep = EnvironmentSweep(analyzer,
             { controller?.zoomState?.value?.zoomRatio ?: 1f }, { controller?.zoomState?.value?.maxZoomRatio ?: 1f },
-            intervalMs = if (autoScan) 250 else 470, frameLimit = if (autoScan) 3 else 6) { batch ->
+            intervalMs = if (contextual && completedTurn == null) 310 else if (autoScan) 250 else 470,
+            frameLimit = if (contextual && completedTurn == null) 5 else if (autoScan) 3 else 6) { batch ->
                 environmentSweep = null
                 when {
                     generation != token || isDestroyed -> batch?.close()
@@ -378,7 +409,11 @@ class MainActivity : ComponentActivity() {
         val availableZoom = ((controller?.zoomState?.value?.maxZoomRatio ?: baselineZoom) / baselineZoom).coerceIn(1f, 3.2f)
         modelExecutor.execute {
             val result = runCatching {
-                localComposition.evaluate(batch, availableZoom, style, tap, autoScan && completedTurn == null,
+                val ranked = if (autoScan && tap == null) runCatching {
+                    contextComposition?.evaluate(batch, availableZoom, style, completedTurn == null,
+                        completedTurn?.expected) { generation == token }
+                }.getOrNull() else null
+                ranked ?: localComposition.evaluate(batch, availableZoom, style, tap, autoScan && completedTurn == null,
                     completedTurn?.expected) { generation == token }
             }
             val optionalOnline = if (requestId != null && generation == token) runCatching {
@@ -393,7 +428,8 @@ class MainActivity : ComponentActivity() {
                 modelReason = "Observed ${batch.frames.size} views, ${batch.map.registeredLinks} overlap links, " +
                     "${local?.relativeDepth?.size ?: 0} relative depth estimates. " +
                     (if (optionalOnline != null) "Online assessment." else "On-device assessment.") +
-                    (local?.recognized?.let { " Region: ${it.description}." } ?: "")
+                    (local?.recognized?.let { " Region: ${it.description}." } ?: "") +
+                    (local?.comparedShots?.takeIf { it > 0 }?.let { " Compared $it frames in one view." } ?: "")
                 if (autoScan) {
                     if (!cameraForeground() || !analyzer.environmentFresh(SystemClock.elapsedRealtime()) || local == null) {
                         analyzer.endEnvironment()
@@ -411,6 +447,7 @@ class MainActivity : ComponentActivity() {
                             EnvironmentDecision.Guide(batch.map.views.last().id, SubjectBox(0f, 0f, 1f, 1f), "Current view", decision.reason)
                         else -> null
                     }
+                    framedRegion = local.recognized?.description?.takeIf { local.comparedShots > 1 && target != null }
                     if (target != null && startEnvironmentGuide(batch, target, autoGuide = true,
                             allowShutter = local.canAutoCapture)) return@post
                     analyzer.endEnvironment()
@@ -627,6 +664,7 @@ class MainActivity : ComponentActivity() {
 
     private fun applyChoice(frame: ScanFrame, choice: ModelChoice) {
         hold.reset(); waypointHold.reset(); automaticShutter.reset(); zoomAnimator.stop()
+        zoomTrimmed = false
         updateCountdown(null)
         overlay.aligned=false; overlay.fresh=false; overlay.frame=null
         val crop = choice.customCrop?.let { CropOption(-1, it) } ?: ShotGeometry.options[choice.cropId]
@@ -644,7 +682,7 @@ class MainActivity : ComponentActivity() {
         activePlan = true; autoZoom = true; lastGood = null
         guideLifetime.start(SystemClock.elapsedRealtime())
         latestGuideFrameAt = SystemClock.elapsedRealtime()
-        guidance.text = "Move toward the outlined frame."
+        guidance.text = framingPrompt()
         telemetry.setText(R.string.guide_controls)
         frame.image.recycle(); refreshButtons()
     }
@@ -681,6 +719,19 @@ class MainActivity : ComponentActivity() {
             if (aiming) zoomAnimator.moveTo(camera, plannedZoom) { autoZoom = false }
         }
         val zoomRatio = camera?.zoomState?.value?.zoomRatio ?: plannedZoom
+        if (framedRegion != null && autoZoom && !waypoint && aiming && !zoomTrimmed && !zoomAnimator.moving &&
+            tracked.timeMs - zoomAnimator.settledAt >= 250 && abs(zoomRatio / plannedZoom - 1f) < .023f && camera != null) {
+            val targetWidth = ShotGeometry.width(tracked.corners)
+            if (abs(targetWidth - 1f) > .085f) {
+                zoomTrimmed = true
+                val lower = maxOf(baselineZoom, zoomRatio * .87f)
+                val upper = minOf(1.85f, baselineZoom * 3.2f, camera.zoomState.value?.maxZoomRatio ?: zoomRatio, zoomRatio * 1.13f)
+                if (lower <= upper) {
+                    plannedZoom = (zoomRatio / targetWidth).coerceIn(lower, upper)
+                    zoomAnimator.moveTo(camera, plannedZoom) { autoZoom = false }
+                }
+            }
+        }
         val zoomReady = !zoomAnimator.moving && tracked.timeMs - zoomAnimator.settledAt >= 80 &&
             (!autoZoom || waypoint || abs(zoomRatio / plannedZoom - 1f) < .026f)
         val framingReady = tracked.confidence >= .68f && zoomReady && ShotGeometry.framingReady(tracked.corners)
@@ -701,9 +752,12 @@ class MainActivity : ComponentActivity() {
             aligned -> "That's the frame. Hold steady and take the photo."
             aiming && !waypoint && !autoZoom -> "Pinch to match the outlined frame."
             aiming && zoomAnimator.moving -> "Framing your shot…"
-            else -> "Move toward the outlined frame."
+            else -> framingPrompt()
         }
     }
+
+    private fun framingPrompt(): String = framedRegion?.let { getString(R.string.frame_this_subject, it) }
+        ?: "Move toward the outlined frame."
 
     private fun updateCountdown(seconds: Int?) {
         if (seconds == null) {
@@ -740,6 +794,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun cancelGuide() {
         generation++
+        framedRegion = null
         automaticGuideAt = 0
         latestGuideFrameAt = 0
         shutterEligible = false
@@ -1037,6 +1092,7 @@ class MainActivity : ComponentActivity() {
         try { camera.cameraSelector = next; baseSelector = next; updateCameraStatus() }
         catch (_: Exception) { camera.cameraSelector = previous; toast(R.string.no_other_camera) }
         motion.configure(camera.cameraInfo, baseSelector == CameraSelector.DEFAULT_BACK_CAMERA)
+        checkOpeningZoom = BuildConfig.VIVO_DEMO && baseSelector == CameraSelector.DEFAULT_BACK_CAMERA
     }
 
     private fun takePhoto(autoShot: Boolean = false) {
@@ -1099,6 +1155,7 @@ class MainActivity : ComponentActivity() {
         analysisExecutor.execute { tracker.close(); analyzer.closeEnvironment() }; analysisExecutor.shutdown()
         modelExecutor.execute {
             planner.close(); localScorer.close(); softwareDepth.close(); subjectDetector.close(); sceneRecognition.close()
+            if (BuildConfig.VIVO_DEMO) contextualScorer.close()
         }; modelExecutor.shutdown()
         super.onDestroy()
     }

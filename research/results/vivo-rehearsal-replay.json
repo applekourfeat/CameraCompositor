@@ -1,0 +1,79 @@
+{
+  "scope": "Recorded stills, desktop CPU. Timing includes local model calls and replay overhead.",
+  "vivoTests": "pending",
+  "humanPreference": "pending",
+  "results": [
+    {
+      "input": "scene-clean.jpg",
+      "sourceZoom": 0.5,
+      "compared": 7,
+      "decision": "Guide",
+      "subject": "FOLIAGE",
+      "frame": [
+        0.4413189,
+        0.025541618,
+        0.99131894,
+        0.5755416
+      ],
+      "chosenZoom": 0.909,
+      "framingGain": 0.5747,
+      "modelScore": 2.5238,
+      "wideScore": 3.6529,
+      "desktopMs": 1069.97
+    },
+    {
+      "input": "after-6.05.jpg",
+      "sourceZoom": 0.5,
+      "compared": 9,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 0.5,
+      "framingGain": 0.0,
+      "modelScore": 4.321,
+      "wideScore": 4.321,
+      "desktopMs": 1098.09
+    },
+    {
+      "input": "balcony-skyline.jpg",
+      "sourceZoom": 1.0,
+      "compared": 9,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.083817095,
+        0.03483978,
+        0.7038171,
+        0.65483975
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.5913,
+      "modelScore": 3.8161,
+      "wideScore": 4.3908,
+      "desktopMs": 1038.81
+    },
+    {
+      "input": "flat-control.png",
+      "sourceZoom": 1.0,
+      "compared": 1,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 1.0,
+      "framingGain": 0.0,
+      "modelScore": 2.3171,
+      "wideScore": 2.3171,
+      "desktopMs": 811.34
+    }
+  ]
+}
