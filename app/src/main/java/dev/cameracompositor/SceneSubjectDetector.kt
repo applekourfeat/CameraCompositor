@@ -63,7 +63,7 @@ object SubjectDetection {
         return weight / total
     }
 
-    fun mainSubject(detections: List<DetectedSubject>): DetectedSubject? {
+    fun mainSubject(detections: List<DetectedSubject>, point: ScenePoint? = null): DetectedSubject? {
         val distinct = mutableListOf<DetectedSubject>()
         for (candidate in detections.sortedByDescending { it.confidence }) {
             val size = area(candidate.box)
@@ -72,6 +72,10 @@ object SubjectDetection {
                     overlap / (size + area(subject.box) - overlap) > .55f
                 }) distinct.add(candidate)
             if (distinct.size == 12) break
+        }
+        if (point != null) {
+            return distinct.filter { it.confidence >= .46f && point.x in it.box.left..it.box.right && point.y in it.box.top..it.box.bottom }
+                .maxByOrNull { it.confidence - .30f * area(it.box) }
         }
         fun priority(subject: DetectedSubject): Float {
             val b = subject.box
@@ -108,7 +112,7 @@ class SceneSubjectDetector(private val context: Context) : AutoCloseable {
     private var session: OrtSession? = null
     private var unavailable = false
 
-    fun detect(image: Bitmap): DetectedSubject? {
+    fun detect(image: Bitmap, point: ScenePoint? = null): DetectedSubject? {
         if (unavailable) return null
         return try {
             val model = session ?: open().also { session = it }
@@ -142,7 +146,7 @@ class SceneSubjectDetector(private val context: Context) : AutoCloseable {
                         val boxes = (output.get(boxIds[index]).get() as OnnxTensor).floatBuffer
                         SubjectDetection.decode(scores, boxes, stride, width, height)
                     }
-                    SubjectDetection.mainSubject(found)
+                    SubjectDetection.mainSubject(found, point)
                 }
             }
         } catch (_: Exception) {

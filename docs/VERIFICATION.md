@@ -1,5 +1,9 @@
 # Verification
 
+## Composition styles build
+
+Version **0.7.0-styles** passes `assembleDebug`, `testDebugUnitTest`, `lintDebug`, and `mergeReleaseAssets`. Both ARM APK signatures and 16 KB archive alignment checks pass. All 79 Android and 20 Python tests pass. Lint reports zero errors and 73 warnings. The 20/60 desktop replay verifies framing geometry. No phone or emulator was attached for the Vivo capture checks. [Delivery verification](../research/results/delivery-verification-v070_styles.json), [composition and camera results](V070_COMPOSITION_STYLES.md).
+
 ## Auto capture build
 
 Version **0.6.0-auto** passes `assembleDebug`, `testDebugUnitTest`, `lintDebug`, and `mergeReleaseAssets`. Both ARM packages pass signature, archive-alignment and model hash checks. See [the recorded results](../research/results/delivery-verification-v060_auto.json) and [Auto capture and processing](V060_AUTO_CAPTURE.md). The owner-confirmed consistent Vivo scans apply to version 0.5.0. The new countdown, zoom and saved-photo paths still require physical checks.

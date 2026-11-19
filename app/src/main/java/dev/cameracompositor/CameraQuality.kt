@@ -36,12 +36,20 @@ class CameraQuality(context: Context, private val onReady: () -> Unit) {
         extensions?.takeIf { it.isExtensionAvailable(base, mode) }?.getExtensionEnabledCameraSelector(base, mode)
     }.getOrNull()
 
-    fun automatic(base: CameraSelector, dim: Boolean): Pair<CameraSelector, String>? {
-        val modes = listOf(ExtensionMode.AUTO to "Manufacturer Auto") +
-            (if (dim) listOf(ExtensionMode.NIGHT to "Manufacturer Night") else emptyList()) +
-            (ExtensionMode.HDR to "Manufacturer HDR")
-        for ((mode, name) in modes) {
-            selector(base, mode)?.let { return it to name }
+    fun processing(base: CameraSelector, mode: PhotoMode, light: PhotoLighting): Pair<CameraSelector, String>? {
+        val requested = if (mode != PhotoMode.ADAPTIVE) listOf(mode) else when (light) {
+            PhotoLighting.ORDINARY -> return null
+            PhotoLighting.DIM -> listOf(PhotoMode.NIGHT, PhotoMode.AUTO)
+            PhotoLighting.BACKLIT -> listOf(PhotoMode.HDR, PhotoMode.AUTO)
+        }
+        for (kind in requested) {
+            val (extension, name) = when (kind) {
+                PhotoMode.AUTO -> ExtensionMode.AUTO to "Manufacturer Auto"
+                PhotoMode.HDR -> ExtensionMode.HDR to "Manufacturer HDR"
+                PhotoMode.NIGHT -> ExtensionMode.NIGHT to "Manufacturer Night"
+                else -> continue
+            }
+            selector(base, extension)?.let { return it to name }
         }
         return null
     }

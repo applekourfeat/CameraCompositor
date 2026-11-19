@@ -5,6 +5,14 @@ import org.junit.Test
 import java.nio.FloatBuffer
 
 class SubjectCompositionTest {
+    @Test fun `tap picks that subject instead of an unrelated stronger detection`() {
+        val objectAtTap = DetectedSubject(SubjectBox(.60f, .40f, .85f, .70f), 58, .61f)
+        val person = DetectedSubject(SubjectBox(.20f, .18f, .49f, .87f), 0, .91f)
+        val candidates = listOf(person, objectAtTap)
+        assertEquals(objectAtTap, SubjectDetection.mainSubject(candidates, ScenePoint(.7f, .55f)))
+        assertNull(SubjectDetection.mainSubject(candidates, ScenePoint(.04f, .04f)))
+    }
+
     @Test fun `detector maps letterboxed output into the portrait viewfinder`() {
         val side = 416 / 32
         val index = 6 * side + 6

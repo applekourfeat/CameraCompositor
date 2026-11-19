@@ -1,0 +1,132 @@
+{
+  "subjectModelSha256": "d891b8c939ce062b13fc7440195d427eeecbec307c2417564d6908309b263e19",
+  "scope": "Frozen stills and desktop CPU. Measures proposed styles and subject containment. Human preference and live camera behavior remain separate.",
+  "development": {
+    "photos": 20,
+    "distinctGuidesInMultipleStyles": 3,
+    "modes": {
+      "thirds": {
+        "Guide": 4,
+        "Keep": 1,
+        "ObserveMore": 15,
+        "recognizedGuides": 2,
+        "wholeRecognizedSubjects": 2
+      },
+      "centered": {
+        "Guide": 4,
+        "Keep": 1,
+        "ObserveMore": 15,
+        "recognizedGuides": 2,
+        "wholeRecognizedSubjects": 2
+      },
+      "negativeSpace": {
+        "Guide": 2,
+        "Keep": 0,
+        "ObserveMore": 18,
+        "recognizedGuides": 1,
+        "wholeRecognizedSubjects": 1
+      },
+      "wide": {
+        "Guide": 0,
+        "Keep": 19,
+        "ObserveMore": 1,
+        "recognizedGuides": 0,
+        "wholeRecognizedSubjects": 0
+      }
+    },
+    "medianDesktopDetectionMs": 156.350650038803
+  },
+  "evaluation": {
+    "photos": 60,
+    "distinctGuidesInMultipleStyles": 14,
+    "modes": {
+      "thirds": {
+        "Guide": 16,
+        "Keep": 3,
+        "ObserveMore": 41,
+        "recognizedGuides": 15,
+        "wholeRecognizedSubjects": 15
+      },
+      "centered": {
+        "Guide": 16,
+        "Keep": 3,
+        "ObserveMore": 41,
+        "recognizedGuides": 15,
+        "wholeRecognizedSubjects": 15
+      },
+      "negativeSpace": {
+        "Guide": 5,
+        "Keep": 0,
+        "ObserveMore": 55,
+        "recognizedGuides": 4,
+        "wholeRecognizedSubjects": 4
+      },
+      "wide": {
+        "Guide": 0,
+        "Keep": 57,
+        "ObserveMore": 3,
+        "recognizedGuides": 0,
+        "wholeRecognizedSubjects": 0
+      }
+    },
+    "medianDesktopDetectionMs": 120.376849983586
+  },
+  "localReference": {
+    "id": "local-reference",
+    "modelMs": 193.44910001382232,
+    "detected": 0.0,
+    "tap": [
+      0.31,
+      0.31
+    ],
+    "modes": {
+      "thirds": {
+        "decision": "Keep",
+        "crop": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "auto": true
+      },
+      "centered": {
+        "decision": "Guide",
+        "crop": [
+          0.0,
+          0.0,
+          0.64102566,
+          0.64102566
+        ],
+        "auto": true
+      },
+      "negativeSpace": {
+        "decision": "ObserveMore",
+        "crop": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "auto": false
+      },
+      "wide": {
+        "decision": "Keep",
+        "crop": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "auto": false
+      }
+    },
+    "subject": null,
+    "priorCrop": [
+      0.0,
+      0.0,
+      1.0,
+      1.0
+    ]
+  }
+}

@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Camera Compositor</string>
-    <string name="prototype">Camera</string>
+    <string name="composition_style">Composition style</string>
+    <string name="style_control">Style · %1$s</string>
+    <string name="style_thirds">Thirds</string>
+    <string name="style_centered">Centered</string>
+    <string name="style_negative_space">Negative space</string>
+    <string name="style_wide">Wide scene</string>
+    <string name="subject_selected">Subject selected. Tap Find a composition.</string>
+    <string name="subject_selected_auto">Subject selected. Keep it in view.</string>
+    <string name="auto_select_subject">Tap the subject to use Auto.</string>
     <string name="options">Options</string>
     <string name="viewfinder">Camera viewfinder</string>
     <string name="find_shot">Find a composition</string>
@@ -20,14 +28,20 @@
     <string name="gallery">Last photo</string>
     <string name="retry">Camera access</string>
     <string name="waiting">Starting camera…</string>
-    <string name="telemetry">Quality capture · tap to focus · pinch to zoom</string>
+    <string name="telemetry">Camera JPEG · tap subject · pinch to zoom</string>
+    <string name="capture_details">%1$s · tap subject · pinch to zoom</string>
+    <string name="processing_jpeg">Camera JPEG</string>
+    <string name="processing_adaptive">Scene-aware HDR or Night</string>
+    <string name="processing_auto">Manufacturer Auto</string>
+    <string name="processing_hdr">Manufacturer HDR</string>
+    <string name="processing_night">Manufacturer Night</string>
     <string name="camera_permission">Allow camera access to see the viewfinder.</string>
     <string name="camera_error">Camera could not start. Tap Camera access to retry.</string>
     <string name="photo_failed">Photo could not be saved. Try again.</string>
     <string name="photo_saved">Saved to Pictures/CameraCompositor</string>
     <string name="no_gallery">No photo viewer is available.</string>
     <string name="no_other_camera">The other camera is unavailable.</string>
-    <string name="ready_to_frame">Point at a scene. Tap Find a composition.</string>
+    <string name="ready_to_frame">Tap a subject or find a composition.</string>
     <string name="finding_frame">Finding a frame…</string>
     <string name="finding_online_frame">Waiting for an online suggestion…</string>
     <string name="no_framing_suggestion">No framing suggestion. Try another angle.</string>
@@ -48,5 +62,4 @@
     <string name="sweep_no_frame">The camera could not finish the scan. Hold the zoom steady and try again.</string>
     <string name="sweep_assessing">Checking the views. Hold this angle.</string>
     <string name="sweep_scene_changed">The view changed during the scan. Try a slower turn.</string>
-    <string name="sweep_keep">Keep this view, or turn a little for another angle.</string>
 </resources>

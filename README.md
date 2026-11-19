@@ -1,16 +1,16 @@
 # Camera Compositor
 
-Native Android camera research for composition guidance. Version **0.6.0-auto** adds an optional hands-free shutter, smoother zoom requests, subject-aware framing, and photo processing. Scans stay on the phone and compare real observations from the ordinary camera stream. The owner leads final UI/UX. [Auto capture and processing](docs/V060_AUTO_CAPTURE.md).
+Native Android camera research for composition guidance. Version **0.7.0-styles** adds selectable composition styles and lets you tap the subject to frame. It preserves the JPEG produced by the camera and offers supported manufacturer processing. Scans compare real observations on the phone. The owner leads final UI/UX. [Composition styles and capture results](docs/V070_COMPOSITION_STYLES.md).
 
 The main camera and composition button require neither ARCore, a depth sensor, nor an account. ARCore and personal-key online scans are available under Developer tools. The managed cloud gateway, photographic preference study and Vivo performance checks remain pending.
 
 ## Try the research build
 
-Install `artifacts/CameraCompositor-0.6.0-auto-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype. The builds target Android 10 and later. The `armv7` APK is for phones that run 32-bit ARM apps.
+Install `artifacts/CameraCompositor-0.7.0-styles-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype. The builds target Android 10 and later. The `armv7` APK is for phones that run 32-bit ARM apps.
 
-1. Tap **Start Auto** once, point at a subject, and follow the on-screen frame. Auto zoom starts when the target is centered. A steady, aligned view begins a three-second countdown. Moving away restarts the countdown. **Stop Auto** and pinch zoom return control to you.
-2. After a photo, move to a different scene for the next shot. **Find a composition** and **Take photo** remain available in manual mode.
-3. **Options > Photo processing** offers Automatic processing, Standard JPEG and available manufacturer modes. The photo status reports which path saved the image. **Developer tools** contains camera capabilities, sweep export, optional ARCore testing and the personal-key online experiment.
+1. Tap **Style** at the top and choose **Thirds**, **Centered**, **Negative space**, or **Wide scene**. Tap a subject to select it for the next scan. **Find a composition** previews a suggestion when the style fits an observed view.
+2. **Start Auto** applies the same style hands-free. Hold the outlined composition steady to start the three-second countdown. **Stop Auto** or pinch zoom returns control to you.
+3. **Options > Photo processing** defaults to **Camera JPEG**. Compatible cameras also offer manufacturer HDR, Night, Auto, and scene-aware selection. The photo status shows what actually saved the image. **Developer tools** contains camera capabilities, sweep export, optional ARCore testing and the personal-key online experiment.
 
 The framing guide expires after three seconds of lost tracking. Saved photographs use quality-priority full-resolution capture, with manufacturer processing when exposed. Photo quality compared with Vivo's stock camera remains unmeasured.
 

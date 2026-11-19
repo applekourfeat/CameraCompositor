@@ -2,18 +2,35 @@ package dev.cameracompositor
 
 import android.graphics.Bitmap
 import android.os.SystemClock
+import kotlin.math.abs
 import kotlin.math.hypot
+
+data class SubjectTap(val point: ScenePoint, val view: LiveScene, val zoom: Float) {
+    fun inBatch(batch: EnvironmentBatch): SelectedSubject? {
+        val match = batch.frames.firstOrNull { (observation, frame) ->
+            abs(observation.zoom / zoom - 1f) < .022f &&
+                FrameSignature.sameSelectedView(view.signature, FrameSignature.sample(frame.gray, frame.width, frame.height))
+        } ?: return null
+        return SelectedSubject(point, match.view.id)
+    }
+}
 
 /** Works with a conventional CameraX stream. Depth is optional per view. */
 class LocalComposition(private val depth: SoftwareDepth, private val detector: SceneSubjectDetector) {
     data class Result(val decision: EnvironmentDecision, val relativeDepth: Map<Int, RelativeDepth>,
-                      val currentSubjectReady: Boolean)
+                      val canAutoCapture: Boolean)
 
-    fun evaluate(batch: EnvironmentBatch, remainingZoom: Float, isActive: () -> Boolean): Result {
+    fun evaluate(batch: EnvironmentBatch, remainingZoom: Float, style: CompositionStyle, tap: SubjectTap?,
+                 isActive: () -> Boolean): Result {
         val start = SystemClock.elapsedRealtime()
         val eligible = batch.frames.filter { batch.map.routeTo(it.view.id) != null }.associateBy { it.view.id }
         val latest = batch.frames.last().view.id
-        val subject = if (isActive()) detector.detect(batch.frames.last().frame.image) else null
+        val selectedSubject = tap?.inBatch(batch)
+        val picked = selectedSubject?.pointIn(batch.map, latest)
+        if (tap != null && picked == null) {
+            return Result(EnvironmentDecision.ObserveMore("The selected subject moved out of view. Tap it again."), emptyMap(), false)
+        }
+        val subject = if (isActive()) detector.detect(batch.frames.last().frame.image, picked) else null
         val center = SubjectBox(.49f, .49f, .51f, .51f)
         val selected = batch.map.plannerViews().asReversed().filter { view ->
             if (view.id !in eligible) false
@@ -41,8 +58,8 @@ class LocalComposition(private val depth: SoftwareDepth, private val detector: S
             }
             SceneLayout(pixels, layers[id])
         }
-        val decision = ObservedComposition.choose(batch.map, layouts, remainingZoom, subject)
-        return Result(decision, layers, ObservedComposition.currentSubjectReady(layouts.getValue(latest), subject))
+        val assessment = StyledComposition.choose(style, batch.map, layouts, remainingZoom, subject, selectedSubject)
+        return Result(assessment.decision, layers, assessment.canAutoCapture)
     }
 }
 
@@ -52,14 +69,14 @@ object ObservedComposition {
     private data class Option(val viewId: Int, val crop: SubjectBox, val improvement: Float, val foregroundRemoved: Float)
 
     fun choose(map: EnvironmentMap, layouts: Map<Int, SceneLayout>, remainingZoom: Float,
-               subject: DetectedSubject? = null): EnvironmentDecision {
+               subject: DetectedSubject? = null, protectedBounds: SubjectBox? = null): EnvironmentDecision {
         val current = map.views.last()
         val starting = layouts.getValue(current.id)
         val focus = starting.focus
         if (focus == null || !starting.hasSubject) {
             return EnvironmentDecision.ObserveMore("Point at a subject with some visible detail.")
         }
-        val protected = subject?.takeIf { it.confidence >= .52f }?.box
+        val protected = protectedBounds ?: subject?.takeIf { it.confidence >= .52f }?.box
         val currentWithDepth = starting.rate(full, useDepth = true)
         val currentRgb = starting.rate(full, useDepth = false)
         val startingDetail = starting.subjectDetail(focus)

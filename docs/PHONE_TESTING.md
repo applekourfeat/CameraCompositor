@@ -4,12 +4,12 @@ Use the standard Vivo V30. A cable or mirroring session is optional. Transfer th
 
 ## Short first session
 
-Install `artifacts/CameraCompositor-0.6.0-auto-debug.apk`. This is the ARM64 test build for the Vivo V30. Android 10 or later is required. The ARMv7 file is for 32-bit ARM phones.
+Install `artifacts/CameraCompositor-0.7.0-styles-debug.apk`. This is the ARM64 test build for the Vivo V30. Android 10 or later is required. The ARMv7 file is for 32-bit ARM phones.
 
-1. Turn on airplane mode and tap **Start Auto** once. Pick a clear subject, such as a pet, a person, or an object on a desk. Follow the outline and hold steady through **3, 2, 1**. Note whether framing was worth taking and whether zoom felt continuous.
-2. Repeat and move slightly as the countdown runs. Check that the countdown clears. Tap **Stop Auto** during another countdown, then verify pinch zoom and the manual shutter. Backgrounding the app should also exit Auto.
-3. After a successful Auto photo, keep the phone pointed at the same subject through the next few seconds. Then change the scene and check that search resumes. Inspect **Camera and scan details** for saved resolution and actual processing path.
-4. Use **Options > Photo processing** to take a pair with Automatic processing and Standard JPEG. Compare with a third photo from Vivo's camera app using matched lens, composition and light. **Camera capability report** lists Android's exposed camera and vendor modes.
+1. From the same starting angle, try **Thirds** and **Centered** on the same object or person. Tap the subject before **Find a composition**. Check that both modes keep the subject and that their suggested placement differs.
+2. Try **Negative space** with a clear wall behind a subject, then with a busy background. In the busy scene, check whether it asks for a quieter angle. Try **Wide scene** with a small sweep and check that the guide keeps surrounding context.
+3. Try **Start Auto** with a clear subject. Move slightly as the countdown runs. Check that it clears, that **Stop Auto** and pinch zoom restore control, and that changing the composition style cancels the old target.
+4. In a backlit scene and a dim room, compare **Camera JPEG** with any available manufacturer HDR or Night option. Take a matched shot with Vivo's camera app. Check saved color, highlights, noise and framing. The status beside **Last photo** and **Camera and scan details** record the processing path.
 
 ## Composition acceptance
 

@@ -1,6 +1,7 @@
 package dev.cameracompositor
 
 import kotlin.math.abs
+import kotlin.math.sqrt
 
 /** A cheap same-angle check for static scenes with too few feature tracks. */
 object FrameSignature {
@@ -24,6 +25,32 @@ object FrameSignature {
 
     fun sameScene(reference: IntArray, current: IntArray): Boolean {
         return similar(reference, current, maxLightChange = 45, maxDifference = 12, maxChanged = 15, changedThreshold = 30)
+    }
+
+    /** Tap-to-focus can change exposure between the tap and the first stored image. */
+    fun sameSelectedView(reference: IntArray, current: IntArray): Boolean {
+        if (sameAngle(reference, current)) return true
+        if (reference.size != 96 || current.size != 96) return false
+        val firstMean = reference.average()
+        val secondMean = current.average()
+        var firstVariance = 0.0
+        var covariance = 0.0
+        for (i in reference.indices) {
+            val base = reference[i] - firstMean
+            firstVariance += base * base
+            covariance += base * (current[i] - secondMean)
+        }
+        if (firstVariance < reference.size * 144) return false
+        val gain = covariance / firstVariance
+        if (gain !in .53..1.78) return false
+        var errorSquared = 0.0
+        var changed = 0
+        for (i in reference.indices) {
+            val error = current[i] - secondMean - (reference[i] - firstMean) * gain
+            errorSquared += error * error
+            if (abs(error) > 17) changed++
+        }
+        return sqrt(errorSquared / firstVariance) < .19 && changed <= 3
     }
 
     private fun similar(reference: IntArray, current: IntArray, maxLightChange: Int, maxDifference: Int,

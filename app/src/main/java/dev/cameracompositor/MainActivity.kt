@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var access: Button
     private lateinit var gallery: Button
     private lateinit var find: Button
+    private lateinit var styleButton: Button
     private lateinit var automatic: Button
     private lateinit var countdown: TextView
     private lateinit var cancel: Button
@@ -105,7 +106,10 @@ class MainActivity : ComponentActivity() {
     private var modelReason = ""
     private var lastScanMs = 0L
     private var lastPhotoDetails = "No photo taken in this session"
-    private var processingMode: Int? = null // null = prefer manufacturer Auto/HDR; NONE = standard
+    private val cameraPreferences by lazy { getSharedPreferences("camera_preferences", MODE_PRIVATE) }
+    private var photoMode = PhotoMode.JPEG
+    private var compositionStyle = CompositionStyle.THIRDS
+    private var pendingSubject: SubjectTap? = null
 
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { allowed ->
         if (allowed) startCamera() else { guidance.setText(R.string.camera_permission); access.visibility = View.VISIBLE }
@@ -141,6 +145,13 @@ class MainActivity : ComponentActivity() {
         capture = findViewById(R.id.capture); access = findViewById(R.id.access); gallery = findViewById(R.id.gallery)
         find = findViewById(R.id.find_shot); cancel = findViewById(R.id.cancel); flip = findViewById(R.id.flip)
         automatic = findViewById(R.id.automatic); countdown = findViewById(R.id.shutter_countdown)
+        styleButton = findViewById(R.id.composition_style)
+        val savedStyle = cameraPreferences.getString("style", null)
+        val savedPhotoMode = cameraPreferences.getString("photo_mode", null)
+        compositionStyle = CompositionStyle.entries.firstOrNull { it.name == savedStyle } ?: CompositionStyle.THIRDS
+        photoMode = PhotoMode.entries.firstOrNull { it.name == savedPhotoMode } ?: PhotoMode.JPEG
+        renderCompositionStyle()
+        styleButton.setOnClickListener { showCompositionStyles() }
         plannerSettings = PlannerSettings(this)
         localScorer = LocalResearchScorer(this)
         softwareDepth = SoftwareDepth(this)
@@ -158,9 +169,20 @@ class MainActivity : ComponentActivity() {
         } }
         preview.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
         preview.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> analyzer.viewSize = Size(preview.width, preview.height) }
+        val taps = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent) = true
+            override fun onSingleTapUp(e: MotionEvent): Boolean {
+                pickSubject(e.x, e.y)
+                return true
+            }
+        })
+        var pinch = false
         preview.setOnTouchListener { _, event ->
             if (saving) true else {
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) pinch = false
                 if (event.pointerCount > 1) {
+                    pinch = true
+                    clearSubjectTap()
                     zoomAnimator.stop()
                     if (automaticMode) setAutomaticMode(false)
                     else if (scanning || activeEnvironmentBatch != null) cancelGuide(false)
@@ -169,6 +191,7 @@ class MainActivity : ComponentActivity() {
                         telemetry.text = "Zoom is yours. Cancel guide to reset."
                     }
                 }
+                if (!pinch) taps.onTouchEvent(event)
                 false
             }
         }
@@ -194,6 +217,7 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         handler.removeCallbacks(tick)
         if (::analyzer.isInitialized) {
+            clearSubjectTap()
             if (automaticMode) setAutomaticMode(false) else cancelGuide(false)
         }
         super.onPause()
@@ -252,9 +276,27 @@ class MainActivity : ComponentActivity() {
         guidance.setText(if (enabled) R.string.auto_observing else R.string.ready_to_frame)
     }
 
-    private fun waitForAnotherScene(saved: Boolean = false, reference: LiveScene? = analyzer.liveScene) {
+    private fun waitForAnotherScene(saved: Boolean = false, reference: LiveScene? = analyzer.liveScene, message: String? = null) {
         automaticScan.waitForChange(SystemClock.elapsedRealtime(), saved, reference, scanReference)
-        guidance.setText(if (saved) R.string.auto_next_scene else R.string.auto_waiting)
+        guidance.text = message ?: getString(if (saved) R.string.auto_next_scene else R.string.auto_waiting)
+    }
+
+    private fun pickSubject(x: Float, y: Float) {
+        val observation = analyzer.liveScene ?: return
+        val zoom = controller?.zoomState?.value?.zoomRatio ?: return
+        if (!cameraReady || saving || preview.width == 0 || preview.height == 0 ||
+            SystemClock.elapsedRealtime() - observation.timeMs > 400) return
+        cancelGuide(false)
+        val point = ScenePoint((x / preview.width).coerceIn(0f, 1f), (y / preview.height).coerceIn(0f, 1f))
+        pendingSubject = SubjectTap(point, observation, zoom)
+        overlay.subjectPin = point
+        if (automaticMode) automaticScan.reset()
+        guidance.setText(if (automaticMode) R.string.subject_selected_auto else R.string.subject_selected)
+    }
+
+    private fun clearSubjectTap() {
+        pendingSubject = null
+        overlay.subjectPin = null
     }
 
     private fun abandonAutomaticGuide() {
@@ -279,6 +321,9 @@ class MainActivity : ComponentActivity() {
         cancelGuide(false)
         val token = generation
         val requestId = if (online) planner.beginRequest() else null
+        val style = compositionStyle
+        val tap = pendingSubject.takeUnless { online }
+        clearSubjectTap()
         baselineZoom = controller?.zoomState?.value?.zoomRatio ?: 1f
         if (autoScan) scanReference = analyzer.liveScene
         scanning = true
@@ -294,17 +339,18 @@ class MainActivity : ComponentActivity() {
                         scanning = false
                         if (autoScan) waitForAnotherScene() else guidance.setText(R.string.sweep_no_frame)
                     }
-                    else -> runEnvironmentPlanner(batch, token, requestId, autoScan)
+                    else -> runEnvironmentPlanner(batch, token, requestId, autoScan, style, tap)
                 }
             }
         environmentSweep!!.start()
     }
-    private fun runEnvironmentPlanner(batch: EnvironmentBatch, token: Int, requestId: Long?, autoScan: Boolean) {
+    private fun runEnvironmentPlanner(batch: EnvironmentBatch, token: Int, requestId: Long?, autoScan: Boolean,
+                                      style: CompositionStyle, tap: SubjectTap?) {
         guidance.setText(R.string.sweep_assessing)
         val started = SystemClock.elapsedRealtime()
         val availableZoom = ((controller?.zoomState?.value?.maxZoomRatio ?: baselineZoom) / baselineZoom).coerceIn(1f, 3.2f)
         modelExecutor.execute {
-            val result = runCatching { localComposition.evaluate(batch, availableZoom) { generation == token } }
+            val result = runCatching { localComposition.evaluate(batch, availableZoom, style, tap) { generation == token } }
             val optionalOnline = if (requestId != null && generation == token) runCatching {
                 planner.chooseEnvironment(batch, requestId, availableZoom, result.getOrNull()?.relativeDepth.orEmpty())
             }.getOrNull() else null
@@ -319,8 +365,9 @@ class MainActivity : ComponentActivity() {
                     (if (optionalOnline != null) "Online assessment." else "On-device assessment.")
                 if (autoScan) {
                     val target = when {
+                        local?.canAutoCapture != true -> null
                         decision is EnvironmentDecision.Guide -> decision
-                        decision is EnvironmentDecision.Keep && local?.currentSubjectReady == true ->
+                        decision is EnvironmentDecision.Keep ->
                             EnvironmentDecision.Guide(batch.map.views.last().id, SubjectBox(0f, 0f, 1f, 1f), "Current view", decision.reason)
                         else -> null
                     }
@@ -328,7 +375,11 @@ class MainActivity : ComponentActivity() {
                         startEnvironmentGuide(batch, target, autoGuide = true)) return@post
                     analyzer.endEnvironment()
                     batch.close()
-                    waitForAnotherScene()
+                    val message = when (decision) {
+                        is EnvironmentDecision.ObserveMore -> decision.reason
+                        else -> if (local?.canAutoCapture == false && style != CompositionStyle.WIDE) getString(R.string.auto_select_subject) else null
+                    }
+                    waitForAnotherScene(message = message)
                     return@post
                 }
                 if (decision == null) {
@@ -338,7 +389,7 @@ class MainActivity : ComponentActivity() {
                 } else when (decision) {
                     is EnvironmentDecision.Keep -> {
                         if (analyzer.atEnvironmentCheckpoint()) {
-                            guidance.setText(R.string.sweep_keep)
+                            guidance.text = decision.reason
                         } else {
                             showEnvironmentChoice(batch, EnvironmentDecision.Guide(batch.frames.last().view.id,
                                 SubjectBox(0f, 0f, 1f, 1f), "Observed view", decision.reason), token)
@@ -820,22 +871,65 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    private fun styleLabel(style: CompositionStyle) = getString(when (style) {
+        CompositionStyle.THIRDS -> R.string.style_thirds
+        CompositionStyle.CENTERED -> R.string.style_centered
+        CompositionStyle.NEGATIVE_SPACE -> R.string.style_negative_space
+        CompositionStyle.WIDE -> R.string.style_wide
+    })
+
+    private fun renderCompositionStyle() {
+        styleButton.text = getString(R.string.style_control, styleLabel(compositionStyle))
+        overlay.compositionStyle = compositionStyle
+    }
+
+    private fun showCompositionStyles() {
+        if (saving) return
+        if (automaticMode) setAutomaticMode(false) else if (scanning || activePlan) cancelGuide(false)
+        val styles = CompositionStyle.entries
+        AlertDialog.Builder(this).setTitle(R.string.composition_style)
+            .setSingleChoiceItems(styles.map(::styleLabel).toTypedArray(), styles.indexOf(compositionStyle)) { dialog, index ->
+                compositionStyle = styles[index]
+                cameraPreferences.edit().putString("style", compositionStyle.name).apply()
+                renderCompositionStyle()
+                guidance.setText(if (pendingSubject == null) R.string.ready_to_frame else R.string.subject_selected)
+                dialog.dismiss()
+            }.setNegativeButton(R.string.close, null).show()
+    }
+
+    private fun availablePhotoModes(): List<PhotoMode> {
+        val extensions = quality.supported(baseSelector).map { it.first }
+        return buildList {
+            add(PhotoMode.JPEG)
+            if (extensions.isNotEmpty()) add(PhotoMode.ADAPTIVE)
+            if (ExtensionMode.AUTO in extensions) add(PhotoMode.AUTO)
+            if (ExtensionMode.HDR in extensions) add(PhotoMode.HDR)
+            if (ExtensionMode.NIGHT in extensions) add(PhotoMode.NIGHT)
+        }
+    }
+
+    private fun photoModeLabel(mode: PhotoMode) = getString(when (mode) {
+        PhotoMode.JPEG -> R.string.processing_jpeg
+        PhotoMode.ADAPTIVE -> R.string.processing_adaptive
+        PhotoMode.AUTO -> R.string.processing_auto
+        PhotoMode.HDR -> R.string.processing_hdr
+        PhotoMode.NIGHT -> R.string.processing_night
+    })
+
     private fun chooseProcessing() {
-        val modes = listOf(null to "Automatic processing", ExtensionMode.NONE to "Standard JPEG") + quality.supported(baseSelector)
-        AlertDialog.Builder(this).setTitle("Photo processing").setItems(modes.map { it.second }.toTypedArray()) { _, index ->
-            processingMode = modes[index].first; updateCameraStatus()
-        }.show()
+        val modes = availablePhotoModes()
+        AlertDialog.Builder(this).setTitle(R.string.photo_processing)
+            .setSingleChoiceItems(modes.map(::photoModeLabel).toTypedArray(), modes.indexOf(photoMode).coerceAtLeast(0)) { dialog, index ->
+                photoMode = modes[index]
+                cameraPreferences.edit().putString("photo_mode", photoMode.name).apply()
+                dialog.dismiss()
+                updateCameraStatus()
+            }.setNegativeButton(R.string.close, null).show()
     }
     private fun updateCameraStatus() {
         if (!::telemetry.isInitialized || activePlan || scanning) return
-        val extension = captureExtension()
-        val method = extension?.second ?: if (processingMode == ExtensionMode.NONE) "Standard JPEG" else "Automatic processing"
-        telemetry.text = "$method · 4:3 · tap to focus · pinch to zoom"
-    }
-    private fun captureExtension(): Pair<CameraSelector, String>? = when (val mode = processingMode) {
-        null -> quality.automatic(baseSelector, dim = analyzer.liveScene?.signature?.average()?.let { it < 64 } == true)
-        ExtensionMode.NONE -> null
-        else -> quality.selector(baseSelector, mode)?.let { it to "Manufacturer ${quality.supported(baseSelector).firstOrNull { entry -> entry.first == mode }?.second}" }
+        val method = photoModeLabel(photoMode.takeIf { it in availablePhotoModes() } ?: PhotoMode.JPEG)
+        telemetry.text = getString(R.string.capture_details, method)
     }
 
     private fun flipCamera() {
@@ -843,6 +937,7 @@ class MainActivity : ComponentActivity() {
         if (!cameraReady || saving || scanning) return
         val next = if (baseSelector != CameraSelector.DEFAULT_FRONT_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
         if (!camera.hasCamera(next)) { toast(R.string.no_other_camera); return }
+        clearSubjectTap()
         if (automaticMode) setAutomaticMode(false) else cancelGuide(false)
         val previous = baseSelector
         try { camera.cameraSelector = next; baseSelector = next; updateCameraStatus() }
@@ -853,11 +948,13 @@ class MainActivity : ComponentActivity() {
         val camera = controller ?: return
         if (!cameraReady || saving || (autoShot && !automaticMode)) return
         val frameAtShutter = analyzer.liveScene
-        val mode = captureExtension()
+        val freshSignature = frameAtShutter?.takeIf { SystemClock.elapsedRealtime() - it.timeMs <= 450 }?.signature
+        val mode = quality.processing(baseSelector, photoMode, classifyLighting(freshSignature))
+        clearSubjectTap()
         if (!autoShot && automaticMode) setAutomaticMode(false) else cancelGuide(false)
         saving = true
         guidance.setText(R.string.capturing_photo)
-        photoCapture.take(camera, baseSelector, mode, enhance = processingMode != ExtensionMode.NONE,
+        photoCapture.take(camera, baseSelector, mode,
             ownsCamera = { !isDestroyed && controller === camera },
             canShoot = { !isDestroyed && controller === camera && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) },
             progress = { if (!isDestroyed) guidance.text = it }) { outcome, restored ->
@@ -894,6 +991,7 @@ class MainActivity : ComponentActivity() {
         gallery.isEnabled = !saving && lastPhoto != null
         find.visibility = if (automaticMode) View.GONE else View.VISIBLE
         find.isEnabled = controls.findEnabled
+        styleButton.isEnabled = !saving
         flip.isEnabled = controls.flipEnabled
         automatic.isEnabled = cameraReady && !saving
         automatic.visibility = if (automaticMode || (!scanning && !activePlan)) View.VISIBLE else View.GONE

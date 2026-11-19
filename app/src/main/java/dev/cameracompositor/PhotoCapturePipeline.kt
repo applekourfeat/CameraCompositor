@@ -17,20 +17,20 @@ import java.util.concurrent.Executors
 
 data class SavedPhoto(val uri: Uri, val width: Int, val height: Int, val processing: String)
 
-/** Camera operations stay on main. JPEG finishing and the atomic gallery publication run on the photo worker. */
+/** Camera operations stay on main. The gallery publication copies the original on the photo worker. */
 class PhotoCapturePipeline(context: Context, private val handler: Handler, private val main: Executor) {
     private val app = context.applicationContext
 
     fun take(camera: CameraController, base: CameraSelector, extension: Pair<CameraSelector, String>?,
-             enhance: Boolean, ownsCamera: () -> Boolean, canShoot: () -> Boolean,
+             ownsCamera: () -> Boolean, canShoot: () -> Boolean,
              progress: (String) -> Unit, finished: (Result<SavedPhoto>, Boolean) -> Unit) {
         val zoom = camera.zoomState.value?.zoomRatio ?: 1f
-        val capture = Request(camera, base, zoom, enhance, ownsCamera, canShoot, progress, finished)
+        val capture = Request(camera, base, zoom, ownsCamera, canShoot, progress, finished)
         if (extension == null) capture.shoot(null) else capture.bindExtension(extension)
     }
 
     private inner class Request(private val camera: CameraController, private val base: CameraSelector,
-                                private val zoom: Float, private val enhance: Boolean,
+                                private val zoom: Float,
                                 private val ownsCamera: () -> Boolean, private val canShoot: () -> Boolean,
                                 private val progress: (String) -> Unit,
                                 private val finished: (Result<SavedPhoto>, Boolean) -> Unit) {
@@ -83,7 +83,7 @@ class PhotoCapturePipeline(context: Context, private val handler: Handler, priva
                         complete = true
                         progress("Saving photo…")
                         photoWorker.execute {
-                            val photo = runCatching { publish(file, manufacturer, enhance) }
+                            val photo = runCatching { publish(file, manufacturer) }
                             main.execute { finished(photo, restored) }
                         }
                     }
@@ -119,18 +119,12 @@ class PhotoCapturePipeline(context: Context, private val handler: Handler, priva
         }
     }
 
-    private fun publish(source: File, manufacturer: String?, enhance: Boolean): SavedPhoto {
-        var processed: File? = null
+    private fun publish(source: File, manufacturer: String?): SavedPhoto {
         try {
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(source.path, bounds)
-            if (manufacturer == null && enhance) {
-                processed = try { PhotoFinisher.enhance(source, bounds.outWidth, bounds.outHeight) }
-                catch (_: Exception) { null }
-                catch (_: OutOfMemoryError) { null }
-            }
-            val processing = manufacturer ?: if (processed != null) "Enhanced shadows" else "Standard JPEG"
-            val photo = processed ?: source
+            check(bounds.outWidth > 0 && bounds.outHeight > 0) { "The camera returned an unreadable JPEG." }
+            val processing = manufacturer ?: "Camera JPEG"
             val resolver = app.contentResolver
             val values = ContentValues().apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, "CC_${System.currentTimeMillis()}.jpg")
@@ -140,7 +134,7 @@ class PhotoCapturePipeline(context: Context, private val handler: Handler, priva
             }
             val uri = checkNotNull(resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values))
             try {
-                checkNotNull(resolver.openOutputStream(uri)).use { output -> photo.inputStream().use { it.copyTo(output) } }
+                checkNotNull(resolver.openOutputStream(uri)).use { output -> source.inputStream().use { it.copyTo(output) } }
                 val published = ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }
                 check(resolver.update(uri, published, null, null) == 1)
             } catch (error: Exception) {
@@ -148,7 +142,7 @@ class PhotoCapturePipeline(context: Context, private val handler: Handler, priva
                 throw error
             }
             return SavedPhoto(uri, bounds.outWidth, bounds.outHeight, processing)
-        } finally { processed?.delete(); source.delete() }
+        } finally { source.delete() }
     }
 
     companion object { private val photoWorker by lazy { Executors.newSingleThreadExecutor() } }

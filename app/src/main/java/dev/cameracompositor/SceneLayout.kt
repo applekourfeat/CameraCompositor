@@ -20,6 +20,7 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
     private val texture = FloatArray(SIZE)
     private val light = FloatArray(SIZE)
     private val clipping = FloatArray(SIZE)
+    private val contrast = FloatArray(SIZE)
     private val attention = FloatArray(SIZE)
     private val occlusion = BooleanArray(SIZE)
     private val contentMass: Float
@@ -53,11 +54,11 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
         markForeground()
         for (i in 0 until SIZE) {
             val neighbors = neighbors(i)
-            val contrast = abs(light[i] - neighbors.map { light[it] }.average().toFloat())
+            contrast[i] = abs(light[i] - neighbors.map { light[it] }.average().toFloat())
             val centerWeight = 1f - .30f * hypot(x[i] - .5f, y[i] - .43f)
             val foregroundWeight = if (occlusion[i]) .10f else 1f
             attention[i] = centerWeight * foregroundWeight *
-                ((texture[i] / .14f).coerceAtMost(1f) * .8f + (contrast / .24f).coerceAtMost(1f) * .2f)
+                ((texture[i] / .14f).coerceAtMost(1f) * .8f + (contrast[i] / .24f).coerceAtMost(1f) * .2f)
         }
         contentMass = attention.sum()
         contentMassWithoutDepth = attention.indices.sumOf { weight(it, useDepth = false).toDouble() }.toFloat()
@@ -121,7 +122,8 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
             quantile(horizontal, .74f), quantile(vertical, .75f))
     }
 
-    data class Rating(val quality: Float, val foreground: Float, val retained: Float)
+    data class Rating(val quality: Float, val foreground: Float, val retained: Float,
+                      val boundary: Float, val clipped: Float)
     private fun weight(index: Int, useDepth: Boolean) =
         if (!useDepth && occlusion[index]) attention[index] * 10 else attention[index]
 
@@ -135,6 +137,45 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
             }
         }
         return sum / samples.coerceAtLeast(1)
+    }
+
+    /** Only offer an automatic anchor when the detail is concentrated in a distinct part of the view. */
+    fun isolatedFocus(): SubjectBox? {
+        val b = focus ?: return null
+        val width = b.right - b.left
+        val height = b.bottom - b.top
+        if (!hasSubject || width < .06f || height < .06f || width > .64f || height > .65f || width * height > .195f) return null
+        if (subjectDetail(b) < detail * 1.65f) return null
+        val area = SubjectBox(b.left - .07f, b.top - .065f, b.right + .07f, b.bottom + .065f)
+        if (area.left < .035f || area.top < .035f || area.right > .965f || area.bottom > .965f) return null
+        var sum = 0f
+        for (i in attention.indices) if (x[i] in area.left..area.right && y[i] in area.top..area.bottom) sum += attention[i]
+        return area.takeIf { sum >= contentMass * .51f }
+    }
+
+    /** Score whether a usable part of the frame beside the subject is visually quiet. */
+    fun quietSide(frame: SubjectBox, subject: SubjectBox, rightSide: Boolean): Float {
+        val width = frame.right - frame.left
+        val height = frame.bottom - frame.top
+        val left = if (rightSide) maxOf(frame.left + width * .49f, subject.right + width * .04f) else frame.left + width * .045f
+        val right = if (rightSide) frame.right - width * .045f else minOf(frame.left + width * .51f, subject.left - width * .04f)
+        if (right - left < width * .29f) return 0f
+        var sum = 0f
+        var squares = 0f
+        var quiet = 0
+        var count = 0
+        for (i in texture.indices) {
+            if (x[i] !in left..right || y[i] !in (frame.top + height * .08f)..(frame.bottom - height * .08f)) continue
+            val value = light[i]
+            count++
+            sum += value
+            squares += value * value
+            if (texture[i] < .043f && contrast[i] < .085f && clipping[i] < .48f && !occlusion[i]) quiet++
+        }
+        if (count < 16) return 0f
+        val mean = sum / count
+        val variation = sqrt((squares / count - mean * mean).coerceAtLeast(0f))
+        return (quiet.toFloat() / count - (variation - .09f).coerceAtLeast(0f) * 1.7f).coerceIn(0f, 1f)
     }
 
     fun rate(box: SubjectBox, useDepth: Boolean): Rating {
@@ -164,7 +205,7 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
             }
             samples++
         }
-        if (samples == 0) return Rating(-1f, 0f, 0f)
+        if (samples == 0) return Rating(-1f, 0f, 0f, 0f, 0f)
         val foreground = near.toFloat() / samples
         val total = if (useDepth) contentMass else contentMassWithoutDepth
         val retained = mass / total.coerceAtLeast(.01f)
@@ -173,6 +214,6 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
         val density = sqrt(mass / samples)
         val quality = .70f * density - .75f * foreground - .32f * boundaryWeight -
             .15f * clipped / samples - .34f * spread
-        return Rating(quality, foreground, retained)
+        return Rating(quality, foreground, retained, boundaryWeight, clipped / samples)
     }
 }

@@ -50,6 +50,10 @@ Model/data redistribution rights remain a separate gate. The code includes the u
 
 ## Environment and subject-discovery experiments
 
+### Replay composition styles
+
+After building the app and preparing the frozen benchmark and NanoDet asset, run `research/evaluate_composition_styles.py` with `--java` set to the local JDK executable and `--classpath` pointing to `app/build/tmp/kotlin-classes/debug` and the Kotlin stdlib JAR. Use the platform's classpath separator. The Java driver runs the same Kotlin framing policy as the app. `--reference` and `--tap X Y` can test a local photo separately. The replay records composition choices and subject coverage. It does not measure blind preference or device performance.
+
 ### Camera-only software depth
 
 Run `research/fetch_subject_model.py` to download and verify the pinned Apache-licensed NanoDet checkpoint. The script writes the processed ONNX to `.local/subject-assets` for Android builds. The app can still plan from image cues when the subject model is absent or finds no subject.

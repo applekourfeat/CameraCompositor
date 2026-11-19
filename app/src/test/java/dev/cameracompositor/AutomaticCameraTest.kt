@@ -59,19 +59,15 @@ class AutomaticCameraTest {
         assertTrue(out.next(2.2f, 900) > 2.05f)
     }
 
-    @Test fun `dark finish preserves highlights and shadow edges`() {
-        val curve = ShadowTone.curve(47)!!
-        assertEquals(0, curve[0])
-        assertTrue(curve[55] > 55)
-        assertEquals(255, curve[255])
-        for (i in 1..255) assertTrue(curve[i] >= curve[i - 1])
-        assertNull(ShadowTone.curve(140))
-        val mid = 0x323232
-        val noisy = 0x383838
-        val trimmed = ShadowTone.finish(noisy, mid, mid, mid, mid, curve)
-        val untouched = ShadowTone.finish(noisy, 0xaaaaaa, mid, mid, mid, curve)
-        assertTrue(ShadowTone.luminance(trimmed) < ShadowTone.luminance(untouched))
-        assertEquals(curve[56], ShadowTone.luminance(untouched))
-        assertEquals(0xfff4f4f4.toInt(), ShadowTone.finish(0xf4f4f4, mid, mid, mid, mid, curve))
+    @Test fun `adaptive photo uses ordinary JPEG for uncertain or midtone lighting`() {
+        assertEquals(PhotoLighting.ORDINARY, classifyLighting(null))
+        assertEquals(PhotoLighting.ORDINARY, classifyLighting(IntArray(96) { -1 }))
+        assertEquals(PhotoLighting.ORDINARY, classifyLighting(IntArray(96) { if (it < 12) 28 else 128 }))
+        assertEquals(PhotoLighting.ORDINARY, classifyLighting(IntArray(96) { if (it < 26) 215 else 130 }))
+    }
+
+    @Test fun `adaptive photo distinguishes a backlit scene from pervasive low light`() {
+        assertEquals(PhotoLighting.DIM, classifyLighting(IntArray(96) { if (it < 74) 44 else 86 }))
+        assertEquals(PhotoLighting.BACKLIT, classifyLighting(IntArray(96) { if (it < 23) 35 else 215 }))
     }
 }

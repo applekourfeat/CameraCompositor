@@ -13,6 +13,10 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
     var fresh = false
     var aligned = false
     var targetPreview: Bitmap? = null
+    var compositionStyle = CompositionStyle.THIRDS
+        set(value) { field = value; invalidate() }
+    var subjectPin: ScenePoint? = null
+        set(value) { field = value; invalidate() }
     private val pen = Paint(Paint.ANTI_ALIAS_FLAG)
     private val path = Path()
     private val thumbnailRect = RectF()
@@ -20,7 +24,9 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
     private val density = resources.displayMetrics.density
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        drawCompositionGrid(canvas)
         drawTargetPreview(canvas)
+        drawSubjectPin(canvas)
         val points = frame ?: return
         pen.style = Paint.Style.STROKE; pen.strokeWidth = 2 * density
         pen.color = if (aligned && fresh) Color.rgb(125, 220, 150) else Color.WHITE
@@ -46,6 +52,40 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
             }
         }
     }
+
+    private fun drawCompositionGrid(canvas: Canvas) {
+        pen.style = Paint.Style.STROKE
+        pen.color = Color.WHITE
+        pen.alpha = 77
+        pen.strokeWidth = density
+        when (compositionStyle) {
+            CompositionStyle.THIRDS, CompositionStyle.NEGATIVE_SPACE -> {
+                for (third in 1..2) {
+                    val x = width * third / 3f
+                    canvas.drawLine(x, 0f, x, height.toFloat(), pen)
+                    if (compositionStyle == CompositionStyle.THIRDS) {
+                        val y = height * third / 3f
+                        canvas.drawLine(0f, y, width.toFloat(), y, pen)
+                    }
+                }
+            }
+            CompositionStyle.CENTERED -> {
+                val x = width * .5f
+                canvas.drawLine(x, 0f, x, height.toFloat(), pen)
+            }
+            CompositionStyle.WIDE -> Unit
+        }
+    }
+
+    private fun drawSubjectPin(canvas: Canvas) {
+        val point = subjectPin ?: return
+        pen.style = Paint.Style.STROKE
+        pen.color = Color.WHITE
+        pen.strokeWidth = 2 * density
+        canvas.drawCircle(point.x * width, point.y * height, 14 * density, pen)
+        canvas.drawCircle(point.x * width, point.y * height, 2 * density, pen)
+    }
+
     private fun drawTargetPreview(canvas: Canvas) {
         targetPreview?.let { bitmap ->
             val w = 76 * density; val h = w * 4 / 3

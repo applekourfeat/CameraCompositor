@@ -15,7 +15,9 @@ DEPTH_ASSET = "zipdepth-192x256.onnx"
 DEPTH_SHA = "dad03af25e12af84feb7694e0b0182dd2811a0d2a47d4c009cd7bcb41b5b7d25"
 CAMERA_VERSION = "0.5.0-camera"
 AUTO_VERSION = "0.6.0-auto"
-DEPTH_BUILDS = {CAMERA_VERSION, AUTO_VERSION}
+STYLES_VERSION = "0.7.0-styles"
+SUBJECT_BUILDS = {AUTO_VERSION, STYLES_VERSION}
+DEPTH_BUILDS = {CAMERA_VERSION} | SUBJECT_BUILDS
 SUBJECT_ASSET = "nanodet-416.onnx"
 SUBJECT_SHA = "d891b8c939ce062b13fc7440195d427eeecbec307c2417564d6908309b263e19"
 KEY_PATTERN = re.compile(rb"AIza[0-9A-Za-z_-]{35}|gh[pousr]_[0-9A-Za-z]{30,}|sk-proj-[0-9A-Za-z_-]{40,}")
@@ -39,7 +41,7 @@ def shipped_models(version):
     if version not in DEPTH_BUILDS:
         return {"gaic-mobilenet.onnx": MODEL_SHA}
     models = {DEPTH_ASSET: DEPTH_SHA}
-    if version == AUTO_VERSION:
+    if version in SUBJECT_BUILDS:
         models[SUBJECT_ASSET] = SUBJECT_SHA
     return models
 
@@ -62,7 +64,7 @@ def verify_apk(apk, abi, version):
         if version in DEPTH_BUILDS:
             assert "assets/third-party/ZipDepth-LICENSE.txt" in names
             assert {n for n in names if n.endswith(".onnx")} == {"assets/" + model for model in models}
-            if version == AUTO_VERSION:
+            if version in SUBJECT_BUILDS:
                 assert "assets/third-party/NanoDet-LICENSE.txt" in names
             if abi == "arm64-v8a":
                 for name in native:
@@ -72,7 +74,7 @@ def verify_apk(apk, abi, version):
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument("--version", default=AUTO_VERSION)
+    parser.add_argument("--version", default=STYLES_VERSION)
     args=parser.parse_args()
     version=args.version
     assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z]+)?",version), "Invalid delivery version"
@@ -84,7 +86,8 @@ def main():
         suite = ET.parse(path).getroot()
         count += int(suite.get("tests", "0"))
         failures += int(suite.get("failures", "0")) + int(suite.get("errors", "0"))
-    minimum = {AUTO_VERSION: 71, CAMERA_VERSION: 63, "0.4.1-spatial": 55, "0.4.0-environment": 47}.get(version, 35)
+    minimum = {STYLES_VERSION: 79, AUTO_VERSION: 71, CAMERA_VERSION: 63,
+               "0.4.1-spatial": 55, "0.4.0-environment": 47}.get(version, 35)
     assert count >= minimum and failures == 0, "Unit checks are missing or failed"
     outputs = ROOT / "app/build/outputs/apk/debug"
     metadata = json.loads((outputs / "output-metadata.json").read_text())
@@ -131,6 +134,10 @@ def main():
         result.update({"subjectModelSha256": SUBJECT_SHA,
             "releaseResearchAssets": "ZipDepth and NanoDet, no legacy research weights",
             "physicalVivoTests": "v0.6.0 pending; owner reports consistent v0.5.0 scans, poor compositions, and slow, stepped auto zoom"})
+    if version == STYLES_VERSION:
+        result.update({"subjectModelSha256": SUBJECT_SHA,
+            "releaseResearchAssets": "ZipDepth and NanoDet, no legacy research weights",
+            "physicalVivoTests": "v0.7.0 pending, owner reported poor composition and post-processing in v0.6.0"})
     tag=version.replace(".","").replace("-","_")
     path = ROOT / f"research/results/delivery-verification-v{tag}.json"
     path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
