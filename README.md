@@ -18,6 +18,8 @@ The guide tries to recover from brief interruptions and reevaluates if it loses 
 
 ## Research results and review
 
+The [composition research gallery](docs/composition-research/README.md) shows the starting skyline, candidate crops from two experiments, and the tighter view used to check whether the planner would keep an already framed shot.
+
 On 60 held-out GAICv2 test photos, GAIC's average crop-rating rank correlation was 0.843, compared with NIMA's 0.251. Its nine-crop selection had a 21.6 ms median on this Windows CPU; phone speed remains pending. These measurements do not establish the 70% human-preference gate or physical angle discovery.
 
 Open `artifacts/composition-research/review.html` in your desktop browser to compare model-anonymous framings. Progress stays in that browser; download answers to keep a copy. [Reproduction instructions](research/README.md), [raw results](research/results/), [remaining product gates](docs/PRODUCT_PLAN.md).
@@ -32,9 +34,24 @@ The owner's instrumented generated-image request reached WAIT_RESPONSE at 187 ms
 
 End users can eventually use managed online assistance without supplying credentials. [The Firebase evaluation](docs/CLOUD_GATEWAY.md) describes an unbilled Spark project, enforced App Check, limited shared free capacity and a local fallback. No managed service has been deployed.
 
-## Build
+## Dependencies and tools
 
-The project uses CameraX 1.6.2, optional ARCore 1.57.0, SDK 36 compilation, target SDK 35, minimum SDK 29, AGP 8.10.1, Gradle 8.11.1 and Kotlin 2.3.20. The local Java toolchain is under ignored `.tools/`.
+| Tool or dependency | Role in this project |
+| --- | --- |
+| Kotlin 2.3.20, JDK 21, Gradle 8.11.1, Android Gradle Plugin 8.10.1 | Compile, test, and package the app. The Windows setup installs JDK 21, and the app targets Java 17 bytecode. Android Studio can open the project. |
+| Google Android SDK and AndroidX CameraX 1.6.2 | Run the camera preview, focus, zoom, and photo capture. The app compiles with SDK 36, targets SDK 35, and supports Android API 29 and later. |
+| AndroidX Activity and Core | Handle the activity lifecycle, permissions, and compatibility helpers. |
+| Android motion sensors | Supply the phone orientation for the viewfinder level and steady capture. |
+| OpenCV 4.12.0 | Match features across preview frames to track the selected framing. |
+| Microsoft ONNX Runtime 1.23.2 | Run models on the phone. NanoDet finds object boxes, TinyCLIP recognizes scene regions, and the private Vivo test build uses GAIC to score candidate crops. ZipDepth estimates relative depth in separate research flows. |
+| Google ARCore 1.57.0 | Optional device experiment for camera pose, sparse points, and depth. |
+| OkHttp 4.12.0 and Google Gemini | Optional online scene scan using a personal API key. The main composition feature runs offline. |
+| JUnit 4.13.2, MockWebServer, and Android lint | Check camera behavior in code, simulate network responses, and check Android source and resources. |
+| Python 3.12, PyTorch, ONNX, NumPy, and Pillow | Export models, replay still images, measure results, and generate comparison sheets on desktop. |
+
+[Android dependencies](app/build.gradle.kts), [build plugin versions](build.gradle.kts), [Python dependency lock](research/requirements-lock.txt), [third-party notices](docs/THIRD_PARTY.md).
+
+## Build
 
 ```powershell
 ./scripts/build.ps1

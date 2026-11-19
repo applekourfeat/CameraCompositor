@@ -10,7 +10,7 @@ The research compares actual model outputs with rated crops and provides a separ
 - Run `summarize_review.py` on the downloaded answers. Blank or partial reviews remain pending.
 - Inspect `artifacts/composition-research/examples-1.jpg` and `examples-2.jpg` for the first six seeded evaluation scenes.
 
-The photos and generated review pages remain local. They are recreated from the pinned author download, rather than committed to GitHub. Opening the reviewer requires no server or account. The in-app automated browser blocks local file navigation, so its interactive behavior needs a manual browser check.
+The benchmark photos and generated review pages stay in the local research workspace. Recreate them from the pinned author download. The [GitHub gallery](../docs/composition-research/README.md) uses the project owner's skyline sample. Opening the reviewer requires no server or account. The in-app automated browser blocks local file navigation, so its interactive behavior needs a manual browser check.
 
 ## Environment and reproduction
 

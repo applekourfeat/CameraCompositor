@@ -17,13 +17,13 @@ The default Find button still uses the existing nine-crop ranker. No environment
 
 ## Why the city view failed
 
-Both supplied clear screenshots are identical, SHA-256 `7383b0975081b06753f05d872c195a556b5460da3799993a1f32f9b2312f2a82`. The exact viewfinder rectangle is `(0,285)-(1080,1725)`, giving a 1080x1440 photograph. Extraction changes no scene content. Images and generated comparisons stay in ignored local directories.
+Both supplied clear screenshots are identical, SHA-256 `7383b0975081b06753f05d872c195a556b5460da3799993a1f32f9b2312f2a82`. The exact viewfinder rectangle is `(0,285)-(1080,1725)`, giving a 1080x1440 photograph. Extraction changes no scene content. The original screenshots stay local. The [gallery](composition-research/README.md) shows the extracted view and selected comparisons.
 
 The app considers the full view and eight fixed crops, capped at 1.8x relative zoom. On this input, full-view GAIC score is 4.632; it wins. The UI reports no suggestion. A dense search of 295 positions/scales still gives the full view the highest score. Therefore widening the search alone does not fix its decision.
 
 The diagnostic semantic pipeline uses a fixed general vocabulary covering people, animals, plants, landscapes, architecture, vehicles and everyday objects, plus empty/obstructed-scene controls. It scores spatially diverse candidates at six zoom scales from 1.25x to 3.2x. A focus-search policy separates possible details from the full-view aesthetic score. Its thresholds and scale preferences were developed using the owner's scene and development set before evaluating the 60-photo split. The towers and bridge have no hand-authored target rectangles or scene-specific label list.
 
-This pipeline selects a 1.8x tower framing and a separate 2.2x bridge framing on the owner input, removing the railing in both. See local `artifacts/composition-research/owner-city-comparison.jpg`. These are real crops selected by the experiment. They provide a useful diagnostic of subject proposals, while still falling short of the owner's environment-understanding requirement.
+This pipeline selects a 1.8x tower framing and a separate 2.2x bridge framing on the owner input, removing the railing in both. The [subject comparison](composition-research/skyline-subject-options.jpg) shows the selected crops. The experiment evaluates proposals within a recorded view. It leaves the question of understanding physical viewpoints open.
 
 ## Proposal evaluation and remaining failures
 
