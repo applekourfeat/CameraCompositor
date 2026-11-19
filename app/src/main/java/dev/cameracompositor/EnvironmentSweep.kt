@@ -14,6 +14,7 @@ class EnvironmentBatch(val map: EnvironmentMap, val frames: List<EnvironmentFram
 class EnvironmentSweep(private val analyzer: SceneFrameAnalyzer, private val zoom: () -> Float,
                        private val maxZoom: () -> Float,
                        private val intervalMs: Long = 470,
+                       private val frameLimit: Int = 6,
                        private val onFinished: (EnvironmentBatch?) -> Unit) {
     private val main=Handler(Looper.getMainLooper())
     private val frames=mutableListOf<EnvironmentFrame>()
@@ -32,7 +33,7 @@ class EnvironmentSweep(private val analyzer: SceneFrameAnalyzer, private val zoo
             val view=EnvironmentView(frames.size,SystemClock.elapsedRealtime(),z,(maxZoom()/z).coerceIn(1f,3.2f),frame.registration,frames.lastOrNull()?.view?.id)
             if (runCatching { map.add(view) }.isFailure) { frame.image.recycle(); cancel(); return@post }
             frames.add(EnvironmentFrame(view,frame))
-            if (frames.size==6) { active=false; onFinished(EnvironmentBatch(map,frames.toList())); frames.clear() }
+            if (frames.size==frameLimit) { active=false; onFinished(EnvironmentBatch(map,frames.toList())); frames.clear() }
             else main.postDelayed({ capture() }, intervalMs)
         } }
         main.postDelayed({ if (active && sequence==request) cancel() },1500)

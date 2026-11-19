@@ -10,8 +10,8 @@ android {
         applicationId = "dev.cameracompositor"
         minSdk = 29
         targetSdk = 35
-        versionCode = 9
-        versionName = "0.7.0-styles"
+        versionCode = 10
+        versionName = "0.8.0-discovery"
     }
     splits {
         abi {
@@ -28,6 +28,7 @@ android {
     buildFeatures { buildConfig = true }
     sourceSets.getByName("main").assets.srcDir(rootProject.file(".local/software-depth-assets"))
     sourceSets.getByName("main").assets.srcDir(rootProject.file(".local/subject-assets"))
+    sourceSets.getByName("main").assets.srcDir(rootProject.file(".local/scene-semantics-assets"))
     if (providers.gradleProperty("includeLegacyResearch").orNull == "true") {
         sourceSets.getByName("debug").assets.srcDir(rootProject.file(".local/research-assets"))
     }

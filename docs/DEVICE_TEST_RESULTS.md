@@ -1,6 +1,8 @@
 # Physical-device test results
 
-The owner reported poor suggestions and post-processing in 0.6.0. No saved JPEG, selected capture mode or stock-camera comparison accompanied this feedback, so the affected path is unknown. Version [0.7.0-styles](V070_COMPOSITION_STYLES.md) adds explicit framing choices and preserves camera output. Its Vivo results are pending.
+The owner reported that 0.7.0 chose weak subjects, appeared to crop the starting view, and dropped guidance too readily. Version [0.8.0-discovery](V080_SCENE_DISCOVERY.md) adds automatic subject selection, prompts to turn toward a fresh view, and image-based tracking recovery. Its live behavior and saved-photo comparisons on the Vivo are pending.
+
+The owner reported poor suggestions and post-processing in 0.6.0. No saved JPEG, selected capture mode or stock-camera comparison accompanied this feedback, so the affected path is unknown. Version [0.7.0-styles](V070_COMPOSITION_STYLES.md) adds explicit framing choices and preserves camera output.
 
 The owner reports that 0.5.0 composition scans now run consistently on the Vivo V30. Indoor suggestions were poor and auto zoom felt slow and stepped. The feedback supplies no measured zoom timing or matched saved photographs. Version [0.6.0-auto](V060_AUTO_CAPTURE.md) adds timed zoom, subject-aware framing, Auto countdown capture and a processing fallback. Its results on the Vivo are pending.
 

@@ -109,6 +109,8 @@ class EnvironmentMap(val sceneId: Long) {
 sealed interface EnvironmentDecision {
     data class Keep(val reason: String): EnvironmentDecision
     data class ObserveMore(val reason: String): EnvironmentDecision
+    data class Explore(val viewId: Int, val aim: ScenePoint, val reason: String,
+                       val expected: SubjectHint? = null): EnvironmentDecision
     data class Guide(val viewId: Int, val crop: SubjectBox, val subject: String, val reason: String): EnvironmentDecision
 }
 

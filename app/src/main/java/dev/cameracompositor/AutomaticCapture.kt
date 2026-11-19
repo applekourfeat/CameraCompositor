@@ -15,9 +15,9 @@ class AutomaticShutter {
     private var previous: Sample? = null
     private var fired = false
 
-    fun update(timeMs: Long, nowMs: Long, corners: List<ScenePoint>, ready: Boolean): ShutterUpdate {
+    fun update(timeMs: Long, nowMs: Long, corners: List<ScenePoint>, ready: Boolean, verified: Boolean = true): ShutterUpdate {
         if (fired) return ShutterUpdate.Waiting
-        if (!ready || nowMs - timeMs !in 0L..300L || !ShotGeometry.valid(corners)) {
+        if (!ready || !verified || nowMs - timeMs !in 0L..300L || !ShotGeometry.valid(corners)) {
             interrupt()
             return ShutterUpdate.Waiting
         }
@@ -53,15 +53,25 @@ class AutomaticScanGate {
     private var readyAt = 0L
     private var changedAt: Long? = null
     private var afterCapture = false
+    private var retried = false
 
-    fun reset() { references = emptyList(); readyAt = 0; changedAt = null }
+    fun reset() { references = emptyList(); readyAt = 0; changedAt = null; afterCapture = false; retried = false }
+
+    fun retryOnce(nowMs: Long): Boolean {
+        if (retried || afterCapture) return false
+        retried = true
+        references = emptyList()
+        readyAt = nowMs + 600
+        changedAt = null
+        return true
+    }
 
     fun waitForChange(nowMs: Long, captured: Boolean, vararg samples: LiveScene?) {
-        val recent = samples.filterNotNull().map { it.signature }
-        if (recent.isNotEmpty()) references = recent
+        references = samples.filterNotNull().map { it.signature }
         readyAt = nowMs + 650
         changedAt = null
         afterCapture = captured
+        retried = false
     }
 
     fun ready(sample: LiveScene?, nowMs: Long): Boolean {
@@ -79,6 +89,8 @@ class AutomaticScanGate {
             return false
         }
         val since = changedAt ?: sample.timeMs.also { changedAt = it }
-        return sample.timeMs - since >= 450
+        if (sample.timeMs - since < 450) return false
+        reset()
+        return true
     }
 }

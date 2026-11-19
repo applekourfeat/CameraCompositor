@@ -50,6 +50,12 @@ Model/data redistribution rights remain a separate gate. The code includes the u
 
 ## Environment and subject-discovery experiments
 
+### Automatic subject discovery
+
+Run `research/export_scene_semantics.py` with the locked environment to fetch the pinned TinyCLIP checkpoint, embed the fixed prompts, and check the 192×192 CPU export. It writes `.local/scene-semantics-assets/scene-regions-192.onnx`. Positional embeddings are interpolated and baked into the export. The packaged image encoder stores large constants in FP16 with FP32 math. The MIT notice accompanies the APK.
+
+After preparing the same benchmark images and NanoDet model and building the app, run `research/evaluate_scene_discovery.py` with the same Java and classpath arguments as the style replay. `--reference` adds a local starting photo and `--after-turn` tests a different observation of its subject. The paths and source pictures remain local. [Results and limitations](../docs/V080_SCENE_DISCOVERY.md).
+
 ### Replay composition styles
 
 After building the app and preparing the frozen benchmark and NanoDet asset, run `research/evaluate_composition_styles.py` with `--java` set to the local JDK executable and `--classpath` pointing to `app/build/tmp/kotlin-classes/debug` and the Kotlin stdlib JAR. Use the platform's classpath separator. The Java driver runs the same Kotlin framing policy as the app. `--reference` and `--tap X Y` can test a local photo separately. The replay records composition choices and subject coverage. It does not measure blind preference or device performance.

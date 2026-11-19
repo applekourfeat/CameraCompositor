@@ -1,7 +1,6 @@
 package dev.cameracompositor
 
-data class CameraControls(val captureEnabled: Boolean, val findEnabled: Boolean,
-                          val flipEnabled: Boolean, val cancelVisible: Boolean)
+data class CameraControls(val captureEnabled: Boolean, val flipEnabled: Boolean, val cancelVisible: Boolean)
 
 /** Every state change renders the controls, including paths that return without a guide. */
 class CameraInteractionState(private val render: (CameraControls) -> Unit) {
@@ -16,7 +15,6 @@ class CameraInteractionState(private val render: (CameraControls) -> Unit) {
 
     val controls get() = CameraControls(
         captureEnabled = ready && !saving,
-        findEnabled = ready && !saving && !scanning,
         flipEnabled = ready && !saving && !scanning,
         cancelVisible = ready && !saving && (scanning || guiding),
     )

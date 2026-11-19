@@ -23,15 +23,16 @@ object StyledComposition {
     private data class Option(val view: Int, val box: SubjectBox, val score: Float)
 
     fun choose(style: CompositionStyle, map: EnvironmentMap, layouts: Map<Int, SceneLayout>,
-               remainingZoom: Float, detection: DetectedSubject?, selected: SelectedSubject? = null): StyleAssessment {
+               remainingZoom: Float, detection: DetectedSubject?, selected: SelectedSubject? = null,
+               semantic: SceneSubject? = null): StyleAssessment {
         val current = map.views.last()
         val initial = layouts.getValue(current.id)
         val picked = selected?.pointIn(map, current.id)
         if (selected != null && picked == null) return more("Keep the selected subject in view, or tap it again.")
-        val target = target(initial, detection, picked)
+        val target = target(initial, detection, picked, semantic)
         if (picked != null && target == null) return more("Tap a subject with visible detail.")
         if (style == CompositionStyle.WIDE) return wide(map, layouts, remainingZoom, detection, target)
-        if (target == null) return more("Tap the subject you want to frame, or try Wide scene.")
+        if (target == null) return more("Point toward a subject with a clear outline.")
 
         val initialFit = fit(style, initial, full, target)
         val initialFits = acceptable(style, initialFit) && contains(full, target.bounds, .03f)
@@ -88,16 +89,17 @@ object StyledComposition {
                      detection: DetectedSubject?, target: CompositionTarget?): StyleAssessment {
         val decision = ObservedComposition.choose(map, layouts, minOf(zoom, 1.25f), detection, target?.bounds)
         return when (decision) {
-            is EnvironmentDecision.Guide -> StyleAssessment(decision.copy(subject = "Wide scene"), true)
+            is EnvironmentDecision.Guide -> StyleAssessment(decision.copy(subject = "Wide scene"), target?.reliable == true)
             is EnvironmentDecision.Keep -> StyleAssessment(EnvironmentDecision.Keep("This wider view keeps the surroundings."),
                 ObservedComposition.currentSubjectReady(layouts.getValue(map.views.last().id), detection))
             is EnvironmentDecision.ObserveMore -> more(decision.reason)
+            is EnvironmentDecision.Explore -> StyleAssessment(decision, false)
         }
     }
 
-    private fun target(layout: SceneLayout, detection: DetectedSubject?, picked: ScenePoint?): CompositionTarget? {
+    private fun target(layout: SceneLayout, detection: DetectedSubject?, picked: ScenePoint?, semantic: SceneSubject?): CompositionTarget? {
         val detected = detection?.takeIf { it.confidence >= .46f && (picked == null || contains(it.box, picked)) }
-        if (detected != null) {
+        if (detected != null && (picked != null || semantic == null || detected.confidence >= .58f)) {
             val b = detected.box
             val person = detected.category == 0 && (b.bottom - b.top) > (b.right - b.left) * 1.12f
             val y = if (person) b.top + (b.bottom - b.top) * .29f else (b.top + b.bottom) * .5f
@@ -109,6 +111,10 @@ object StyledComposition {
                 (picked.x + .13f).coerceAtMost(1f), (picked.y + .16f).coerceAtMost(1f))
             if (layout.subjectDetail(box) < .010f) return null
             return CompositionTarget(box, picked, false, true, 1.56f)
+        }
+        if (semantic != null) {
+            return CompositionTarget(semantic.framingBounds, semantic.point, semantic.kind == SceneKind.PERSON,
+                semantic.strength >= .19f, 1.75f)
         }
         val box = layout.isolatedFocus() ?: return null
         return CompositionTarget(box, ScenePoint((box.left + box.right) * .5f, (box.top + box.bottom) * .5f), false, false, 1.42f)

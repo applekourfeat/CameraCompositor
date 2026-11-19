@@ -1,18 +1,18 @@
 # Camera Compositor
 
-Native Android camera research for composition guidance. Version **0.7.0-styles** adds selectable composition styles and lets you tap the subject to frame. It preserves the JPEG produced by the camera and offers supported manufacturer processing. Scans compare real observations on the phone. The owner leads final UI/UX. [Composition styles and capture results](docs/V070_COMPOSITION_STYLES.md).
+Native Android camera research for composition guidance. Version **0.8.0-discovery** looks for subjects as soon as the viewfinder opens. It can suggest a turn, then check the actual scene from the new angle before setting a frame. The owner leads final UI/UX. [Subject discovery and tracking results](docs/V080_SCENE_DISCOVERY.md).
 
-The main camera and composition button require neither ARCore, a depth sensor, nor an account. ARCore and personal-key online scans are available under Developer tools. The managed cloud gateway, photographic preference study and Vivo performance checks remain pending.
+The main camera and automatic composition run offline on the regular Android camera. ARCore and personal-key online scans are optional research tools. The measured photographic preference study and Vivo performance checks remain pending.
 
 ## Try the research build
 
-Install `artifacts/CameraCompositor-0.7.0-styles-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype. The builds target Android 10 and later. The `armv7` APK is for phones that run 32-bit ARM apps.
+Install `artifacts/CameraCompositor-0.8.0-discovery-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype. The builds target Android 10 and later. The `armv7` APK is for phones that run 32-bit ARM apps.
 
-1. Tap **Style** at the top and choose **Thirds**, **Centered**, **Negative space**, or **Wide scene**. Tap a subject to select it for the next scan. **Find a composition** previews a suggestion when the style fits an observed view.
-2. **Start Auto** applies the same style hands-free. Hold the outlined composition steady to start the three-second countdown. **Stop Auto** or pinch zoom returns control to you.
+1. Point the camera at a scene and follow the arrow if one appears. The app checks what comes into view. **Style** chooses Thirds, Centered, Negative space, or Wide scene. Tapping a subject is optional.
+2. When the outlined frame is aligned and steady, **Auto shutter** starts a three-second countdown. Tap **Auto shutter on** to turn automatic photos off while keeping guidance. **Take photo** works at any time, and **Skip shot** dismisses the current proposal.
 3. **Options > Photo processing** defaults to **Camera JPEG**. Compatible cameras also offer manufacturer HDR, Night, Auto, and scene-aware selection. The photo status shows what actually saved the image. **Developer tools** contains camera capabilities, sweep export, optional ARCore testing and the personal-key online experiment.
 
-The framing guide expires after three seconds of lost tracking. Saved photographs use quality-priority full-resolution capture, with manufacturer processing when exposed. Photo quality compared with Vivo's stock camera remains unmeasured.
+The guide tries to recover from brief interruptions and reevaluates if it loses its target. Saved photographs use quality-priority high-resolution capture, with manufacturer processing when exposed. Photo quality compared with Vivo's stock camera remains unmeasured.
 
 ## Research results and review
 
@@ -40,7 +40,7 @@ The project uses CameraX 1.6.2, optional ARCore 1.57.0, SDK 36 compilation, targ
 
 This runs `assembleDebug`, `testDebugUnitTest` and `lintDebug`. Android Studio can also open the project normally. `scripts/bootstrap_windows.py` provisions the local SDK/toolchain on another Windows computer; review the Android SDK terms first.
 
-To add the optional depth and subject models, run `research/export_software_depth.py` and `research/fetch_subject_model.py` with the installed research dependencies. A fresh checkout without those assets continues with the image-detail framing policy. `includeLegacyResearch=true` is a Gradle property for private debug builds with the older GAIC asset. [Asset setup and provenance](research/README.md).
+To add the models included in the APK, run `research/export_software_depth.py`, `research/fetch_subject_model.py`, and `research/export_scene_semantics.py` with the installed research dependencies. A checkout without those assets uses the image-detail framing policy. `includeLegacyResearch=true` is a Gradle property for private debug builds with the older GAIC asset. [Asset setup and provenance](research/README.md).
 
 ## Code responsibilities
 
@@ -49,10 +49,11 @@ To add the optional depth and subject models, run `research/export_software_dept
 | `LocalResearchScorer` | Local GAIC preprocessing and inference, separate from camera control |
 | `EnvironmentMotionTracker`, `EnvironmentSweep`, `EnvironmentMap` | Continuous image tracking, bounded scene observations and measured return routes |
 | `SoftwareDepth`, `SceneLayout`, `LocalComposition` | Optional RGB depth, visible subject and framing cues, and on-device viewpoint selection |
+| `SceneRecognition`, `SceneDiscovery` | Local visual categories, subject candidates, and rotation proposals |
 | `EnvironmentProtocol`, `CloudShotPlanner` | Structured subject/relationship assessment and constrained observed-view selection |
 | `SpatialProbeActivity` | Isolated optional ARCore camera pose, sparse point and depth sampling |
 | `CompositionDecision` | Experimental keep/observe/guide contract, view identities and subject/zoom constraints |
-| `SceneFrameAnalyzer`, `SceneTracker` | Camera-coordinate extraction and geometric feature tracking |
+| `SceneFrameAnalyzer`, `SceneTracker`, `MotionOrientation` | Camera coordinates, image tracking and optional rotation estimates |
 | `ShotGeometry`, `GuideOverlay` | Framing rules and viewfinder drawing |
 | `ResearchSweepRecorder` | Explicit local capture of bounded observed views and relative rotation |
 | `SceneHttpClient`, `ScanDiagnostics` | Bounded/cancellable online research requests and sanitized stages |

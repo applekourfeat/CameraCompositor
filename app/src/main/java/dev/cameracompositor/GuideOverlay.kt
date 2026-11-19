@@ -12,6 +12,7 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
     var frame: List<ScenePoint>? = null
     var fresh = false
     var aligned = false
+    var aimPoint: ScenePoint? = null
     var targetPreview: Bitmap? = null
     var compositionStyle = CompositionStyle.THIRDS
         set(value) { field = value; invalidate() }
@@ -27,10 +28,17 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
         drawCompositionGrid(canvas)
         drawTargetPreview(canvas)
         drawSubjectPin(canvas)
-        val points = frame ?: return
+        val aim = aimPoint
+        val points = frame
+        if (aim == null && points == null) return
         pen.style = Paint.Style.STROKE; pen.strokeWidth = 2 * density
         pen.color = if (aligned && fresh) Color.rgb(125, 220, 150) else Color.WHITE
         pen.alpha = if (fresh) 240 else 85
+        if (aim != null) {
+            drawDirection(canvas, aim, !NextView.arrived(aim))
+            return
+        }
+        if (points == null) return
         path.reset()
         path.apply {
             moveTo(points[0].x * width, points[0].y * height)
@@ -38,19 +46,21 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
             close()
         }
         canvas.drawPath(path, pen)
-        if (fresh) {
-            val center = ShotGeometry.center(points)
-            val cx = width * .5f; val cy = height * .5f
-            canvas.drawCircle(cx, cy, 7 * density, pen)
-            if (!ShotGeometry.aimReady(points)) {
-                val angle = atan2((center.y - .5f) * height, (center.x - .5f) * width)
-                val length = 42 * density
-                val x = cx + cos(angle) * length; val y = cy + sin(angle) * length
-                canvas.drawLine(cx, cy, x, y, pen)
-                for (offset in arrowOffsets) canvas.drawLine(x, y,
-                    x - cos(angle + offset) * 12 * density, y - sin(angle + offset) * 12 * density, pen)
-            }
-        }
+        if (fresh) drawDirection(canvas, ShotGeometry.center(points), !ShotGeometry.aimReady(points))
+    }
+
+    private fun drawDirection(canvas: Canvas, point: ScenePoint, arrow: Boolean) {
+        val cx = width * .5f
+        val cy = height * .5f
+        canvas.drawCircle(cx, cy, 7 * density, pen)
+        if (!arrow) return
+        val angle = atan2((point.y - .5f) * height, (point.x - .5f) * width)
+        val length = 42 * density
+        val x = cx + cos(angle) * length
+        val y = cy + sin(angle) * length
+        canvas.drawLine(cx, cy, x, y, pen)
+        for (offset in arrowOffsets) canvas.drawLine(x, y,
+            x - cos(angle + offset) * 12 * density, y - sin(angle + offset) * 12 * density, pen)
     }
 
     private fun drawCompositionGrid(canvas: Canvas) {

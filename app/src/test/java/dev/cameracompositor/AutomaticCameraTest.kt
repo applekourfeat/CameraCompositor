@@ -29,6 +29,27 @@ class AutomaticCameraTest {
         assertEquals(ShutterUpdate.Waiting, shutter.update(3800, 3800, corners, true))
     }
 
+    @Test fun `orientation alone can never sustain the shutter countdown`() {
+        val shutter = AutomaticShutter()
+        for (time in 0L..700L step 100) shutter.update(time, time, corners, true)
+        for (time in 800L..4900L step 100) {
+            assertEquals(ShutterUpdate.Waiting, shutter.update(time, time, corners, ready = true, verified = false))
+        }
+        assertEquals(ShutterUpdate.Waiting, shutter.update(5000, 5000, corners, ready = true))
+    }
+
+    @Test fun `lost guidance can retry once in place but a captured scene cannot`() {
+        val still = IntArray(96) { it * 2 }
+        val gate = AutomaticScanGate()
+        assertTrue(gate.retryOnce(100))
+        assertFalse(gate.ready(LiveScene(699, still), 699))
+        assertTrue(gate.ready(LiveScene(701, still), 701))
+        assertFalse(gate.retryOnce(701))
+        gate.waitForChange(900, true, LiveScene(899, still))
+        assertFalse(gate.retryOnce(1000))
+        assertFalse(gate.ready(LiveScene(1700, still), 1700))
+    }
+
     @Test fun `same scene and a quick blur cannot rearm scan`() {
         val used = IntArray(96) { if (it % 12 < 6) 50 else 155 }
         val other = IntArray(96) { if (it / 12 < 4) 180 else 25 }

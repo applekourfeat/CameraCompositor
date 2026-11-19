@@ -16,10 +16,14 @@ DEPTH_SHA = "dad03af25e12af84feb7694e0b0182dd2811a0d2a47d4c009cd7bcb41b5b7d25"
 CAMERA_VERSION = "0.5.0-camera"
 AUTO_VERSION = "0.6.0-auto"
 STYLES_VERSION = "0.7.0-styles"
-SUBJECT_BUILDS = {AUTO_VERSION, STYLES_VERSION}
+DISCOVERY_VERSION = "0.8.0-discovery"
+SUBJECT_BUILDS = {AUTO_VERSION, STYLES_VERSION, DISCOVERY_VERSION}
 DEPTH_BUILDS = {CAMERA_VERSION} | SUBJECT_BUILDS
 SUBJECT_ASSET = "nanodet-416.onnx"
 SUBJECT_SHA = "d891b8c939ce062b13fc7440195d427eeecbec307c2417564d6908309b263e19"
+SEMANTICS_ASSET = "scene-regions-192.onnx"
+SEMANTICS_SHA = "2fb0ea9ce371d5c6c64fec2c3ce6a354314d6e3f99f7489de81952f8ea2bdc3a"
+SEMANTICS_LICENSE_SHA = "583acc0d9c74def18ec24e56964421bf1fac1fa2d60451e75e6681d5ae58a3f6"
 KEY_PATTERN = re.compile(rb"AIza[0-9A-Za-z_-]{35}|gh[pousr]_[0-9A-Za-z]{30,}|sk-proj-[0-9A-Za-z_-]{40,}")
 
 
@@ -43,6 +47,8 @@ def shipped_models(version):
     models = {DEPTH_ASSET: DEPTH_SHA}
     if version in SUBJECT_BUILDS:
         models[SUBJECT_ASSET] = SUBJECT_SHA
+    if version == DISCOVERY_VERSION:
+        models[SEMANTICS_ASSET] = SEMANTICS_SHA
     return models
 
 
@@ -66,6 +72,9 @@ def verify_apk(apk, abi, version):
             assert {n for n in names if n.endswith(".onnx")} == {"assets/" + model for model in models}
             if version in SUBJECT_BUILDS:
                 assert "assets/third-party/NanoDet-LICENSE.txt" in names
+            if version == DISCOVERY_VERSION:
+                notice = source.read("assets/third-party/TinyCLIP-LICENSE.txt").replace(b"\r\n", b"\n")
+                assert hashlib.sha256(notice).hexdigest() == SEMANTICS_LICENSE_SHA
             if abi == "arm64-v8a":
                 for name in native:
                     verify_arm64_segments(source.read(name))
@@ -74,7 +83,7 @@ def verify_apk(apk, abi, version):
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument("--version", default=STYLES_VERSION)
+    parser.add_argument("--version", default=DISCOVERY_VERSION)
     args=parser.parse_args()
     version=args.version
     assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z]+)?",version), "Invalid delivery version"
@@ -86,7 +95,7 @@ def main():
         suite = ET.parse(path).getroot()
         count += int(suite.get("tests", "0"))
         failures += int(suite.get("failures", "0")) + int(suite.get("errors", "0"))
-    minimum = {STYLES_VERSION: 79, AUTO_VERSION: 71, CAMERA_VERSION: 63,
+    minimum = {DISCOVERY_VERSION: 88, STYLES_VERSION: 79, AUTO_VERSION: 71, CAMERA_VERSION: 63,
                "0.4.1-spatial": 55, "0.4.0-environment": 47}.get(version, 35)
     assert count >= minimum and failures == 0, "Unit checks are missing or failed"
     outputs = ROOT / "app/build/outputs/apk/debug"
@@ -138,6 +147,10 @@ def main():
         result.update({"subjectModelSha256": SUBJECT_SHA,
             "releaseResearchAssets": "ZipDepth and NanoDet, no legacy research weights",
             "physicalVivoTests": "v0.7.0 pending, owner reported poor composition and post-processing in v0.6.0"})
+    if version == DISCOVERY_VERSION:
+        result.update({"subjectModelSha256": SUBJECT_SHA, "sceneSemanticsSha256": SEMANTICS_SHA,
+            "releaseResearchAssets": "ZipDepth, NanoDet and TinyCLIP image encoder",
+            "physicalVivoTests": "v0.8.0 pending; owner reported weak subject choice and frequent loss of tracking on v0.7.0"})
     tag=version.replace(".","").replace("-","_")
     path = ROOT / f"research/results/delivery-verification-v{tag}.json"
     path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

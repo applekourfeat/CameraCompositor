@@ -11,10 +11,11 @@ import java.util.concurrent.atomic.AtomicReference
 
 data class ScanFrame(val image: Bitmap, val gray: ByteArray, val width: Int, val height: Int,
     val bufferToView: Matrix, val viewSize: Size, val cameraTimestampNs: Long,
-    val sensorToBuffer: Matrix?, val registration: ViewRegistration? = null)
+    val sensorToBuffer: Matrix?, val registration: ViewRegistration? = null, val attitude: ViewAttitude? = null)
 
 /** Shared analysis frames feed both the one-shot scan and scene tracking. */
-class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack: (TrackingEvent) -> Unit) : ImageAnalysis.Analyzer {
+class SceneFrameAnalyzer(private val tracker: SceneTracker, private val motion: MotionOrientation,
+                         private val onTrack: (TrackingEvent) -> Unit) : ImageAnalysis.Analyzer {
     val stats = AnalysisStats()
     @Volatile private var sensorToView: Matrix? = null
     @Volatile var viewSize = Size(0, 0)
@@ -64,7 +65,9 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
                 }
             }
             val signature = FrameSignature.sample(gray, image.width, image.height)
-            liveScene = LiveScene(SystemClock.elapsedRealtime(), signature)
+            val now = SystemClock.elapsedRealtime()
+            val attitude = motion.viewAttitude(size.width, size.height)
+            liveScene = LiveScene(now, signature)
             if (environmentReset) {
                 environment.close(); checkpointSignature = null; missedEnvironmentFrames = 0; environmentReset=false
             }
@@ -104,12 +107,14 @@ class SceneFrameAnalyzer(private val tracker: SceneTracker, private val onTrack:
                     } else null
                     callback(ScanFrame(visible, gray, image.width, image.height, bufferToView, size,
                         image.imageInfo.timestamp, Matrix(image.imageInfo.sensorToBufferTransformMatrix),
-                        registration))
+                        registration, attitude))
                 } catch (_: Exception) { callback(null) }
             }
-            val tracked = tracker.update(gray, image.width, image.height, bufferToView, size, SystemClock.elapsedRealtime())
-            onTrack(TrackingEvent(tracker.activePlanId, tracked))
-        } catch (_: Exception) { failed = true; onTrack(TrackingEvent(tracker.activePlanId, null)) }
+            if (trackingGuide) {
+                val tracked = tracker.update(gray, image.width, image.height, bufferToView, size, now, attitude)
+                onTrack(TrackingEvent(tracker.activePlanId, tracked))
+            }
+        } catch (_: Exception) { failed = true; if (trackingGuide) onTrack(TrackingEvent(tracker.activePlanId, null)) }
         finally { stats.record(SystemClock.elapsedRealtime() - started, failed); image.close() }
     }
 }

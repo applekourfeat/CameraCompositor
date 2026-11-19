@@ -16,12 +16,13 @@ data class SubjectTap(val point: ScenePoint, val view: LiveScene, val zoom: Floa
 }
 
 /** Works with a conventional CameraX stream. Depth is optional per view. */
-class LocalComposition(private val depth: SoftwareDepth, private val detector: SceneSubjectDetector) {
+class LocalComposition(private val depth: SoftwareDepth, private val detector: SceneSubjectDetector,
+                       private val recognition: SceneRecognition) {
     data class Result(val decision: EnvironmentDecision, val relativeDepth: Map<Int, RelativeDepth>,
-                      val canAutoCapture: Boolean)
+                      val canAutoCapture: Boolean, val recognized: SceneKind? = null)
 
     fun evaluate(batch: EnvironmentBatch, remainingZoom: Float, style: CompositionStyle, tap: SubjectTap?,
-                 isActive: () -> Boolean): Result {
+                 allowExploration: Boolean, expected: SubjectHint?, isActive: () -> Boolean): Result {
         val start = SystemClock.elapsedRealtime()
         val eligible = batch.frames.filter { batch.map.routeTo(it.view.id) != null }.associateBy { it.view.id }
         val latest = batch.frames.last().view.id
@@ -58,8 +59,12 @@ class LocalComposition(private val depth: SoftwareDepth, private val detector: S
             }
             SceneLayout(pixels, layers[id])
         }
-        val assessment = StyledComposition.choose(style, batch.map, layouts, remainingZoom, subject, selectedSubject)
-        return Result(assessment.decision, layers, assessment.canAutoCapture)
+        val scores = if (isActive() && SceneDiscovery.needsSemantics(subject, picked, expected)) {
+            recognition.scores(batch.frames.last().frame.image)
+        } else null
+        val assessment = SceneDiscovery.choose(style, batch.map, layouts, remainingZoom, subject, selectedSubject,
+            scores, allowExploration, expected)
+        return Result(assessment.plan.decision, layers, assessment.plan.canAutoCapture, assessment.region?.kind)
     }
 }
 

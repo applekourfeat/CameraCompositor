@@ -35,7 +35,7 @@ def letterbox(image):
     return np.ascontiguousarray(tensor), width, height
 
 
-def replay(process, record, image, session, tap=None):
+def write_inputs(process, record, image, session, tap=None, suffix=b""):
     start = time.perf_counter()
     pixels, width, height = letterbox(image)
     names = [name for pair in zip(SCORES, BOXES) for name in pair]
@@ -45,7 +45,14 @@ def replay(process, record, image, session, tap=None):
     process.stdin.write(struct.pack("!I", len(path)) + path + struct.pack("!iiff", width, height, *(tap or (-1, -1))))
     for array in output:
         process.stdin.write(array.astype(">f4").tobytes())
+    if suffix:
+        process.stdin.write(suffix)
     process.stdin.flush()
+    return elapsed
+
+
+def replay(process, record, image, session, tap=None):
+    elapsed = write_inputs(process, record, image, session, tap)
     reply = process.stdout.readline().decode("utf-8").strip().split("\t")
     if len(reply) != 3 + 3 * len(STYLES):
         raise ValueError("The desktop composition replay returned invalid data")

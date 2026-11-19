@@ -1,0 +1,194 @@
+{
+  "revision": "a2a8c6eaa2549ad66eb7c31b85022bf58273a26c",
+  "patchModelSha256": "2fb0ea9ce371d5c6c64fec2c3ce6a354314d6e3f99f7489de81952f8ea2bdc3a",
+  "scope": "Static desktop replay. Subject hypotheses and proposed turns only. No tracking or human preference metrics.",
+  "development": {
+    "scenes": 20,
+    "previous": {
+      "Guide": 4,
+      "Keep": 1,
+      "ObserveMore": 15,
+      "Explore": 0
+    },
+    "discovery": {
+      "Guide": 6,
+      "Keep": 0,
+      "ObserveMore": 1,
+      "Explore": 13
+    },
+    "rotationProposalsOutsideFirstFrame": 13,
+    "shutterEligibleFromObservedView": 5,
+    "desktopMedianPatchModelMs": 150.94
+  },
+  "evaluation": {
+    "scenes": 60,
+    "previous": {
+      "Guide": 16,
+      "Keep": 3,
+      "ObserveMore": 41,
+      "Explore": 0
+    },
+    "discovery": {
+      "Guide": 18,
+      "Keep": 2,
+      "ObserveMore": 16,
+      "Explore": 24
+    },
+    "rotationProposalsOutsideFirstFrame": 24,
+    "shutterEligibleFromObservedView": 19,
+    "desktopMedianPatchModelMs": 121.17
+  },
+  "references": [
+    {
+      "id": "reference-1",
+      "previous": "ObserveMore",
+      "decision": "ObserveMore",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "region": null,
+      "bounds": null,
+      "strength": 0.0,
+      "detectorConfidence": 0.0,
+      "autoEligible": false,
+      "patchModelMs": 116.31
+    },
+    {
+      "id": "reference-2",
+      "previous": "ObserveMore",
+      "decision": "Guide",
+      "frame": [
+        0.0908,
+        0.0046,
+        0.9999,
+        0.9137
+      ],
+      "region": "ARCHITECTURE",
+      "bounds": [
+        0.25,
+        0.1667,
+        0.5833,
+        0.5417
+      ],
+      "strength": 0.3453,
+      "detectorConfidence": 0.0,
+      "autoEligible": true,
+      "patchModelMs": 188.48
+    },
+    {
+      "id": "reference-3",
+      "previous": "ObserveMore",
+      "decision": "Explore",
+      "frame": [
+        0.22,
+        -0.22,
+        1.22,
+        0.78
+      ],
+      "region": "FOLIAGE",
+      "bounds": [
+        0.4167,
+        0.0,
+        1.0,
+        0.5
+      ],
+      "strength": 0.2549,
+      "detectorConfidence": 0.475,
+      "autoEligible": false,
+      "patchModelMs": 123.09
+    }
+  ],
+  "afterTurn": [
+    {
+      "id": "afterTurn-1",
+      "previous": "ObserveMore",
+      "decision": "Guide",
+      "frame": [
+        0.0028,
+        0.0198,
+        0.6438,
+        0.6608
+      ],
+      "region": "FOLIAGE",
+      "bounds": [
+        0.0833,
+        0.3333,
+        0.3333,
+        0.5833
+      ],
+      "strength": 0.2262,
+      "detectorConfidence": 0.4029,
+      "autoEligible": true,
+      "patchModelMs": 187.2
+    },
+    {
+      "id": "afterTurn-2",
+      "previous": "ObserveMore",
+      "decision": "Keep",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "region": "FOLIAGE",
+      "bounds": [
+        0.4167,
+        0.1667,
+        1.0,
+        0.5
+      ],
+      "strength": 0.2584,
+      "detectorConfidence": 0.4506,
+      "autoEligible": true,
+      "patchModelMs": 209.21
+    },
+    {
+      "id": "afterTurn-3",
+      "previous": "ObserveMore",
+      "decision": "Guide",
+      "frame": [
+        0.1667,
+        0.135,
+        1.0,
+        0.9684
+      ],
+      "region": "FOLIAGE",
+      "bounds": [
+        0.5,
+        0.25,
+        1.0,
+        0.5833
+      ],
+      "strength": 0.2656,
+      "detectorConfidence": 0.0,
+      "autoEligible": true,
+      "patchModelMs": 188.12
+    },
+    {
+      "id": "afterTurn-4",
+      "previous": "ObserveMore",
+      "decision": "Guide",
+      "frame": [
+        0.1741,
+        0.2291,
+        0.9433,
+        0.9983
+      ],
+      "region": "FOLIAGE",
+      "bounds": [
+        0.5,
+        0.25,
+        1.0,
+        0.75
+      ],
+      "strength": 0.2742,
+      "detectorConfidence": 0.4331,
+      "autoEligible": true,
+      "patchModelMs": 113.69
+    }
+  ]
+}

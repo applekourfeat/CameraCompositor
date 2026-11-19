@@ -4,11 +4,11 @@ Use the standard Vivo V30. A cable or mirroring session is optional. Transfer th
 
 ## Short first session
 
-Install `artifacts/CameraCompositor-0.7.0-styles-debug.apk`. This is the ARM64 test build for the Vivo V30. Android 10 or later is required. The ARMv7 file is for 32-bit ARM phones.
+Install `artifacts/CameraCompositor-0.8.0-discovery-debug.apk`. This is the ARM64 test build for the Vivo V30. Android 10 or later is required. The ARMv7 file is for 32-bit ARM phones.
 
-1. From the same starting angle, try **Thirds** and **Centered** on the same object or person. Tap the subject before **Find a composition**. Check that both modes keep the subject and that their suggested placement differs.
-2. Try **Negative space** with a clear wall behind a subject, then with a busy background. In the busy scene, check whether it asks for a quieter angle. Try **Wide scene** with a small sweep and check that the guide keeps surrounding context.
-3. Try **Start Auto** with a clear subject. Move slightly as the countdown runs. Check that it clears, that **Stop Auto** and pinch zoom restore control, and that changing the composition style cancels the old target.
+1. Open the app and aim broadly at trees or a skyline. Follow the arrow when it appears. Check for newly visible content, a fresh assessment after the turn, and whether the final view keeps a subject you would actually photograph.
+2. Try **Thirds** and **Centered** from the same starting angle. Use **Skip shot** if the subject makes little sense. Try a tap to choose a different subject, then check that a scan respects it.
+3. Move slightly or cover then uncover the lens briefly during guidance. Check whether it recovers and whether the countdown restarts with a verified view. Open **Options** during another countdown and check that no exposure starts. Tap **Auto shutter on** to switch it off and check that guidance continues.
 4. In a backlit scene and a dim room, compare **Camera JPEG** with any available manufacturer HDR or Night option. Take a matched shot with Vivo's camera app. Check saved color, highlights, noise and framing. The status beside **Last photo** and **Camera and scan details** record the processing path.
 
 ## Composition acceptance
