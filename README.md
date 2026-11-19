@@ -2,7 +2,7 @@
 
 The private [Vivo V30 build](docs/V0120_LEVEL_AND_SUBJECTS.md) chooses a framing automatically as you aim. A gravity level shows how to straighten the shot. The planner compares the room with closer views of individual subjects.
 
-Native Android camera research for live composition guidance. It can suggest a new angle when a subject is visibly cut off. The owner leads final UI/UX.
+Native Android camera research for live composition guidance. It can suggest a new angle when a subject is visibly cut off. UI/UX is yet to be worked on.
 
 The main camera and automatic composition run offline on the regular Android camera. ARCore and personal-key online scans are optional research tools. The measured photographic preference study and Vivo performance checks remain pending.
 
