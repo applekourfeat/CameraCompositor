@@ -19,7 +19,8 @@ STYLES_VERSION = "0.7.0-styles"
 DISCOVERY_VERSION = "0.8.0-discovery"
 VIVO_VERSION = "0.9.0-vivo"
 LIVE_VERSION = "0.10.0-live"
-VIVO_BUILDS = {VIVO_VERSION, LIVE_VERSION}
+ADAPTIVE_VERSION = "0.11.0-adaptive"
+VIVO_BUILDS = {VIVO_VERSION, LIVE_VERSION, ADAPTIVE_VERSION}
 SEMANTICS_BUILDS = {DISCOVERY_VERSION} | VIVO_BUILDS
 SUBJECT_BUILDS = {AUTO_VERSION, STYLES_VERSION} | SEMANTICS_BUILDS
 DEPTH_BUILDS = {CAMERA_VERSION} | SUBJECT_BUILDS
@@ -106,7 +107,8 @@ def main():
         suite = ET.parse(path).getroot()
         count += int(suite.get("tests", "0"))
         failures += int(suite.get("failures", "0")) + int(suite.get("errors", "0"))
-    minimum = {LIVE_VERSION: 95, VIVO_VERSION: 91, DISCOVERY_VERSION: 88, STYLES_VERSION: 79, AUTO_VERSION: 71, CAMERA_VERSION: 63,
+    minimum = {ADAPTIVE_VERSION: 104, LIVE_VERSION: 95, VIVO_VERSION: 91, DISCOVERY_VERSION: 88,
+               STYLES_VERSION: 79, AUTO_VERSION: 71, CAMERA_VERSION: 63,
                "0.4.1-spatial": 55, "0.4.0-environment": 47}.get(version, 35)
     assert count >= minimum and failures == 0, "Unit checks are missing or failed"
     outputs = ROOT / "app/build/outputs/apk/debug"
@@ -172,6 +174,8 @@ def main():
             "physicalVivoTests": "v0.9.0 lens access, guidance, saved framing and live selection time pending"})
     if version == LIVE_VERSION:
         result["physicalVivoTests"] = "v0.10.0 pending. Owner reported rare suggestions and repeated turning prompts on v0.9.0."
+    if version == ADAPTIVE_VERSION:
+        result["physicalVivoTests"] = "v0.11.0 pending. Owner reported rare indoor suggestions on v0.10.0."
     tag=version.replace(".","").replace("-","_")
     path = ROOT / f"research/results/delivery-verification-v{tag}.json"
     path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

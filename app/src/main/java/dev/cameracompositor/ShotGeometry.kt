@@ -22,6 +22,11 @@ data class CropOption(val id: Int, val box: SubjectBox) {
 
 /** Known crop candidates let the model choose a framing without inventing pixel coordinates. */
 object ShotGeometry {
+    const val DEFAULT_AIM_TOLERANCE = .045f
+
+    fun aimTolerance(crop: CropOption, automatic: Boolean): Float =
+        if (automatic && crop.zoom < 1.20f) .026f else DEFAULT_AIM_TOLERANCE
+
     fun cropFromModel(x: Float, y: Float, zoom: Float): SubjectBox {
         require(x.isFinite() && y.isFinite() && zoom.isFinite() && x in 0f..1f && y in 0f..1f && zoom in 1f..1.8f) {
             "The scene service proposed an invalid framing. Try another scan."
@@ -58,13 +63,14 @@ object ShotGeometry {
     fun width(points: List<ScenePoint>): Float = (hypot(points[1].x - points[0].x, points[1].y - points[0].y) +
         hypot(points[2].x - points[3].x, points[2].y - points[3].y)) / 2f
 
-    fun aimReady(points: List<ScenePoint>): Boolean {
+    fun aimReady(points: List<ScenePoint>, tolerance: Float = DEFAULT_AIM_TOLERANCE): Boolean {
         if (!valid(points)) return false
         val c = center(points)
-        return abs(c.x - .5f) < .045f && abs(c.y - .5f) < .045f
+        return abs(c.x - .5f) < tolerance && abs(c.y - .5f) < tolerance
     }
 
-    fun framingReady(points: List<ScenePoint>) = aimReady(points) && abs(width(points) - 1f) < .09f &&
+    fun framingReady(points: List<ScenePoint>, tolerance: Float = DEFAULT_AIM_TOLERANCE) =
+        aimReady(points, tolerance) && abs(width(points) - 1f) < .09f &&
         abs(points[1].y - points[0].y) < .07f
 
     fun desiredZoom(current: Float, points: List<ScenePoint>, baseline: Float, deviceMax: Float, relativeLimit: Float = 1.8f): Float? {

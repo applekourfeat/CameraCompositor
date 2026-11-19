@@ -7,6 +7,7 @@ import subprocess
 from time import perf_counter
 
 import cv2
+import numpy as np
 import onnxruntime as ort
 from PIL import Image, ImageDraw, ImageOps
 
@@ -24,16 +25,20 @@ def compare(driver, path, zoom, detector, patch_model, ranker):
     count = int(driver.stdout.readline())
     rows = [driver.stdout.readline().decode().split() for _ in range(count)]
     boxes = [list(map(float, row[:4])) for row in rows]
-    scores = gaic_scores(ranker, image, boxes)
+    scores = gaic_scores(ranker, image, boxes) if ranker is not None else np.zeros(count, dtype=np.float32)
     driver.stdin.write(scores.astype(">f4").tobytes())
     driver.stdin.flush()
-    winner, gain = map(float, driver.stdout.readline().split())
+    fields = driver.stdout.readline().decode().split()
+    winner, gain = map(float, fields[:2])
     index = int(winner)
     box = boxes[index]
     result = {"input": path.name, "sourceZoom": zoom, "compared": count, "decision": "Guide" if index else "Keep",
               "subject": rows[index][4], "frame": box, "chosenZoom": round(zoom / (box[2] - box[0]), 3),
-              "framingGain": round(gain, 4), "modelScore": round(float(scores[index]), 4),
-              "wideScore": round(float(scores[0]), 4), "desktopMs": round((perf_counter() - start) * 1000, 2)}
+              "framingGain": round(gain, 4), "modelScore": round(float(scores[index]), 4) if ranker is not None else None,
+              "wideScore": round(float(scores[0]), 4) if ranker is not None else None,
+              "desktopMs": round((perf_counter() - start) * 1000, 2)}
+    if len(fields) == 3:
+        result["autoShutterEligible"] = fields[2] == "true"
     return result, image, crop(image, box)
 
 
@@ -57,12 +62,20 @@ def main():
     parser.add_argument("--frame", action="append", nargs=2, metavar=("IMAGE", "ZOOM"), required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--comparison", type=Path)
+    parser.add_argument("--adaptive", action="store_true")
+    parser.add_argument("--geometry-only", action="store_true")
     args = parser.parse_args()
+    if args.geometry_only and not args.adaptive:
+        parser.error("--geometry-only requires --adaptive")
     cv2.setNumThreads(1)
     ort.disable_telemetry_events()
     detector, patch_model = session(MODEL), session(ASSETS / "scene-regions-192.onnx")
-    ranker = gaic_session()
+    ranker = None if args.geometry_only else gaic_session()
     command = [args.java, "--class-path", args.classpath, str(ROOT / "research/ReplayContextShots.java")]
+    if args.adaptive:
+        command.append("--adaptive")
+    if args.geometry_only:
+        command.append("--geometry-only")
     with subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, cwd=ROOT) as driver:
         results = [compare(driver, Path(path).resolve(), float(zoom), detector, patch_model, ranker)
                    for path, zoom in args.frame]

@@ -1,65 +1,71 @@
 package dev.cameracompositor
 
-import android.graphics.Bitmap
-import android.os.SystemClock
 import kotlin.math.hypot
 
-/** Private prototype planner, with one inference batch against the current wide camera image. */
+/** Turns one observed view into an automatic guide. Learned ranking is optional. */
 class ContextComposition(private val recognition: SceneRecognition, private val detector: SceneSubjectDetector,
-                         private val scorer: LocalResearchScorer) {
-    fun evaluate(batch: EnvironmentBatch, maxRelativeZoom: Float, style: CompositionStyle,
-                 allowExploration: Boolean, expected: SubjectHint?, isActive: () -> Boolean): LocalComposition.Result? {
-        if (!scorer.available) return null
+                         private val scorer: LocalResearchScorer?) {
+    fun evaluate(batch: EnvironmentBatch, maxRelativeZoom: Float, tap: SubjectTap?,
+                 allowExploration: Boolean, expected: SubjectHint?, isActive: () -> Boolean): LocalComposition.Result {
         val current = batch.frames.last()
-        val viewId = current.view.id
-        val start = SystemClock.elapsedRealtime()
-        if (!isActive()) return null
-        val latest = evidence(current, detect = true)
-        val views = mutableListOf(latest)
-        val center = ScenePoint(.5f, .5f)
-        for (frame in batch.frames.dropLast(1).asReversed()) {
-            if (views.size == 3 || !isActive() || SystemClock.elapsedRealtime() - start > 740) break
-            val projected = batch.map.projectPoints(frame.view.id, viewId, listOf(center))?.singleOrNull() ?: continue
-            if (hypot(projected.x - .5f, projected.y - .5f) !in .065f.. .36f) continue
-            if (views.drop(1).any { old ->
-                    val oldCenter = batch.map.projectPoints(old.view.id, viewId, listOf(center))?.singleOrNull()
-                    oldCenter != null && hypot(oldCenter.x - projected.x, oldCenter.y - projected.y) < .06f
-                }) continue
-            views.add(evidence(frame))
+        val view = current.view
+        val picked = tap?.inBatch(batch)?.pointIn(batch.map, view.id)
+        fun observe(message: String, recheck: Boolean = false) =
+            LocalComposition.Result(EnvironmentDecision.ObserveMore(message), emptyMap(), false, recheckAfterSettling = recheck)
+        if (tap != null && picked == null) return observe("Keep the selected subject in view, or tap it again.")
+        val image = current.frame.image
+        val layout = sceneLayout(image)
+        if (!layout.hasSceneDetail && picked == null) {
+            return observe(if (layout.brightness < .15f) "Aim toward a better-lit part of the scene."
+                else "Include an edge, object, or doorway.", recheck = true)
         }
-        if (!isActive()) return null
-        val shots = ContextShots.candidates(batch.map, views, style, maxRelativeZoom, expected)
-        val ranked = if (shots.size > 1) ContextShots.choose(shots,
-            scorer.score(current.frame.image, shots.map { it.comparisonBox }, isActive)) else null
-        val subject = ranked?.shot?.subject
-        if (ranked != null && subject != null) {
-            val shot = EnvironmentDecision.Guide(ranked.shot.viewId, ranked.shot.crop, subject.kind.description,
-                "The framing gives the ${subject.kind.description} more room to stand out.")
-            return LocalComposition.Result(shot, emptyMap(), ranked.gain >= .23f && subject.strength >= .21f,
-                subject.kind, shots.size)
+        if (!isActive()) return observe("Checking the view again…")
+        val detection = detector.detect(image, picked)
+        val subjects = ContextShots.subjects(layout, recognition.scores(image), detection)
+        val target = when {
+            picked != null -> selectedSubject(picked, layout, subjects, detection)
+                ?: return observe("Tap an area with a visible edge or detail.")
+            expected != null -> subjects.filter { it.kind == expected.kind && it.strength >= .18f }
+                .minByOrNull { hypot(it.point.x - expected.point.x, it.point.y - expected.point.y) }
+                ?.takeIf { hypot(it.point.x - expected.point.x, it.point.y - expected.point.y) <= .31f }
+                ?: return observe("Bring the subject back into view.")
+            else -> null
         }
-        val observed = EnvironmentDecision.ObserveMore("No clear shot yet. Aim at a subject or tap Find shot.")
-        val main = latest.subjects.firstOrNull { it.kind != SceneKind.WALKWAY && it.strength >= .21f }
+        val evidence = ShotEvidence(view, layout, if (target == null) subjects else listOf(target) + subjects.filterNot { it == target })
+        val shots = AdaptiveFraming.candidates(batch.map, evidence, maxRelativeZoom, target)
+        if (!isActive()) return observe("Checking the view again…")
+        val scores = scorer?.takeIf { shots.size > 1 }?.let { model ->
+            runCatching {
+                if (model.available) model.score(image, shots.map { it.comparisonBox }, isActive) else null
+            }
+        }
+        val report = scores?.exceptionOrNull()?.javaClass?.simpleName
+        val choice = AdaptiveFraming.choose(shots, scores?.getOrNull())
+        if (choice != null) {
+            val selected = choice.shot.subject?.kind
+            val label = choice.shot.cue?.title ?: selected?.description ?: "Selected subject"
+            val reason = choice.shot.cue?.instruction ?: "Follow the outline to frame the $label."
+            val guide = EnvironmentDecision.Guide(view.id, choice.shot.crop, label, reason)
+            return LocalComposition.Result(guide, emptyMap(), choice.canAutoCapture, selected, shots.size, report)
+        }
+        val main = target ?: subjects.firstOrNull { it.kind != SceneKind.WALKWAY && it.strength >= .26f }
         val edge = main?.framingBounds
-        val clipped = edge != null && minOf(edge.left, edge.top, 1 - edge.right, 1 - edge.bottom) <= .055f
-        val next = if (allowExploration && clipped) NextView.suggest(viewId, style, null, main, observed) else null
-        val keep = if (main != null && !clipped) EnvironmentDecision.Keep("This framing works. Take the photo when ready.") else observed
-        return LocalComposition.Result(next ?: keep, emptyMap(), false, main?.kind, shots.size)
+        val clipped = edge != null && minOf(edge.left, edge.top, 1 - edge.right, 1 - edge.bottom) <= .04f
+        val more = EnvironmentDecision.ObserveMore("Widen the view to include more of the subject.")
+        val next = if (allowExploration && clipped) NextView.suggest(view.id, CompositionStyle.WIDE, null, main, more) else null
+        val decision = next ?: if (clipped) more else EnvironmentDecision.Keep("Keep this view. Take the photo when ready.")
+        return LocalComposition.Result(decision, emptyMap(), false, main?.kind, shots.size, report)
     }
 
-    private fun evidence(entry: EnvironmentFrame, detect: Boolean = false): ShotEvidence {
-        val image = entry.frame.image
-        val rgb = IntArray(SceneLayout.WIDTH * SceneLayout.HEIGHT)
-        val reduced = Bitmap.createScaledBitmap(image, SceneLayout.WIDTH, SceneLayout.HEIGHT, true)
-        try {
-            reduced.getPixels(rgb, 0, SceneLayout.WIDTH, 0, 0, SceneLayout.WIDTH, SceneLayout.HEIGHT)
-        } finally {
-            if (reduced !== image) reduced.recycle()
-        }
-        val layout = SceneLayout(rgb, null)
-        val scores = recognition.scores(image)
-        val detected = if (detect) detector.detect(image) else null
-        val subjects = ContextShots.subjects(layout, scores, detected)
-        return ShotEvidence(entry.view, layout, subjects)
+    private fun selectedSubject(point: ScenePoint, layout: SceneLayout, subjects: List<SceneSubject>,
+                                detection: DetectedSubject?): SceneSubject? {
+        if (detection != null) return ContextShots.detectedSubject(detection)
+        subjects.firstOrNull { subject ->
+            val box = subject.framingBounds
+            subject.strength >= .18f && point.x in box.left..box.right && point.y in box.top..box.bottom
+        }?.let { return it }
+        val box = SubjectBox((point.x - .11f).coerceAtLeast(0f), (point.y - .14f).coerceAtLeast(0f),
+            (point.x + .11f).coerceAtMost(1f), (point.y + .14f).coerceAtMost(1f))
+        return if (layout.subjectDetail(box) >= .020f) SceneSubject(SceneKind.OBJECTS, box, point, .22f) else null
     }
 }

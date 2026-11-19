@@ -15,8 +15,7 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
     var aimPoint: ScenePoint? = null
     var targetPreview: Bitmap? = null
     var targetVisible = true
-    var compositionStyle = CompositionStyle.THIRDS
-        set(value) { field = value; invalidate() }
+    var aimTolerance = ShotGeometry.DEFAULT_AIM_TOLERANCE
     var subjectPin: ScenePoint? = null
         set(value) { field = value; invalidate() }
     private val pen = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -26,7 +25,6 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
     private val density = resources.displayMetrics.density
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        drawCompositionGrid(canvas)
         if (targetVisible) drawTargetPreview(canvas)
         drawSubjectPin(canvas)
         val aim = aimPoint
@@ -47,7 +45,7 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
             close()
         }
         canvas.drawPath(path, pen)
-        if (fresh) drawDirection(canvas, ShotGeometry.center(points), !ShotGeometry.aimReady(points))
+        if (fresh) drawDirection(canvas, ShotGeometry.center(points), !ShotGeometry.aimReady(points, aimTolerance))
     }
 
     private fun drawDirection(canvas: Canvas, point: ScenePoint, arrow: Boolean) {
@@ -62,30 +60,6 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
         canvas.drawLine(cx, cy, x, y, pen)
         for (offset in arrowOffsets) canvas.drawLine(x, y,
             x - cos(angle + offset) * 12 * density, y - sin(angle + offset) * 12 * density, pen)
-    }
-
-    private fun drawCompositionGrid(canvas: Canvas) {
-        pen.style = Paint.Style.STROKE
-        pen.color = Color.WHITE
-        pen.alpha = 77
-        pen.strokeWidth = density
-        when (compositionStyle) {
-            CompositionStyle.THIRDS, CompositionStyle.NEGATIVE_SPACE -> {
-                for (third in 1..2) {
-                    val x = width * third / 3f
-                    canvas.drawLine(x, 0f, x, height.toFloat(), pen)
-                    if (compositionStyle == CompositionStyle.THIRDS) {
-                        val y = height * third / 3f
-                        canvas.drawLine(0f, y, width.toFloat(), y, pen)
-                    }
-                }
-            }
-            CompositionStyle.CENTERED -> {
-                val x = width * .5f
-                canvas.drawLine(x, 0f, x, height.toFloat(), pen)
-            }
-            CompositionStyle.WIDE -> Unit
-        }
     }
 
     private fun drawSubjectPin(canvas: Canvas) {

@@ -1,16 +1,16 @@
 # Camera Compositor
 
-The private [Vivo V30 live build](docs/V0100_LIVE_GUIDANCE.md) checks the view you are already pointing at and shows a framing guide when it finds a shot. Use this build for the Vivo rehearsal.
+The private [Vivo V30 adaptive build](docs/V0110_ADAPTIVE_COMPOSITION.md) chooses a framing automatically as you aim. It compares whole-scene layouts with subject-focused shots.
 
-Native Android camera research for composition guidance. Version **0.8.0-discovery** looks for subjects as soon as the viewfinder opens. It can suggest a turn, then check the actual scene from the new angle before setting a frame. The owner leads final UI/UX. [Subject discovery and tracking results](docs/V080_SCENE_DISCOVERY.md).
+Native Android camera research for live composition guidance. It can suggest a new angle when a subject is visibly cut off. The owner leads final UI/UX.
 
 The main camera and automatic composition run offline on the regular Android camera. ARCore and personal-key online scans are optional research tools. The measured photographic preference study and Vivo performance checks remain pending.
 
 ## Try the research build
 
-Install `artifacts/CameraCompositor-0.8.0-discovery-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype. The builds target Android 10 and later. The `armv7` APK is for phones that run 32-bit ARM apps.
+Install `artifacts/CameraCompositor-0.11.0-adaptive-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype.
 
-1. Point the camera at a scene and follow the arrow if one appears. The app checks what comes into view. **Style** chooses Thirds, Centered, Negative space, or Wide scene. Tapping a subject is optional.
+1. Aim at the scene and line up the outline when it appears. The camera chooses the framing. Tap a subject if you want to choose what to keep in the frame. **Find shot** checks the view again.
 2. When the outlined frame is aligned and steady, **Auto shutter** starts a three-second countdown. Tap **Auto shutter on** to turn automatic photos off while keeping guidance. **Take photo** works at any time, and **Skip shot** dismisses the current proposal.
 3. **Options > Photo processing** defaults to **Camera JPEG**. Compatible cameras also offer manufacturer HDR, Night, Auto, and scene-aware selection. The photo status shows what actually saved the image. **Developer tools** contains camera capabilities, sweep export, optional ARCore testing and the personal-key online experiment.
 

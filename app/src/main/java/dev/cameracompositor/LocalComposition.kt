@@ -15,11 +15,23 @@ data class SubjectTap(val point: ScenePoint, val view: LiveScene, val zoom: Floa
     }
 }
 
+internal fun sceneLayout(image: Bitmap, depth: RelativeDepth? = null): SceneLayout {
+    val pixels = IntArray(SceneLayout.WIDTH * SceneLayout.HEIGHT)
+    val reduced = Bitmap.createScaledBitmap(image, SceneLayout.WIDTH, SceneLayout.HEIGHT, true)
+    try {
+        reduced.getPixels(pixels, 0, SceneLayout.WIDTH, 0, 0, SceneLayout.WIDTH, SceneLayout.HEIGHT)
+    } finally {
+        if (reduced !== image) reduced.recycle()
+    }
+    return SceneLayout(pixels, depth)
+}
+
 /** Works with a conventional CameraX stream. Depth is optional per view. */
 class LocalComposition(private val depth: SoftwareDepth, private val detector: SceneSubjectDetector,
                        private val recognition: SceneRecognition) {
     data class Result(val decision: EnvironmentDecision, val relativeDepth: Map<Int, RelativeDepth>,
-                      val canAutoCapture: Boolean, val recognized: SceneKind? = null, val comparedShots: Int = 0)
+                      val canAutoCapture: Boolean, val recognized: SceneKind? = null, val comparedShots: Int = 0,
+                      val modelFallback: String? = null, val recheckAfterSettling: Boolean = false)
 
     fun evaluate(batch: EnvironmentBatch, remainingZoom: Float, style: CompositionStyle, tap: SubjectTap?,
                  allowExploration: Boolean, expected: SubjectHint?, isActive: () -> Boolean): Result {
@@ -49,15 +61,7 @@ class LocalComposition(private val depth: SoftwareDepth, private val detector: S
         val layers = DepthAgreement.corroborated(batch.map, estimates)
         val layouts = eligible.mapValues { (id, entry) ->
             if (!isActive()) throw SceneServiceException("cancelled", "Scan cancelled.")
-            val pixels = IntArray(SceneLayout.WIDTH * SceneLayout.HEIGHT)
-            val image = entry.frame.image
-            val reduced = Bitmap.createScaledBitmap(image, SceneLayout.WIDTH, SceneLayout.HEIGHT, true)
-            try {
-                reduced.getPixels(pixels, 0, SceneLayout.WIDTH, 0, 0, SceneLayout.WIDTH, SceneLayout.HEIGHT)
-            } finally {
-                if (reduced !== image) reduced.recycle()
-            }
-            SceneLayout(pixels, layers[id])
+            sceneLayout(entry.frame.image, layers[id])
         }
         val scores = if (isActive() && SceneDiscovery.needsSemantics(subject, picked, expected)) {
             recognition.scores(batch.frames.last().frame.image)

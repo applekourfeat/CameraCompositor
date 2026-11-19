@@ -1,5 +1,9 @@
 # Verification
 
+## Adaptive composition build
+
+Version **0.11.0-adaptive** passed the Android build, 104 Android unit tests, lint with zero errors and 70 warnings, 20 Python research tests, and APK signing and alignment. The owner reported very few indoor proposals with version 0.10.0. In the 16-view indoor desktop replay, the prior policy proposed one shot and the adaptive policy proposed 16. Real-time alignment, zoom, capture, and composition preference on the Vivo V30 remain pending. [Indoor replay and method](V0110_ADAPTIVE_COMPOSITION.md), [delivery verification](../research/results/delivery-verification-v0110_adaptive.json).
+
 ## Vivo live guidance build
 
 Version **0.10.0-live** passed the Android build, 97 unit tests, lint with zero errors and 72 warnings, and 20 Python research tests. The ARM64 APK passed signing and alignment checks. The owner's 0.9.0 report describes rare proposals and repeated turning prompts. The new policy proposed building frames in eight of nine desktop variations of the owner's skyline. Live Vivo selection time, alignment, zoom and saved framing remain pending. [Live guidance and replay](V0100_LIVE_GUIDANCE.md), [delivery verification](../research/results/delivery-verification-v0100_live.json).

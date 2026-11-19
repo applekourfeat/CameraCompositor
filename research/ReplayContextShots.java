@@ -23,6 +23,8 @@ class ReplayContextShots {
     }
 
     public static void main(String[] args) throws Exception {
+        boolean adaptive = List.of(args).contains("--adaptive");
+        boolean useRanker = !List.of(args).contains("--geometry-only");
         try (var in = new DataInputStream(new BufferedInputStream(System.in))) {
             int length;
             while ((length = in.readInt()) > 0) {
@@ -45,19 +47,27 @@ class ReplayContextShots {
                 var map = new EnvironmentMap(1);
                 map.add(view);
                 var subjects = ContextShots.INSTANCE.subjects(layout, patches, SubjectDetection.INSTANCE.mainSubject(detections, null));
-                var shots = ContextShots.INSTANCE.candidates(map, List.of(new ShotEvidence(view, layout, subjects)),
-                    CompositionStyle.THIRDS, 3.2f, null);
+                var evidence = new ShotEvidence(view, layout, subjects);
+                var shots = adaptive ? AdaptiveFraming.INSTANCE.candidates(map, evidence, 3.2f, null) :
+                    ContextShots.INSTANCE.candidates(map, List.of(evidence), CompositionStyle.THIRDS, 3.2f, null, null);
                 System.out.println(shots.size());
                 for (var shot : shots) {
                     var box = shot.getComparisonBox();
                     System.out.println(box.getLeft() + " " + box.getTop() + " " + box.getRight() + " " + box.getBottom() +
-                        " " + (shot.getSubject() == null ? "wide" : shot.getSubject().getKind().name()));
+                        " " + (shot.getCue() != null ? shot.getCue().name() :
+                        shot.getSubject() == null ? "wide" : shot.getSubject().getKind().name()));
                 }
                 System.out.flush();
                 var scores = new float[shots.size()];
                 for (int i = 0; i < scores.length; i++) scores[i] = in.readFloat();
-                var chosen = ContextShots.INSTANCE.choose(shots, scores);
-                System.out.println(chosen == null ? "0 0" : shots.indexOf(chosen.getShot()) + " " + chosen.getGain());
+                if (adaptive) {
+                    var chosen = AdaptiveFraming.INSTANCE.choose(shots, useRanker ? scores : null);
+                    System.out.println(chosen == null ? "0 0 false" :
+                        shots.indexOf(chosen.getShot()) + " " + chosen.getGain() + " " + chosen.getCanAutoCapture());
+                } else {
+                    var chosen = ContextShots.INSTANCE.choose(shots, scores);
+                    System.out.println(chosen == null ? "0 0" : shots.indexOf(chosen.getShot()) + " " + chosen.getGain());
+                }
                 System.out.flush();
             }
         }

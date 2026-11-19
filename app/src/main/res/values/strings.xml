@@ -1,25 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Camera Compositor</string>
-    <string name="composition_style">Composition style</string>
-    <string name="style_control">Style · %1$s</string>
-    <string name="style_thirds">Thirds</string>
-    <string name="style_centered">Centered</string>
-    <string name="style_negative_space">Negative space</string>
-    <string name="style_wide">Wide scene</string>
     <string name="subject_selected">Subject selected. Keep it in view.</string>
     <string name="options">Options</string>
     <string name="viewfinder">Camera viewfinder</string>
     <string name="auto_on">Auto shutter on</string>
     <string name="auto_off">Auto shutter off</string>
-    <string name="auto_observing">Looking for a shot. Turn slowly or hold your view.</string>
     <string name="opening_wide">Opening the wide view…</string>
     <string name="find_shot">Find shot</string>
     <string name="checking_composition">Looking for a composition…</string>
     <string name="checking_match">Found a shot. Checking the live view…</string>
-    <string name="need_clear_subject">No clear shot yet. Aim at a subject or tap Find shot.</string>
+    <string name="find_again">Hold on this view and tap Find shot to retry.</string>
     <string name="recheck_shot">The view shifted. Checking it again…</string>
-    <string name="frame_this_subject">Follow the outline to frame the %1$s.</string>
     <string name="auto_waiting">Point at a different subject or angle.</string>
     <string name="auto_next_scene">Photo saved. Move to a new scene for the next shot.</string>
     <string name="auto_counting">Hold still. Photo in %1$d.</string>
@@ -61,7 +53,7 @@
     <string name="photo_processing">Photo processing</string>
     <string name="about_build">About this build</string>
     <string name="developer_tools">Developer tools</string>
-    <string name="about_framing">The camera looks for subjects and checks new angles as you turn. When the frame is steady, Auto shutter counts down and takes the picture. You can take a photo at any time.</string>
+    <string name="about_framing">The camera checks the whole view and chooses a framing as you aim. Tap an object to make it the subject. Auto shutter counts down once a suggested frame is steady. You can take a photo at any time.</string>
     <string name="sweep_instruction">Turn slowly to show more angles, or hold still for this view.</string>
     <string name="sweep_no_frame">The camera could not finish the scan. Hold the zoom steady and try again.</string>
     <string name="sweep_assessing">Checking the views. Hold this angle.</string>

@@ -27,7 +27,15 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
     private val contentMassWithoutDepth: Float
     val focus: SubjectBox?
     val detail: Float
+    val brightness: Float
+    val tonalRange: Float
+    val uprightPair: UprightPair?
     val hasSubject get() = detail > .012f && focus != null
+    val hasSceneDetail get() = tonalRange >= .065f && (detail >= .009f || uprightPair != null)
+
+    data class UprightPair(val left: Float, val right: Float, val support: Float) {
+        val center get() = (left + right) * .5f
+    }
 
     init {
         require(rgb.size == WIDTH * HEIGHT)
@@ -35,6 +43,7 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
             val color = rgb[it]
             (.213f * (color shr 16 and 255) + .715f * (color shr 8 and 255) + .072f * (color and 255)) / 255
         }
+        val uprightSamples = IntArray(SIZE)
         for (index in luma.indices) {
             val px = index % WIDTH
             val py = index / WIDTH
@@ -42,8 +51,10 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
             val value = luma[index]
             light[cell] += value
             if (value < .025f || value > .985f) clipping[cell]++
-            if (px < WIDTH - 1) texture[cell] += abs(value - luma[index + 1])
-            if (py < HEIGHT - 1) texture[cell] += abs(value - luma[index + WIDTH])
+            val horizontal = if (px < WIDTH - 1) abs(value - luma[index + 1]) else 0f
+            val vertical = if (py < HEIGHT - 1) abs(value - luma[index + WIDTH]) else 0f
+            texture[cell] += horizontal + vertical
+            if (horizontal >= .092f && horizontal >= 2.4f * vertical) uprightSamples[cell]++
         }
         for (i in 0 until SIZE) {
             light[i] /= CELL * CELL
@@ -51,6 +62,10 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
             texture[i] /= 2 * CELL * CELL
         }
         detail = texture.average().toFloat()
+        brightness = light.average().toFloat()
+        val tones = light.sortedArray()
+        tonalRange = tones[SIZE * 9 / 10] - tones[SIZE / 10]
+        uprightPair = findUprights(uprightSamples)
         markForeground()
         for (i in 0 until SIZE) {
             val neighbors = neighbors(i)
@@ -123,7 +138,7 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
     }
 
     data class Rating(val quality: Float, val foreground: Float, val retained: Float,
-                      val boundary: Float, val clipped: Float)
+                      val boundary: Float, val clipped: Float, val balance: Float)
     private fun weight(index: Int, useDepth: Boolean) =
         if (!useDepth && occlusion[index]) attention[index] * 10 else attention[index]
 
@@ -205,7 +220,7 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
             }
             samples++
         }
-        if (samples == 0) return Rating(-1f, 0f, 0f, 0f, 0f)
+        if (samples == 0) return Rating(-1f, 0f, 0f, 0f, 0f, 1f)
         val foreground = near.toFloat() / samples
         val total = if (useDepth) contentMass else contentMassWithoutDepth
         val retained = mass / total.coerceAtLeast(.01f)
@@ -214,6 +229,28 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
         val density = sqrt(mass / samples)
         val quality = .70f * density - .75f * foreground - .32f * boundaryWeight -
             .15f * clipped / samples - .34f * spread
-        return Rating(quality, foreground, retained, boundaryWeight, clipped / samples)
+        return Rating(quality, foreground, retained, boundaryWeight, clipped / samples, spread)
+    }
+
+    /** Look for two long upright edges that coexist over much of the image. */
+    private fun findUprights(samples: IntArray): UprightPair? {
+        val rows = 4 until ROWS - 4
+        val columns = List(COLUMNS) { x -> rows.filter { y -> samples[y * COLUMNS + x] >= 4 }.toSet() }
+        var best: UprightPair? = null
+        var bestScore = 0f
+        for (left in 1 until COLUMNS - 5) {
+            if (columns[left].size < 11) continue
+            for (right in left + 5..minOf(left + 18, COLUMNS - 2)) {
+                val common = columns[left].count { it in columns[right] }
+                if (common < 11) continue
+                val support = common.toFloat() / rows.count()
+                val score = support * (1f + (right - left) / (3f * COLUMNS))
+                if (score > bestScore) {
+                    bestScore = score
+                    best = UprightPair((left + .5f) / COLUMNS, (right + .5f) / COLUMNS, support)
+                }
+            }
+        }
+        return best
     }
 }

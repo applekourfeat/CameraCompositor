@@ -35,7 +35,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var capture: Button
     private lateinit var access: Button
     private lateinit var gallery: Button
-    private lateinit var styleButton: Button
     private lateinit var findShot: Button
     private lateinit var automatic: Button
     private lateinit var countdown: TextView
@@ -49,7 +48,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var sceneRecognition: SceneRecognition
     private lateinit var localComposition: LocalComposition
     private val contextualScorer by lazy { LocalResearchScorer(this, "gaic-dynamic.onnx") }
-    private var contextComposition: ContextComposition? = null
+    private lateinit var contextComposition: ContextComposition
     private lateinit var quality: CameraQuality
     private var sweepRecorder: ResearchSweepRecorder? = null
     private var environmentSweep: EnvironmentSweep? = null
@@ -57,6 +56,7 @@ class MainActivity : ComponentActivity() {
     private var activeEnvironmentBatch: EnvironmentBatch? = null
     private val environmentRoute=ArrayDeque<Pair<ScanFrame,ModelChoice>>()
     private var plannedZoom = 1f
+    private var aimTolerance = ShotGeometry.DEFAULT_AIM_TOLERANCE
     private var pendingSweep: java.io.File? = null
     private val exportSweep = registerForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         val file = pendingSweep
@@ -117,10 +117,9 @@ class MainActivity : ComponentActivity() {
     private var lastPhotoDetails = "No photo taken in this session"
     private val cameraPreferences by lazy { getSharedPreferences("camera_preferences", MODE_PRIVATE) }
     private var photoMode = PhotoMode.JPEG
-    private var compositionStyle = CompositionStyle.THIRDS
     private var pendingSubject: SubjectTap? = null
     private var checkOpeningZoom = BuildConfig.VIVO_DEMO
-    private var framedRegion: String? = null
+    private var framingInstruction: String? = null
     private var zoomTrimmed = false
     private var verifyingUntil = 0L
 
@@ -158,28 +157,23 @@ class MainActivity : ComponentActivity() {
         capture = findViewById(R.id.capture); access = findViewById(R.id.access); gallery = findViewById(R.id.gallery)
         cancel = findViewById(R.id.cancel); flip = findViewById(R.id.flip)
         automatic = findViewById(R.id.automatic); countdown = findViewById(R.id.shutter_countdown)
-        styleButton = findViewById(R.id.composition_style)
         findShot = findViewById(R.id.find_shot)
-        if (BuildConfig.VIVO_DEMO) findShot.visibility = View.VISIBLE
         findShot.setOnClickListener {
             checkOpeningZoom = false
             automaticScan.reset()
             scanEnvironment(autoScan = true)
         }
-        val savedStyle = cameraPreferences.getString("style", null)
         val savedPhotoMode = cameraPreferences.getString("photo_mode", null)
-        compositionStyle = CompositionStyle.entries.firstOrNull { it.name == savedStyle } ?: CompositionStyle.THIRDS
         photoMode = PhotoMode.entries.firstOrNull { it.name == savedPhotoMode } ?: PhotoMode.JPEG
         autoShutter = cameraPreferences.getBoolean("auto_shutter", true)
-        renderCompositionStyle()
-        styleButton.setOnClickListener { showCompositionStyles() }
         plannerSettings = PlannerSettings(this)
         localScorer = LocalResearchScorer(this)
         softwareDepth = SoftwareDepth(this)
         subjectDetector = SceneSubjectDetector(this)
         sceneRecognition = SceneRecognition(this)
         localComposition = LocalComposition(softwareDepth, subjectDetector, sceneRecognition)
-        if (BuildConfig.VIVO_DEMO) contextComposition = ContextComposition(sceneRecognition, subjectDetector, contextualScorer)
+        contextComposition = ContextComposition(sceneRecognition, subjectDetector,
+            if (BuildConfig.VIVO_DEMO) contextualScorer else null)
         lastDiagnostic = runCatching { java.io.File(filesDir, "last-scan-diagnostic.json").readText() }.getOrDefault(lastDiagnostic)
         planner = CloudShotPlanner(plannerSettings) { report ->
             lastDiagnostic = report
@@ -362,7 +356,7 @@ class MainActivity : ComponentActivity() {
 
     private fun retryAutomatic(message: Int = R.string.guide_recovering) {
         if (automaticScan.retryOnce(SystemClock.elapsedRealtime())) guidance.setText(message)
-        else waitForAnotherScene(message = if (BuildConfig.VIVO_DEMO) getString(R.string.need_clear_subject) else null)
+        else waitForAnotherScene(message = getString(R.string.find_again))
     }
 
     private fun requestOnlineEnvironmentScan() {
@@ -383,22 +377,15 @@ class MainActivity : ComponentActivity() {
         cancelGuide()
         val token = generation
         val requestId = if (online) planner.beginRequest() else null
-        val style = compositionStyle
         val tap = pendingSubject.takeUnless { online }
-        val firstLook = BuildConfig.VIVO_DEMO && autoScan
         clearSubjectTap()
         baselineZoom = controller?.zoomState?.value?.zoomRatio ?: 1f
         if (autoScan) scanReference = analyzer.liveScene
         scanning = true
-        guidance.setText(when {
-            firstLook -> R.string.checking_composition
-            autoScan -> R.string.auto_observing
-            else -> R.string.sweep_instruction
-        })
+        guidance.setText(if (autoScan) R.string.checking_composition else R.string.sweep_instruction)
         environmentSweep = EnvironmentSweep(analyzer,
             { controller?.zoomState?.value?.zoomRatio ?: 1f }, { controller?.zoomState?.value?.maxZoomRatio ?: 1f },
-            intervalMs = if (autoScan) 250 else 470,
-            frameLimit = if (firstLook) 1 else if (autoScan) 3 else 6) { batch ->
+            frameLimit = if (autoScan) 1 else 6) { batch ->
                 environmentSweep = null
                 when {
                     generation != token || isDestroyed -> batch?.close()
@@ -408,26 +395,25 @@ class MainActivity : ComponentActivity() {
                         modelReason = "The camera did not return a complete analysis frame."
                         if (autoScan) retryAutomatic() else guidance.setText(R.string.sweep_no_frame)
                     }
-                    else -> runEnvironmentPlanner(batch, token, requestId, autoScan, completedTurn, style, tap)
+                    else -> runEnvironmentPlanner(batch, token, requestId, autoScan, completedTurn, tap)
                 }
             }
         environmentSweep!!.start()
     }
     private fun runEnvironmentPlanner(batch: EnvironmentBatch, token: Int, requestId: Long?, autoScan: Boolean,
-                                      completedTurn: EnvironmentDecision.Explore?, style: CompositionStyle, tap: SubjectTap?) {
-        val firstLook = BuildConfig.VIVO_DEMO && autoScan
-        guidance.setText(if (firstLook) R.string.checking_composition else R.string.sweep_assessing)
+                                      completedTurn: EnvironmentDecision.Explore?, tap: SubjectTap?) {
+        guidance.setText(if (autoScan) R.string.checking_composition else R.string.sweep_assessing)
         val started = SystemClock.elapsedRealtime()
         val availableZoom = ((controller?.zoomState?.value?.maxZoomRatio ?: baselineZoom) / baselineZoom).coerceIn(1f, 3.2f)
         modelExecutor.execute {
-            val contextResult = if (autoScan && tap == null && contextComposition != null) runCatching {
-                contextComposition?.evaluate(batch, availableZoom, style, completedTurn == null,
-                    completedTurn?.expected) { generation == token }
-            } else null
             val result = runCatching {
-                contextResult?.getOrNull() ?: localComposition.evaluate(batch, availableZoom, style, tap,
-                    autoScan && !firstLook && completedTurn == null,
-                    completedTurn?.expected) { generation == token }
+                if (autoScan) {
+                    contextComposition.evaluate(batch, availableZoom, tap, completedTurn == null,
+                        completedTurn?.expected) { generation == token }
+                } else {
+                    localComposition.evaluate(batch, availableZoom, CompositionStyle.THIRDS, tap,
+                        false, null) { generation == token }
+                }
             }
             val optionalOnline = if (requestId != null && generation == token) runCatching {
                 planner.chooseEnvironment(batch, requestId, availableZoom, result.getOrNull()?.relativeDepth.orEmpty())
@@ -439,7 +425,7 @@ class MainActivity : ComponentActivity() {
                 val local = result.getOrNull()
                 val decision = optionalOnline?.decision ?: local?.decision
                 val reference = batch.frames.last()
-                val handoff = if (firstLook) LiveShotHandoff.assess(reference.frame.scene, analyzer.liveScene,
+                val handoff = if (autoScan) LiveShotHandoff.assess(reference.frame.scene, analyzer.liveScene,
                     reference.view.zoom, controller?.zoomState?.value?.zoomRatio ?: baselineZoom,
                     SystemClock.elapsedRealtime()) else null
                 modelReason = "Observed ${batch.frames.size} views, ${batch.map.registeredLinks} overlap links, " +
@@ -447,16 +433,14 @@ class MainActivity : ComponentActivity() {
                     (if (optionalOnline != null) "Online assessment." else "On-device assessment.") +
                     (local?.recognized?.let { " Region: ${it.description}." } ?: "") +
                     (local?.comparedShots?.takeIf { it > 0 }?.let { " Compared $it frames in one view." } ?: "") +
-                    (contextResult?.exceptionOrNull()?.let { " Context model fallback: ${it.javaClass.simpleName}." } ?: "") +
+                    (local?.modelFallback?.let { " Geometry-only ranking after model failure: $it." } ?: "") +
                     (result.exceptionOrNull()?.let { " Local analysis failed: ${it.javaClass.simpleName}." } ?: "") +
                     (handoff?.let { " Live-view handoff: ${it.name}." } ?: "")
                 if (autoScan) {
-                    val usable = if (firstLook) handoff != ShotHandoff.RESCAN
-                        else analyzer.environmentFresh(SystemClock.elapsedRealtime())
-                    if (!cameraForeground() || !usable || local == null) {
+                    if (!cameraForeground() || handoff == ShotHandoff.RESCAN || local == null) {
                         analyzer.endEnvironment()
                         batch.close()
-                        retryAutomatic(if (firstLook && local != null) R.string.recheck_shot else R.string.guide_recovering)
+                        retryAutomatic(if (local != null) R.string.recheck_shot else R.string.guide_recovering)
                         return@post
                     }
                     if (decision is EnvironmentDecision.Explore) {
@@ -469,13 +453,8 @@ class MainActivity : ComponentActivity() {
                         startExploration(batch, decision)
                         return@post
                     }
-                    val target = when {
-                        decision is EnvironmentDecision.Guide -> decision
-                        decision is EnvironmentDecision.Keep && local.canAutoCapture && autoShutter ->
-                            EnvironmentDecision.Guide(batch.map.views.last().id, SubjectBox(0f, 0f, 1f, 1f), "Current view", decision.reason)
-                        else -> null
-                    }
-                    framedRegion = local.recognized?.description?.takeIf { local.comparedShots > 1 && target != null }
+                    val target = decision as? EnvironmentDecision.Guide
+                    framingInstruction = target?.reason
                     if (target != null && startEnvironmentGuide(batch, target, autoGuide = true,
                             allowShutter = local.canAutoCapture, handoff = handoff)) return@post
                     analyzer.endEnvironment()
@@ -484,9 +463,12 @@ class MainActivity : ComponentActivity() {
                         retryAutomatic(R.string.recheck_shot)
                         return@post
                     }
+                    if (local.recheckAfterSettling && automaticScan.retryOnce(SystemClock.elapsedRealtime())) {
+                        guidance.setText(R.string.checking_composition)
+                        return@post
+                    }
                     val message = when (decision) {
-                        is EnvironmentDecision.ObserveMore -> if (firstLook && tap == null) getString(R.string.need_clear_subject)
-                            else decision.reason
+                        is EnvironmentDecision.ObserveMore -> decision.reason
                         is EnvironmentDecision.Keep -> decision.reason
                         else -> null
                     }
@@ -713,6 +695,8 @@ class MainActivity : ComponentActivity() {
         overlay.aligned=false; overlay.fresh=false; overlay.frame=null
         val crop = choice.customCrop?.let { CropOption(-1, it) } ?: ShotGeometry.options[choice.cropId]
         val b = crop.box
+        aimTolerance = ShotGeometry.aimTolerance(crop, automatic = framingInstruction != null)
+        overlay.aimTolerance = aimTolerance
         plannedZoom = baselineZoom * crop.zoom.coerceIn(1f, 3.2f)
         overlay.targetPreview?.recycle()
         val selected = Bitmap.createBitmap(frame.image, (b.left * frame.image.width).toInt(),
@@ -761,7 +745,7 @@ class MainActivity : ComponentActivity() {
         }
         lastGood = tracked; guideLifetime.observed(tracked.timeMs)
         val waypoint = environmentRoute.isNotEmpty()
-        val aiming = ShotGeometry.aimReady(tracked.corners)
+        val aiming = ShotGeometry.aimReady(tracked.corners, aimTolerance)
         val camera = controller
         if (autoZoom && !waypoint && camera != null) {
             val point = ShotGeometry.center(tracked.corners)
@@ -769,7 +753,7 @@ class MainActivity : ComponentActivity() {
             if (aiming) zoomAnimator.moveTo(camera, plannedZoom) { autoZoom = false }
         }
         val zoomRatio = camera?.zoomState?.value?.zoomRatio ?: plannedZoom
-        if (framedRegion != null && autoZoom && !waypoint && aiming && !zoomTrimmed && !zoomAnimator.moving &&
+        if (framingInstruction != null && autoZoom && !waypoint && aiming && !zoomTrimmed && !zoomAnimator.moving &&
             tracked.timeMs - zoomAnimator.settledAt >= 250 && abs(zoomRatio / plannedZoom - 1f) < .023f && camera != null) {
             val targetWidth = ShotGeometry.width(tracked.corners)
             if (abs(targetWidth - 1f) > .085f) {
@@ -784,7 +768,7 @@ class MainActivity : ComponentActivity() {
         }
         val zoomReady = !zoomAnimator.moving && tracked.timeMs - zoomAnimator.settledAt >= 80 &&
             (!autoZoom || waypoint || abs(zoomRatio / plannedZoom - 1f) < .026f)
-        val framingReady = tracked.confidence >= .68f && zoomReady && ShotGeometry.framingReady(tracked.corners)
+        val framingReady = tracked.confidence >= .68f && zoomReady && ShotGeometry.framingReady(tracked.corners, aimTolerance)
         overlay.frame = tracked.corners; overlay.fresh = true
         val aligned = (if (waypoint) waypointHold else hold).update(framingReady, tracked.timeMs)
         if (aligned && waypoint) { advanceEnvironmentRoute(); return }
@@ -806,8 +790,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun framingPrompt(): String = framedRegion?.let { getString(R.string.frame_this_subject, it) }
-        ?: "Move toward the outlined frame."
+    private fun framingPrompt(): String = framingInstruction ?: "Move toward the outlined frame."
 
     private fun updateCountdown(seconds: Int?) {
         if (seconds == null) {
@@ -854,7 +837,7 @@ class MainActivity : ComponentActivity() {
         generation++
         verifyingUntil = 0
         overlay.targetVisible = true
-        framedRegion = null
+        framingInstruction = null
         automaticGuideAt = 0
         latestGuideFrameAt = 0
         shutterEligible = false
@@ -1078,33 +1061,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    private fun styleLabel(style: CompositionStyle) = getString(when (style) {
-        CompositionStyle.THIRDS -> R.string.style_thirds
-        CompositionStyle.CENTERED -> R.string.style_centered
-        CompositionStyle.NEGATIVE_SPACE -> R.string.style_negative_space
-        CompositionStyle.WIDE -> R.string.style_wide
-    })
-
-    private fun renderCompositionStyle() {
-        styleButton.text = getString(R.string.style_control, styleLabel(compositionStyle))
-        overlay.compositionStyle = compositionStyle
-    }
-
-    private fun showCompositionStyles() {
-        if (saving) return
-        cancelGuide()
-        val styles = CompositionStyle.entries
-        AlertDialog.Builder(this).setTitle(R.string.composition_style)
-            .setSingleChoiceItems(styles.map(::styleLabel).toTypedArray(), styles.indexOf(compositionStyle)) { dialog, index ->
-                compositionStyle = styles[index]
-                cameraPreferences.edit().putString("style", compositionStyle.name).apply()
-                automaticScan.reset()
-                renderCompositionStyle()
-                guidance.setText(if (pendingSubject == null) R.string.ready_to_frame else R.string.subject_selected)
-                dialog.dismiss()
-            }.setNegativeButton(R.string.close, null).show()
-    }
-
     private fun availablePhotoModes(): List<PhotoMode> {
         val extensions = quality.supported(baseSelector).map { it.first }
         return buildList {
@@ -1198,7 +1154,6 @@ class MainActivity : ComponentActivity() {
         if (!::automatic.isInitialized) return
         capture.isEnabled = controls.captureEnabled
         gallery.isEnabled = !saving && lastPhoto != null
-        styleButton.isEnabled = !saving
         flip.isEnabled = controls.flipEnabled
         automatic.isEnabled = cameraReady && !saving
         if (::findShot.isInitialized) findShot.isEnabled = cameraReady && !saving && !scanning
