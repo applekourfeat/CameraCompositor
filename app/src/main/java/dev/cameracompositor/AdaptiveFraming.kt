@@ -35,10 +35,12 @@ object AdaptiveFraming {
         val anchored = ContextShots.candidates(map, listOf(evidence), null, maxRelativeZoom,
             requiredSubject = required).drop(1).filter { frame ->
             protected == null || ContextShots.containsSubject(frame.crop, protected.framingBounds)
-        }.take(17)
+        }
+        // Reserve a place for each observed subject before filling the remaining scoring slots.
+        val diverse = (anchored.distinctBy { it.subject } + anchored).distinct().take(22)
         val context = sceneCandidates(evidence, maxRelativeZoom, protected, strongSubject)
         val result = mutableListOf(original)
-        for (frame in (anchored + context).sortedByDescending { it.framingGain }) {
+        for (frame in (diverse + context).sortedByDescending { it.framingGain }) {
             if (result.none { ContextShots.overlap(it.comparisonBox, frame.comparisonBox) > .93f }) {
                 result.add(frame)
             }
@@ -61,10 +63,15 @@ object AdaptiveFraming {
                 scores == null -> .205f
                 else -> .155f
             }
-            val acceptablePhoto = photoScore == null || (photoScore >= 2.5f && photoGain >= if (isScene) -.58f else -1.26f)
+            val minimumPhotoGain = when {
+                frame.subject?.outlinedDetail == true -> -.32f
+                isScene -> -.58f
+                else -> -1.26f
+            }
+            val acceptablePhoto = photoScore == null || (photoScore >= 2.5f && photoGain >= minimumPhotoGain)
             if (gain < requiredGain || !acceptablePhoto) return@mapIndexedNotNull null
             val trustedSubject = frame.subject?.let {
-                it.detected || photoScore != null && (it.skyline || it.strength >= .28f)
+                if (it.detected) it.strength >= .30f else photoScore != null && (it.skyline || it.strength >= .28f)
             } == true
             val trustedScene = isScene && photoScore != null && photoGain >= -.03f && frame.framingGain >= .17f
             val autoCapture = gain >= .23f && (trustedSubject || trustedScene)

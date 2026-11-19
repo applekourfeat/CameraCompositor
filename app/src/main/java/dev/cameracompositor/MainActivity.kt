@@ -130,6 +130,7 @@ class MainActivity : ComponentActivity() {
     private val tick = object : Runnable {
         override fun run() {
             val now = SystemClock.elapsedRealtime()
+            refreshLevel()
             if (activePlan && !saving && cameraForeground()) {
                 if (verifyingUntil != 0L && now >= verifyingUntil) trackingLost()
                 else if (automaticGuideAt != 0L && now - automaticGuideAt > 15_000) abandonAutomaticGuide()
@@ -153,6 +154,7 @@ class MainActivity : ComponentActivity() {
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom); insets
         }
         preview = findViewById(R.id.preview); overlay = findViewById(R.id.overlay)
+        motion.onLevelChanged = ::refreshLevel
         guidance = findViewById(R.id.guidance); telemetry = findViewById(R.id.telemetry)
         capture = findViewById(R.id.capture); access = findViewById(R.id.access); gallery = findViewById(R.id.gallery)
         cancel = findViewById(R.id.cancel); flip = findViewById(R.id.flip)
@@ -244,11 +246,22 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         handler.removeCallbacks(tick)
         motion.stop()
+        overlay.level = null
         if (::analyzer.isInitialized) {
             clearSubjectTap()
             cancelGuide()
         }
         super.onPause()
+    }
+    private fun refreshLevel() {
+        val level = if (cameraReady) motion.level() else null
+        overlay.level = level
+        if (activePlan && environmentRoute.isEmpty() && level?.aligned != true) {
+            hold.reset()
+            if (overlay.aligned) { overlay.aligned = false; overlay.invalidate() }
+            automaticShutter.interrupt()
+            updateCountdown(null)
+        }
     }
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
@@ -559,9 +572,9 @@ class MainActivity : ComponentActivity() {
             verifyingUntil = SystemClock.elapsedRealtime() + LiveShotHandoff.VERIFY_WINDOW_MS
             overlay.targetVisible = handoff == ShotHandoff.SHOW
             if (handoff == ShotHandoff.SHOW && route.size == 1) {
-                overlay.frame = ShotGeometry.corners(decision.crop)
                 overlay.fresh = true
             } else {
+                overlay.frame = null
                 guidance.setText(R.string.checking_match)
             }
             overlay.invalidate()
@@ -572,7 +585,7 @@ class MainActivity : ComponentActivity() {
     private fun startExploration(batch: EnvironmentBatch, decision: EnvironmentDecision.Explore) {
         val reference = batch.frames.single { it.view.id == decision.viewId }.frame
         val crop = CropOption(-1, NextView.frame(decision.aim))
-        activePlanId = tracker.select(reference, crop)
+        activePlanId = tracker.select(reference, ShotGeometry.corners(crop.box))
         exploration = decision
         explorationHold.reset()
         analyzer.endEnvironment()
@@ -699,12 +712,11 @@ class MainActivity : ComponentActivity() {
         overlay.aimTolerance = aimTolerance
         plannedZoom = baselineZoom * crop.zoom.coerceIn(1f, 3.2f)
         overlay.targetPreview?.recycle()
-        val selected = Bitmap.createBitmap(frame.image, (b.left * frame.image.width).toInt(),
-            (b.top * frame.image.height).toInt(), ((b.right - b.left) * frame.image.width).toInt(),
-            ((b.bottom - b.top) * frame.image.height).toInt())
-        overlay.targetPreview = Bitmap.createScaledBitmap(selected, 180, 240, true)
-        if (selected !== frame.image && selected !== overlay.targetPreview) selected.recycle()
-        activePlanId = tracker.select(frame, crop)
+        val corners = CameraLevel.corners(b, frame.level.takeIf { environmentRoute.isEmpty() },
+            frame.viewSize.width.toFloat() / frame.viewSize.height)
+        overlay.targetPreview = CropPreviews.thumbnail(frame.image, corners)
+        overlay.frame = corners
+        activePlanId = tracker.select(frame, corners)
         analyzer.trackingGuide = true
         if (automaticGuideAt == 0L) modelReason = choice.explanation
         activePlan = true; autoZoom = true; lastGood = null
@@ -759,7 +771,7 @@ class MainActivity : ComponentActivity() {
             if (abs(targetWidth - 1f) > .085f) {
                 zoomTrimmed = true
                 val lower = maxOf(baselineZoom, zoomRatio * .87f)
-                val upper = minOf(1.85f, baselineZoom * 3.2f, camera.zoomState.value?.maxZoomRatio ?: zoomRatio, zoomRatio * 1.13f)
+                val upper = minOf(maxOf(1.85f, plannedZoom), baselineZoom * 3.2f, camera.zoomState.value?.maxZoomRatio ?: zoomRatio, zoomRatio * 1.13f)
                 if (lower <= upper) {
                     plannedZoom = (zoomRatio / targetWidth).coerceIn(lower, upper)
                     zoomAnimator.moveTo(camera, plannedZoom) { autoZoom = false }
@@ -768,7 +780,9 @@ class MainActivity : ComponentActivity() {
         }
         val zoomReady = !zoomAnimator.moving && tracked.timeMs - zoomAnimator.settledAt >= 80 &&
             (!autoZoom || waypoint || abs(zoomRatio / plannedZoom - 1f) < .026f)
-        val framingReady = tracked.confidence >= .68f && zoomReady && ShotGeometry.framingReady(tracked.corners, aimTolerance)
+        val boxReady = tracked.confidence >= .68f && zoomReady && ShotGeometry.framingReady(tracked.corners, aimTolerance)
+        val level = motion.level()
+        val framingReady = boxReady && (waypoint || level?.aligned == true)
         overlay.frame = tracked.corners; overlay.fresh = true
         val aligned = (if (waypoint) waypointHold else hold).update(framingReady, tracked.timeMs)
         if (aligned && waypoint) { advanceEnvironmentRoute(); return }
@@ -782,6 +796,9 @@ class MainActivity : ComponentActivity() {
             }
         }
         guidance.text = when {
+            !waypoint && aiming && level != null && !level.aligned ->
+                if (level is CameraLevel.Overhead) "Center the level dot." else "Turn the phone until the level lines meet."
+            !waypoint && boxReady && level == null -> "Level signal unavailable. Take the photo when ready."
             framingReady && shutterEligible && autoShutter -> getString(R.string.auto_steady)
             aligned -> "That's the frame. Hold steady and take the photo."
             aiming && !waypoint && !autoZoom -> "Pinch to match the outlined frame."
@@ -1123,7 +1140,7 @@ class MainActivity : ComponentActivity() {
         guidance.setText(R.string.capturing_photo)
         photoCapture.take(camera, baseSelector, mode,
             ownsCamera = { !isDestroyed && controller === camera },
-            canShoot = { controller === camera && cameraForeground() },
+            canShoot = { controller === camera && cameraForeground() && (!autoShot || motion.level()?.aligned == true) },
             progress = { if (!isDestroyed) guidance.text = it }) { outcome, restored ->
                 if (isDestroyed) return@take
                 saving = false

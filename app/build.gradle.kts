@@ -12,8 +12,8 @@ android {
         applicationId = "dev.cameracompositor"
         minSdk = 29
         targetSdk = 35
-        versionCode = 13
-        versionName = "0.11.0-adaptive"
+        versionCode = 14
+        versionName = "0.12.0-level"
         buildConfigField("boolean", "VIVO_DEMO", "false")
     }
     buildTypes.getByName("debug") {

@@ -12,6 +12,10 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
     var frame: List<ScenePoint>? = null
     var fresh = false
     var aligned = false
+    var level: CameraLevel? = null
+        set(value) {
+            if (field != value) { field = value; invalidate() }
+        }
     var aimPoint: ScenePoint? = null
     var targetPreview: Bitmap? = null
     var targetVisible = true
@@ -27,6 +31,7 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
         super.onDraw(canvas)
         if (targetVisible) drawTargetPreview(canvas)
         drawSubjectPin(canvas)
+        drawLevel(canvas)
         val aim = aimPoint
         val points = frame
         if (aim == null && points == null) return
@@ -46,6 +51,35 @@ class GuideOverlay(context: Context, attrs: AttributeSet) : View(context, attrs)
         }
         canvas.drawPath(path, pen)
         if (fresh) drawDirection(canvas, ShotGeometry.center(points), !ShotGeometry.aimReady(points, aimTolerance))
+    }
+
+    private fun drawLevel(canvas: Canvas) {
+        val reading = level ?: return
+        val cx = width * .5f
+        val cy = height * .64f
+        val d = density
+        canvas.save()
+        canvas.translate(cx, cy)
+        if (reading is CameraLevel.Horizon && reading.verticalOnDisplay) canvas.rotate(90f)
+        pen.style = Paint.Style.STROKE
+        // A dark under-stroke keeps the thin instrument visible against bright sky.
+        for (pass in 0..1) {
+            val outline = pass == 0
+            pen.strokeWidth = (if (outline) 4f else 2f) * d
+            pen.color = if (outline) Color.BLACK else if (reading.aligned) Color.rgb(125, 220, 150) else Color.WHITE
+            if (reading is CameraLevel.Horizon) {
+                canvas.drawLine(-44*d, 0f, -26*d, 0f, pen)
+                canvas.drawLine(26*d, 0f, 44*d, 0f, pen)
+                canvas.save()
+                canvas.rotate(reading.degrees)
+                canvas.drawLine(-24*d, 0f, 24*d, 0f, pen)
+                canvas.restore()
+            } else if (reading is CameraLevel.Overhead) {
+                canvas.drawCircle(0f, 0f, 9*d, pen)
+                canvas.drawCircle(reading.x*240*d, reading.y*240*d, 4*d, pen)
+            }
+        }
+        canvas.restore()
     }
 
     private fun drawDirection(canvas: Canvas, point: ScenePoint, arrow: Boolean) {

@@ -30,8 +30,9 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
     val brightness: Float
     val tonalRange: Float
     val uprightPair: UprightPair?
+    val framedDetail: SubjectBox?
     val hasSubject get() = detail > .012f && focus != null
-    val hasSceneDetail get() = tonalRange >= .065f && (detail >= .009f || uprightPair != null)
+    val hasSceneDetail get() = framedDetail != null || tonalRange >= .065f && (detail >= .009f || uprightPair != null)
 
     data class UprightPair(val left: Float, val right: Float, val support: Float) {
         val center get() = (left + right) * .5f
@@ -44,6 +45,7 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
             (.213f * (color shr 16 and 255) + .715f * (color shr 8 and 255) + .072f * (color and 255)) / 255
         }
         val uprightSamples = IntArray(SIZE)
+        val crossbarSamples = IntArray(SIZE)
         for (index in luma.indices) {
             val px = index % WIDTH
             val py = index / WIDTH
@@ -55,6 +57,7 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
             val vertical = if (py < HEIGHT - 1) abs(value - luma[index + WIDTH]) else 0f
             texture[cell] += horizontal + vertical
             if (horizontal >= .092f && horizontal >= 2.4f * vertical) uprightSamples[cell]++
+            if (vertical >= .075f && vertical >= 2.4f * horizontal) crossbarSamples[cell]++
         }
         for (i in 0 until SIZE) {
             light[i] /= CELL * CELL
@@ -66,6 +69,7 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
         val tones = light.sortedArray()
         tonalRange = tones[SIZE * 9 / 10] - tones[SIZE / 10]
         uprightPair = findUprights(uprightSamples)
+        framedDetail = findFramedDetail(uprightSamples, crossbarSamples)
         markForeground()
         for (i in 0 until SIZE) {
             val neighbors = neighbors(i)
@@ -78,6 +82,50 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
         contentMass = attention.sum()
         contentMassWithoutDepth = attention.indices.sumOf { weight(it, useDepth = false).toDouble() }.toFloat()
         focus = if (contentMass > .01f) focusBounds() else null
+    }
+
+    /** Four supported sides around a region whose light differs from its immediate surroundings. */
+    private fun findFramedDetail(vertical: IntArray, horizontal: IntArray): SubjectBox? {
+        val columns = Array(COLUMNS) { IntArray(ROWS + 1) }
+        val rows = Array(ROWS) { IntArray(COLUMNS + 1) }
+        val lightSum = Array(ROWS + 1) { FloatArray(COLUMNS + 1) }
+        for (y in 0 until ROWS) for (x in 0 until COLUMNS) {
+            val i = y * COLUMNS + x
+            columns[x][y+1] = columns[x][y] + if (vertical[i] >= 4) 1 else 0
+            rows[y][x+1] = rows[y][x] + if (horizontal[i] >= 4) 1 else 0
+            lightSum[y+1][x+1] = light[i] + lightSum[y][x+1] + lightSum[y+1][x] - lightSum[y][x]
+        }
+        fun lightIn(l: Int, t: Int, r: Int, b: Int) =
+            lightSum[b][r] - lightSum[t][r] - lightSum[b][l] + lightSum[t][l]
+        var best: SubjectBox? = null
+        var bestScore = .55f
+        for (t in 2 until ROWS-6) for (l in 2 until COLUMNS-5) {
+            for (b in t+4..minOf(t+17, ROWS-3)) {
+                val h = b - t + 1
+                val left = (columns[l][b+1] - columns[l][t]) / h.toFloat()
+                if (left < .65f) continue
+                for (r in l+4..minOf(l+14, COLUMNS-3)) {
+                    val w = r - l + 1
+                    val right = (columns[r][b+1] - columns[r][t]) / h.toFloat()
+                    val top = (rows[t][r+1] - rows[t][l]) / w.toFloat()
+                    val bottom = (rows[b][r+1] - rows[b][l]) / w.toFloat()
+                    val weakest = minOf(left, right, top, bottom)
+                    if (weakest < .64f) continue
+                    val inner = lightIn(l+1, t+1, r, b) / ((w-2)*(h-2))
+                    val outer = (lightIn(l-1, t-1, r+2, b+2) - lightIn(l, t, r+1, b+1)) / (2*w+2*h+4)
+                    val separation = abs(inner - outer)
+                    if (separation < .12f) continue
+                    val score = weakest * (.50f + separation.coerceAtMost(.5f)) +
+                        .12f * (left + right + top + bottom) / 4f
+                    if (score > bestScore) {
+                        bestScore = score
+                        best = SubjectBox(l.toFloat()/COLUMNS, t.toFloat()/ROWS,
+                            (r+1f)/COLUMNS, (b+1f)/ROWS)
+                    }
+                }
+            }
+        }
+        return best
     }
 
     /** Count coherent near-depth areas attached to a frame edge, outside the main central region. */

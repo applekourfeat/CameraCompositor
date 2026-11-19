@@ -22,6 +22,8 @@ class MotionOrientation(context: Context) : SensorEventListener {
     @Volatile var focalPerViewWidth: Float? = null
     @Volatile var zoom = 1f
     @Volatile var displayRotation = Surface.ROTATION_0
+    var onLevelChanged: (() -> Unit)? = null
+    private var lastNotificationNs = 0L
 
     fun start() { sensor?.let { manager?.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) } }
     fun stop() { manager?.unregisterListener(this); sample = null }
@@ -31,7 +33,26 @@ class MotionOrientation(context: Context) : SensorEventListener {
     override fun onSensorChanged(event: SensorEvent) {
         val rotation = FloatArray(9)
         SensorManager.getRotationMatrixFromVector(rotation, event.values)
-        if (rotation.all(Float::isFinite)) sample = Sample(rotation, event.timestamp)
+        if (rotation.all(Float::isFinite)) {
+            sample = Sample(rotation, event.timestamp)
+            if (event.timestamp - lastNotificationNs >= 32_000_000L) {
+                lastNotificationNs = event.timestamp
+                onLevelChanged?.invoke()
+            }
+        }
+    }
+
+    fun level(): CameraLevel? {
+        val input = sample ?: return null
+        if (SystemClock.elapsedRealtimeNanos() - input.timestampNs !in 0L..200_000_000L) return null
+        val x = input.matrix[6]
+        val y = input.matrix[7]
+        return when (displayRotation) {
+            Surface.ROTATION_90 -> CameraLevel.fromUp(-y, x)
+            Surface.ROTATION_180 -> CameraLevel.fromUp(-x, -y)
+            Surface.ROTATION_270 -> CameraLevel.fromUp(y, -x)
+            else -> CameraLevel.fromUp(x, y)
+        }
     }
 
     fun viewAttitude(width: Int, height: Int): ViewAttitude? {

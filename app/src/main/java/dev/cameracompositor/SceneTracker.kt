@@ -26,7 +26,7 @@ class SceneTracker : AutoCloseable {
         Core.setNumThreads(2)
     } }
 
-    private data class Seed(val frame: ScanFrame, val crop: CropOption, val id: Long)
+    private data class Seed(val frame: ScanFrame, val corners: List<ScenePoint>, val id: Long)
     private data class Descriptors(val points: List<Point>, val data: Mat) : AutoCloseable {
         override fun close() = data.release()
     }
@@ -52,9 +52,9 @@ class SceneTracker : AutoCloseable {
     var activePlanId = 0L
         private set
 
-    fun select(frame: ScanFrame, crop: CropOption): Long {
+    fun select(frame: ScanFrame, corners: List<ScenePoint>): Long {
         val id = nextId.incrementAndGet()
-        pending.set(Seed(frame, crop, id))
+        pending.set(Seed(frame, corners, id))
         return id
     }
 
@@ -97,7 +97,7 @@ class SceneTracker : AutoCloseable {
         height = frame.height
         val inverse = Matrix()
         if (!frame.bufferToView.invert(inverse)) return
-        val corners = ShotGeometry.corners(seed.crop.box)
+        val corners = seed.corners
         val pixels = corners.flatMap { listOf(it.x * frame.viewSize.width, it.y * frame.viewSize.height) }.toFloatArray()
         inverse.mapPoints(pixels)
         val target = List(4) { Point(pixels[it * 2].toDouble(), pixels[it * 2 + 1].toDouble()) }

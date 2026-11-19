@@ -1,0 +1,1634 @@
+{
+  "scope": "Still frames. Nearest annotated crop is a proxy for the suggestion.",
+  "minimumPairedIoU": 0.85,
+  "summary": {
+    "scenes": 60,
+    "changed": 16,
+    "matchedChanges": 0,
+    "higher": 0,
+    "equal": 0,
+    "lower": 0
+  },
+  "scenes": [
+    {
+      "scene": "gaic-test-417815",
+      "before": {
+        "box": [
+          0.044999987,
+          0.0,
+          0.95500004,
+          0.91
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9116,
+        "mos": 4.29
+      },
+      "after": {
+        "box": [
+          0.044999987,
+          0.0,
+          0.95500004,
+          0.91
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9116,
+        "mos": 4.29
+      }
+    },
+    {
+      "scene": "gaic-test-414429",
+      "before": {
+        "box": [
+          0.05916667,
+          0.040000007,
+          0.89916664,
+          0.88
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.19,
+        "overlap": 0.9441,
+        "mos": 4.43
+      },
+      "after": {
+        "box": [
+          0.49075645,
+          0.42166847,
+          0.85075647,
+          0.7816685
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 2.778,
+        "overlap": 0.2598,
+        "mos": 2.57
+      }
+    },
+    {
+      "scene": "gaic-test-405358",
+      "before": {
+        "box": [
+          0.18424031,
+          0.06806387,
+          0.80424035,
+          0.68806386
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 1.613,
+        "overlap": 0.7677,
+        "mos": 3.79
+      },
+      "after": {
+        "box": [
+          0.2283403,
+          0.093263865,
+          0.77834034,
+          0.6432639
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 1.818,
+        "overlap": 0.6041,
+        "mos": 3.5
+      }
+    },
+    {
+      "scene": "gaic-test-472295",
+      "before": {
+        "box": [
+          0.15686044,
+          0.3263222,
+          0.7068604,
+          0.8763222
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 1.818,
+        "overlap": 0.6047,
+        "mos": 3.29
+      },
+      "after": {
+        "box": [
+          0.20096046,
+          0.3515222,
+          0.6809604,
+          0.8315222
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 2.083,
+        "overlap": 0.4606,
+        "mos": 3.86
+      }
+    },
+    {
+      "scene": "gaic-test-475676",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8405,
+        "mos": 3.86
+      },
+      "after": {
+        "box": [
+          0.39073646,
+          0.26267213,
+          0.8107364,
+          0.68267214
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 2.381,
+        "overlap": 0.3531,
+        "mos": 2.57
+      }
+    },
+    {
+      "scene": "gaic-test-422879",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8409,
+        "mos": 4.0
+      },
+      "after": {
+        "box": [
+          0.43372422,
+          0.051395386,
+          0.85372424,
+          0.47139537
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 2.381,
+        "overlap": 0.3526,
+        "mos": 3.21
+      }
+    },
+    {
+      "scene": "gaic-test-223721",
+      "before": {
+        "box": [
+          0.035864443,
+          0.34003344,
+          0.5858644,
+          0.8900335
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 1.818,
+        "overlap": 0.594,
+        "mos": 3.79
+      },
+      "after": {
+        "box": [
+          0.059364438,
+          0.51123345,
+          0.41936445,
+          0.87123346
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 2.778,
+        "overlap": 0.2591,
+        "mos": 3.29
+      }
+    },
+    {
+      "scene": "gaic-test-269979",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8409,
+        "mos": 3.93
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8409,
+        "mos": 3.93
+      }
+    },
+    {
+      "scene": "gaic-test-451263",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8397,
+        "mos": 4.14
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8397,
+        "mos": 4.14
+      }
+    },
+    {
+      "scene": "gaic-test-442424",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8408,
+        "mos": 4.64
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8408,
+        "mos": 4.64
+      }
+    },
+    {
+      "scene": "gaic-test-490393",
+      "before": {
+        "box": [
+          0.015182614,
+          0.22000003,
+          0.7951826,
+          1.0
+        ],
+        "subject": "FOLIAGE",
+        "relativeZoom": 1.282,
+        "overlap": 0.897,
+        "mos": 4.21
+      },
+      "after": {
+        "box": [
+          0.015182614,
+          0.22000003,
+          0.7951826,
+          1.0
+        ],
+        "subject": "FOLIAGE",
+        "relativeZoom": 1.282,
+        "overlap": 0.897,
+        "mos": 4.21
+      }
+    },
+    {
+      "scene": "gaic-test-313667",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8397,
+        "mos": 4.36
+      },
+      "after": {
+        "box": [
+          0.4729132,
+          0.40756494,
+          0.8329132,
+          0.76756495
+        ],
+        "subject": "ANIMAL",
+        "relativeZoom": 2.778,
+        "overlap": 0.2595,
+        "mos": 2.21
+      }
+    },
+    {
+      "scene": "gaic-test-264035",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8407,
+        "mos": 4.0
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8407,
+        "mos": 4.0
+      }
+    },
+    {
+      "scene": "gaic-test-225087",
+      "before": {
+        "box": [
+          0.044999987,
+          0.089999974,
+          0.95500004,
+          1.0
+        ],
+        "subject": "BALANCE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9102,
+        "mos": 3.79
+      },
+      "after": {
+        "box": [
+          0.044999987,
+          0.089999974,
+          0.95500004,
+          1.0
+        ],
+        "subject": "BALANCE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9102,
+        "mos": 3.79
+      }
+    },
+    {
+      "scene": "gaic-test-408054",
+      "before": {
+        "box": [
+          0.27941987,
+          0.27619264,
+          0.82941985,
+          0.8261926
+        ],
+        "subject": "ANIMAL",
+        "relativeZoom": 1.818,
+        "overlap": 0.605,
+        "mos": 3.29
+      },
+      "after": {
+        "box": [
+          0.13641986,
+          0.27619264,
+          0.68641984,
+          0.8261926
+        ],
+        "subject": "ANIMAL",
+        "relativeZoom": 1.818,
+        "overlap": 0.6059,
+        "mos": 4.0
+      }
+    },
+    {
+      "scene": "gaic-test-430541",
+      "before": {
+        "box": [
+          0.17250001,
+          0.23000002,
+          0.9425,
+          1.0
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.299,
+        "overlap": 0.8603,
+        "mos": 3.86
+      },
+      "after": {
+        "box": [
+          0.64,
+          0.6024192,
+          1.0,
+          0.9624192
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 2.778,
+        "overlap": 0.2195,
+        "mos": 3.57
+      }
+    },
+    {
+      "scene": "gaic-test-224003",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.839,
+        "mos": 3.93
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.839,
+        "mos": 3.93
+      }
+    },
+    {
+      "scene": "gaic-test-236160",
+      "before": {
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.8383,
+        "mos": 3.71
+      },
+      "after": {
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.8383,
+        "mos": 3.71
+      }
+    },
+    {
+      "scene": "gaic-test-307903",
+      "before": {
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9094,
+        "mos": 3.86
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9094,
+        "mos": 3.86
+      }
+    },
+    {
+      "scene": "gaic-test-396172",
+      "before": {
+        "box": [
+          0.044999987,
+          0.089999974,
+          0.95500004,
+          1.0
+        ],
+        "subject": "BALANCE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9111,
+        "mos": 4.07
+      },
+      "after": {
+        "box": [
+          0.044999987,
+          0.089999974,
+          0.95500004,
+          1.0
+        ],
+        "subject": "BALANCE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9111,
+        "mos": 4.07
+      }
+    },
+    {
+      "scene": "gaic-test-231629",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8391,
+        "mos": 3.14
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8391,
+        "mos": 3.14
+      }
+    },
+    {
+      "scene": "gaic-test-233781",
+      "before": {
+        "box": [
+          0.17250001,
+          0.23000002,
+          0.9425,
+          1.0
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.299,
+        "overlap": 0.8622,
+        "mos": 4.0
+      },
+      "after": {
+        "box": [
+          0.17250001,
+          0.23000002,
+          0.9425,
+          1.0
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.299,
+        "overlap": 0.8622,
+        "mos": 4.0
+      }
+    },
+    {
+      "scene": "gaic-test-392985",
+      "before": {
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.19,
+        "overlap": 0.9053,
+        "mos": 4.21
+      },
+      "after": {
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.19,
+        "overlap": 0.9053,
+        "mos": 4.21
+      }
+    },
+    {
+      "scene": "gaic-test-309808",
+      "before": {
+        "box": [
+          0.0,
+          0.17250001,
+          0.77,
+          0.9425
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.299,
+        "overlap": 0.8608,
+        "mos": 3.57
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.5001676,
+          0.42,
+          0.92016757
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 2.381,
+        "overlap": 0.3067,
+        "mos": 3.43
+      }
+    },
+    {
+      "scene": "gaic-test-294427",
+      "before": {
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9093,
+        "mos": 3.5
+      },
+      "after": {
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9093,
+        "mos": 3.5
+      }
+    },
+    {
+      "scene": "gaic-test-472330",
+      "before": {
+        "box": [
+          0.2901573,
+          0.24519506,
+          0.8401573,
+          0.7951951
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 1.818,
+        "overlap": 0.605,
+        "mos": 3.57
+      },
+      "after": {
+        "box": [
+          0.24043332,
+          0.333175,
+          0.6604333,
+          0.753175
+        ],
+        "subject": "OBJECTS",
+        "relativeZoom": 2.381,
+        "overlap": 0.3531,
+        "mos": 3.21
+      }
+    },
+    {
+      "scene": "gaic-test-220827",
+      "before": {
+        "box": [
+          0.044999987,
+          0.089999974,
+          0.95500004,
+          1.0
+        ],
+        "subject": "BALANCE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9085,
+        "mos": 4.07
+      },
+      "after": {
+        "box": [
+          0.26327616,
+          0.20841016,
+          0.8132762,
+          0.75841016
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 1.818,
+        "overlap": 0.605,
+        "mos": 3.07
+      }
+    },
+    {
+      "scene": "gaic-test-344258",
+      "before": {
+        "box": [
+          0.17250001,
+          0.23000002,
+          0.9425,
+          1.0
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.299,
+        "overlap": 0.8638,
+        "mos": 3.86
+      },
+      "after": {
+        "box": [
+          0.17250001,
+          0.23000002,
+          0.9425,
+          1.0
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.299,
+        "overlap": 0.8638,
+        "mos": 3.86
+      }
+    },
+    {
+      "scene": "gaic-test-243796",
+      "before": {
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "BALANCE",
+        "relativeZoom": 1.099,
+        "overlap": 0.8395,
+        "mos": 3.93
+      },
+      "after": {
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "BALANCE",
+        "relativeZoom": 1.099,
+        "overlap": 0.8395,
+        "mos": 3.93
+      }
+    },
+    {
+      "scene": "gaic-test-263479",
+      "before": {
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9092,
+        "mos": 3.57
+      },
+      "after": {
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9092,
+        "mos": 3.57
+      }
+    },
+    {
+      "scene": "gaic-test-490217",
+      "before": {
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "BALANCE",
+        "relativeZoom": 1.099,
+        "overlap": 0.8395,
+        "mos": 3.71
+      },
+      "after": {
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "BALANCE",
+        "relativeZoom": 1.099,
+        "overlap": 0.8395,
+        "mos": 3.71
+      }
+    },
+    {
+      "scene": "gaic-test-326329",
+      "before": {
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9858,
+        "mos": 4.0
+      },
+      "after": {
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9858,
+        "mos": 4.0
+      }
+    },
+    {
+      "scene": "gaic-test-321720",
+      "before": {
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9862,
+        "mos": 4.29
+      },
+      "after": {
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9862,
+        "mos": 4.29
+      }
+    },
+    {
+      "scene": "gaic-test-271146",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8388,
+        "mos": 3.79
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8388,
+        "mos": 3.79
+      }
+    },
+    {
+      "scene": "gaic-test-290240",
+      "before": {
+        "box": [
+          0.0,
+          0.08000001,
+          0.84,
+          0.91999996
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.19,
+        "overlap": 0.8396,
+        "mos": 4.0
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.08000001,
+          0.84,
+          0.91999996
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.19,
+        "overlap": 0.8396,
+        "mos": 4.0
+      }
+    },
+    {
+      "scene": "gaic-test-236854",
+      "before": {
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9102,
+        "mos": 4.36
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9102,
+        "mos": 4.36
+      }
+    },
+    {
+      "scene": "gaic-test-281995",
+      "before": {
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9857,
+        "mos": 3.79
+      },
+      "after": {
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9857,
+        "mos": 3.79
+      }
+    },
+    {
+      "scene": "gaic-test-221520",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8396,
+        "mos": 3.71
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8396,
+        "mos": 3.71
+      }
+    },
+    {
+      "scene": "gaic-test-294272",
+      "before": {
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9082,
+        "mos": 3.5
+      },
+      "after": {
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9082,
+        "mos": 3.5
+      }
+    },
+    {
+      "scene": "gaic-test-243460",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8388,
+        "mos": 3.57
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8388,
+        "mos": 3.57
+      }
+    },
+    {
+      "scene": "gaic-test-255010",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8409,
+        "mos": 3.64
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8409,
+        "mos": 3.64
+      }
+    },
+    {
+      "scene": "gaic-test-238563",
+      "before": {
+        "box": [
+          0.086666614,
+          0.044999987,
+          0.99666667,
+          0.95500004
+        ],
+        "subject": "UPRIGHTS",
+        "relativeZoom": 1.099,
+        "overlap": 0.9083,
+        "mos": 3.5
+      },
+      "after": {
+        "box": [
+          0.086666614,
+          0.044999987,
+          0.99666667,
+          0.95500004
+        ],
+        "subject": "UPRIGHTS",
+        "relativeZoom": 1.099,
+        "overlap": 0.9083,
+        "mos": 3.5
+      }
+    },
+    {
+      "scene": "gaic-test-274076",
+      "before": {
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.19,
+        "overlap": 0.9056,
+        "mos": 3.0
+      },
+      "after": {
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.19,
+        "overlap": 0.9056,
+        "mos": 3.0
+      }
+    },
+    {
+      "scene": "gaic-test-254375",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8397,
+        "mos": 3.71
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8397,
+        "mos": 3.71
+      }
+    },
+    {
+      "scene": "gaic-test-220921",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8389,
+        "mos": 4.14
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8389,
+        "mos": 4.14
+      }
+    },
+    {
+      "scene": "gaic-test-260596",
+      "before": {
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9081,
+        "mos": 3.57
+      },
+      "after": {
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9081,
+        "mos": 3.57
+      }
+    },
+    {
+      "scene": "gaic-test-425907",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8408,
+        "mos": 4.36
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.27109268,
+          0.62,
+          0.89109266
+        ],
+        "subject": "ANIMAL",
+        "relativeZoom": 1.613,
+        "overlap": 0.6813,
+        "mos": 3.0
+      }
+    },
+    {
+      "scene": "gaic-test-483387",
+      "before": {
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9081,
+        "mos": 3.43
+      },
+      "after": {
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9081,
+        "mos": 3.43
+      }
+    },
+    {
+      "scene": "gaic-test-396968",
+      "before": {
+        "box": [
+          0.21050546,
+          0.2344751,
+          0.76050544,
+          0.7844751
+        ],
+        "subject": "ANIMAL",
+        "relativeZoom": 1.818,
+        "overlap": 0.6053,
+        "mos": 3.86
+      },
+      "after": {
+        "box": [
+          0.31700546,
+          0.3312751,
+          0.7970054,
+          0.8112751
+        ],
+        "subject": "ANIMAL",
+        "relativeZoom": 2.083,
+        "overlap": 0.4617,
+        "mos": 3.14
+      }
+    },
+    {
+      "scene": "gaic-test-234404",
+      "before": {
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.19,
+        "overlap": 0.9053,
+        "mos": 4.21
+      },
+      "after": {
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES",
+        "relativeZoom": 1.19,
+        "overlap": 0.9053,
+        "mos": 4.21
+      }
+    },
+    {
+      "scene": "gaic-test-302180",
+      "before": {
+        "box": [
+          0.19340897,
+          0.3245995,
+          0.743409,
+          0.8745995
+        ],
+        "subject": "ANIMAL",
+        "relativeZoom": 1.818,
+        "overlap": 0.605,
+        "mos": 3.21
+      },
+      "after": {
+        "box": [
+          0.22840898,
+          0.3553995,
+          0.70840895,
+          0.8353995
+        ],
+        "subject": "ANIMAL",
+        "relativeZoom": 2.083,
+        "overlap": 0.4608,
+        "mos": 3.21
+      }
+    },
+    {
+      "scene": "gaic-test-215046",
+      "before": {
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.837,
+        "mos": 2.64
+      },
+      "after": {
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.837,
+        "mos": 2.64
+      }
+    },
+    {
+      "scene": "gaic-test-211144",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8409,
+        "mos": 3.71
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8409,
+        "mos": 3.71
+      }
+    },
+    {
+      "scene": "gaic-test-286151",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8391,
+        "mos": 4.57
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8391,
+        "mos": 4.57
+      }
+    },
+    {
+      "scene": "gaic-test-222619",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8389,
+        "mos": 4.21
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8389,
+        "mos": 4.21
+      }
+    },
+    {
+      "scene": "gaic-test-400943",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8397,
+        "mos": 3.71
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8397,
+        "mos": 3.71
+      }
+    },
+    {
+      "scene": "gaic-test-255509",
+      "before": {
+        "box": [
+          0.098985106,
+          0.3099075,
+          0.64898515,
+          0.8599075
+        ],
+        "subject": "PERSON",
+        "relativeZoom": 1.818,
+        "overlap": 0.6047,
+        "mos": 3.64
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE",
+        "relativeZoom": 1.099,
+        "overlap": 0.9081,
+        "mos": 3.93
+      }
+    },
+    {
+      "scene": "gaic-test-492029",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8408,
+        "mos": 3.71
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8408,
+        "mos": 3.71
+      }
+    },
+    {
+      "scene": "gaic-test-401710",
+      "before": {
+        "box": [
+          0.07798278,
+          0.124074906,
+          0.7779828,
+          0.82407486
+        ],
+        "subject": "MOUNTAIN",
+        "relativeZoom": 1.429,
+        "overlap": 0.8923,
+        "mos": 3.14
+      },
+      "after": {
+        "box": [
+          0.07798278,
+          0.124074906,
+          0.7779828,
+          0.82407486
+        ],
+        "subject": "MOUNTAIN",
+        "relativeZoom": 1.429,
+        "overlap": 0.8923,
+        "mos": 3.14
+      }
+    },
+    {
+      "scene": "gaic-test-475757",
+      "before": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8409,
+        "mos": 3.64
+      },
+      "after": {
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide",
+        "relativeZoom": 1.0,
+        "overlap": 0.8409,
+        "mos": 3.64
+      }
+    }
+  ]
+}

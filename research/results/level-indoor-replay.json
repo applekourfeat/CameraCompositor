@@ -1,0 +1,406 @@
+{
+  "scope": "Recorded stills, desktop CPU. Timing includes local model calls and replay overhead.",
+  "vivoTests": "pending",
+  "humanPreference": "pending",
+  "results": [
+    {
+      "input": "bathroom.jpg",
+      "sourceZoom": 1.0,
+      "compared": 16,
+      "decision": "Guide",
+      "subject": "SCENE",
+      "frame": [
+        0.089999974,
+        0.044999987,
+        1.0,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.1807,
+      "modelScore": 4.4049,
+      "wideScore": 4.0007,
+      "desktopMs": 1306.77,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "bedroom-dim.jpg",
+      "sourceZoom": 1.0,
+      "compared": 16,
+      "decision": "Guide",
+      "subject": "BALANCE",
+      "frame": [
+        0.089999974,
+        0.044999987,
+        1.0,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.1995,
+      "modelScore": 4.4992,
+      "wideScore": 4.1871,
+      "desktopMs": 743.18,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "bedroom-portrait.jpg",
+      "sourceZoom": 1.0,
+      "compared": 21,
+      "decision": "Guide",
+      "subject": "OBJECTS",
+      "frame": [
+        0.45344943,
+        0.16770348,
+        0.87344944,
+        0.58770347
+      ],
+      "chosenZoom": 2.381,
+      "framingGain": 1.3212,
+      "modelScore": 2.8589,
+      "wideScore": 3.0341,
+      "desktopMs": 2739.06,
+      "autoShutterEligible": true
+    },
+    {
+      "input": "bedroom.jpg",
+      "sourceZoom": 1.0,
+      "compared": 24,
+      "decision": "Guide",
+      "subject": "BALANCE",
+      "frame": [
+        0.089999974,
+        0.044999987,
+        1.0,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.1864,
+      "modelScore": 4.578,
+      "wideScore": 4.2833,
+      "desktopMs": 2239.37,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "bright-dining.jpg",
+      "sourceZoom": 1.0,
+      "compared": 31,
+      "decision": "Guide",
+      "subject": "SCENE",
+      "frame": [
+        0.089999974,
+        0.044999987,
+        1.0,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.3486,
+      "modelScore": 4.7088,
+      "wideScore": 4.0063,
+      "desktopMs": 1976.39,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "classroom.jpg",
+      "sourceZoom": 1.0,
+      "compared": 24,
+      "decision": "Guide",
+      "subject": "SCENE",
+      "frame": [
+        0.044999987,
+        0.044999987,
+        0.95500004,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.2192,
+      "modelScore": 4.6342,
+      "wideScore": 4.1133,
+      "desktopMs": 1375.0,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "cluttered-lounge.jpg",
+      "sourceZoom": 1.0,
+      "compared": 19,
+      "decision": "Guide",
+      "subject": "SCENE",
+      "frame": [
+        0.044999987,
+        0.044999987,
+        0.95500004,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.1792,
+      "modelScore": 4.081,
+      "wideScore": 3.6056,
+      "desktopMs": 1691.28,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "conference-corridor-portrait.jpg",
+      "sourceZoom": 1.0,
+      "compared": 24,
+      "decision": "Guide",
+      "subject": "OBJECTS",
+      "frame": [
+        0.1006667,
+        0.12362501,
+        0.8006667,
+        0.82362497
+      ],
+      "chosenZoom": 1.429,
+      "framingGain": 0.4253,
+      "modelScore": 3.682,
+      "wideScore": 3.862,
+      "desktopMs": 1230.96,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "conference-corridor.jpg",
+      "sourceZoom": 1.0,
+      "compared": 23,
+      "decision": "Guide",
+      "subject": "SCENE",
+      "frame": [
+        0.044999987,
+        0.044999987,
+        0.95500004,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.2047,
+      "modelScore": 4.6797,
+      "wideScore": 4.2079,
+      "desktopMs": 1138.83,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "desk-portrait.jpg",
+      "sourceZoom": 1.0,
+      "compared": 24,
+      "decision": "Guide",
+      "subject": "OBJECTS",
+      "frame": [
+        0.20530915,
+        0.14155798,
+        0.75530916,
+        0.691558
+      ],
+      "chosenZoom": 1.818,
+      "framingGain": 0.5217,
+      "modelScore": 3.7236,
+      "wideScore": 4.0282,
+      "desktopMs": 1748.81,
+      "autoShutterEligible": true
+    },
+    {
+      "input": "desk.jpg",
+      "sourceZoom": 1.0,
+      "compared": 24,
+      "decision": "Guide",
+      "subject": "OBJECTS",
+      "frame": [
+        0.22243631,
+        0.22431687,
+        0.64243627,
+        0.64431685
+      ],
+      "chosenZoom": 2.381,
+      "framingGain": 0.5397,
+      "modelScore": 2.9876,
+      "wideScore": 3.7434,
+      "desktopMs": 929.75,
+      "autoShutterEligible": true
+    },
+    {
+      "input": "dining-room.jpg",
+      "sourceZoom": 1.0,
+      "compared": 16,
+      "decision": "Guide",
+      "subject": "SCENE",
+      "frame": [
+        0.089999974,
+        0.044999987,
+        1.0,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.1187,
+      "modelScore": 4.1778,
+      "wideScore": 3.9513,
+      "desktopMs": 973.75,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "kitchen.jpg",
+      "sourceZoom": 1.0,
+      "compared": 24,
+      "decision": "Guide",
+      "subject": "SCENE",
+      "frame": [
+        0.044999987,
+        0.044999987,
+        0.95500004,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.2498,
+      "modelScore": 4.5943,
+      "wideScore": 4.0241,
+      "desktopMs": 1397.77,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "second-bedroom-portrait.jpg",
+      "sourceZoom": 1.0,
+      "compared": 16,
+      "decision": "Guide",
+      "subject": "BALANCE",
+      "frame": [
+        0.089999974,
+        0.044999987,
+        1.0,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.1976,
+      "modelScore": 4.5462,
+      "wideScore": 4.1947,
+      "desktopMs": 1336.33,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "second-bedroom.jpg",
+      "sourceZoom": 1.0,
+      "compared": 15,
+      "decision": "Guide",
+      "subject": "SCENE",
+      "frame": [
+        0.089999974,
+        0.044999987,
+        1.0,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.2139,
+      "modelScore": 4.655,
+      "wideScore": 4.1938,
+      "desktopMs": 1595.38,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "sitting-room.jpg",
+      "sourceZoom": 1.0,
+      "compared": 16,
+      "decision": "Guide",
+      "subject": "SCENE",
+      "frame": [
+        0.089999974,
+        0.044999987,
+        1.0,
+        0.95500004
+      ],
+      "chosenZoom": 1.099,
+      "framingGain": 0.1321,
+      "modelScore": 4.2931,
+      "wideScore": 3.985,
+      "desktopMs": 1282.16,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "base.jpg",
+      "sourceZoom": 1.0,
+      "compared": 28,
+      "decision": "Guide",
+      "subject": "ARCHITECTURE",
+      "frame": [
+        0.082377315,
+        0.02763769,
+        0.7023773,
+        0.6476377
+      ],
+      "chosenZoom": 1.613,
+      "framingGain": 0.7644,
+      "modelScore": 3.7346,
+      "wideScore": 4.405,
+      "desktopMs": 958.09,
+      "autoShutterEligible": true
+    },
+    {
+      "input": "framed.jpg",
+      "sourceZoom": 1.61,
+      "compared": 14,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 1.61,
+      "framingGain": 0.0,
+      "modelScore": 4.4836,
+      "wideScore": 4.4836,
+      "desktopMs": 992.16,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "scene-clean.jpg",
+      "sourceZoom": 0.5,
+      "compared": 19,
+      "decision": "Guide",
+      "subject": "FOLIAGE",
+      "frame": [
+        0.4413189,
+        0.025541618,
+        0.99131894,
+        0.5755416
+      ],
+      "chosenZoom": 0.909,
+      "framingGain": 0.2343,
+      "modelScore": 2.5238,
+      "wideScore": 3.6529,
+      "desktopMs": 841.5,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "after-6.05.jpg",
+      "sourceZoom": 0.5,
+      "compared": 24,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 0.5,
+      "framingGain": 0.0,
+      "modelScore": 4.321,
+      "wideScore": 4.321,
+      "desktopMs": 1492.57,
+      "autoShutterEligible": false
+    },
+    {
+      "input": "flat-control.png",
+      "sourceZoom": 1.0,
+      "compared": 1,
+      "decision": "Keep",
+      "subject": "wide",
+      "frame": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "chosenZoom": 1.0,
+      "framingGain": 0.0,
+      "modelScore": 2.3171,
+      "wideScore": 2.3171,
+      "desktopMs": 1375.4,
+      "autoShutterEligible": false
+    }
+  ]
+}

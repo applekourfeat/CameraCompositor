@@ -23,6 +23,34 @@ object ContextShots {
         return listOf(subject) + semantic.filterNot { it.kind == subject.kind && distance(it.point, subject.point) < .20f }
     }
 
+    /** Let distinct objects in a room compete, even when a larger background object wins detection. */
+    fun observedSubjects(layout: SceneLayout, scores: FloatArray?, detections: List<DetectedSubject>): List<SceneSubject> {
+        val main = SubjectDetection.mainSubject(detections)
+        val semantic = subjects(layout, scores, main)
+        val outdoorSubject = semantic.any { it.skyline || it.kind == SceneKind.FOLIAGE && it.framingBounds != it.bounds }
+        val protectedGroup = main?.takeIf { it.confidence >= .58f && (it.category == 0 || it.category in 14..23) }
+        val objects = SubjectDetection.distinctSubjects(detections).filter { candidate ->
+            val b = candidate.box
+            val minimum = if (candidate.category == 0 || candidate.category in 14..23) .58f else .45f
+            candidate.confidence >= minimum && area(b) in .012f.. .48f &&
+                minOf(b.left, b.top, 1 - b.right, 1 - b.bottom) >= .012f &&
+                layout.subjectDetail(b) >= .014f &&
+                (protectedGroup == null || candidate.category != protectedGroup.category ||
+                    coverage(protectedGroup.box, b) < .80f)
+        }.map(::detectedSubject)
+        val combined = mutableListOf<SceneSubject>()
+        for (subject in listOfNotNull(protectedGroup?.let(::detectedSubject)) + objects + semantic) {
+            if (combined.none { it.kind == subject.kind && overlap(it.bounds, subject.bounds) > .60f }) combined.add(subject)
+        }
+        if (!outdoorSubject) layout.framedDetail?.let { box ->
+            if (combined.none { overlap(it.framingBounds, box) >= .48f }) {
+                combined.add(SceneSubject(SceneKind.OBJECTS, box,
+                    ScenePoint((box.left + box.right)/2, (box.top + box.bottom)/2), .255f, outlinedDetail = true))
+            }
+        }
+        return combined
+    }
+
     internal fun detectedSubject(found: DetectedSubject): SceneSubject {
         val kind = when (found.category) {
             0 -> SceneKind.PERSON
@@ -44,21 +72,27 @@ object ContextShots {
         val baseHighlights = current.layout.rate(full, useDepth = false).clipped
         val options = mutableListOf<ContextShot>()
         for ((view, layout, subjects) in evidence) {
-            val qualityLimit = if (style == null) maxOf(1.17f, 1.85f / view.zoom) else 1.85f / view.zoom
-            val zoomLimit = minOf(view.maxRelativeZoom, maxRelativeZoom, qualityLimit,
-                if (style == CompositionStyle.WIDE) 1.32f else 3.2f)
             val distinctSubjects = subjects.filter { it.strength >= .187f && it.kind != SceneKind.WALKWAY }
                 .filter { requiredSubject == null || it == requiredSubject }
                 .distinctBy { (it.point.x * 8).toInt() to (it.point.y * 8).toInt() }
                 .take(4)
             for (subject in distinctSubjects) {
+                // Small, well-lit objects can tolerate more digital enlargement than an entire room.
+                val detailShot = style == null && (subject.detected || subject.outlinedDetail) && layout.brightness >= .20f &&
+                    layout.subjectDetail(subject.framingBounds) >= .020f
+                val absoluteLimit = if (detailShot) 2.8f else 1.85f
+                val qualityLimit = if (style == null) maxOf(1.17f, absoluteLimit / view.zoom) else absoluteLimit / view.zoom
+                val zoomLimit = minOf(view.maxRelativeZoom, maxRelativeZoom, qualityLimit,
+                    if (style == CompositionStyle.WIDE) 1.32f else 3.2f)
                 val projected = map.projectPoints(view.id, context, listOf(subject.point))?.singleOrNull() ?: continue
                 if (expected != null && (subject.kind != expected.kind || distance(projected, expected.point) > .31f)) continue
                 val baseline = if (view.id == context) subject else current.subjects
                     .filter { it.kind == subject.kind && distance(it.point, projected) < .20f }
                     .minByOrNull { distance(it.point, projected) } ?: continue
                 val placements = placements(style, layout, subject)
-                val baselineQuality = framing(current.layout, full, baseline, current.subjects, style, placements)
+                val baselineQuality = framing(current.layout, full, baseline,
+                    if (style == null && view.id == context && (subject.detected || subject.outlinedDetail))
+                        distinctSubjects else current.subjects, style, placements)
                 val allowedSizes = if (style == null && zoomLimit < 1.40f) listOf(.91f, .85f) + sizes else sizes
                 val proposals = allowedSizes.filter { 1 / it <= zoomLimit + .001f }.flatMap { size ->
                     placements.map { position -> boxAt(subject.point, position, size) }
@@ -103,6 +137,8 @@ object ContextShots {
         val extent = maxOf(width(core), core.bottom - core.top) / size
         val p = ScenePoint((subject.point.x - crop.left) / size, (subject.point.y - crop.top) / size)
         val attention = when (style) {
+            null if subject.detected || subject.outlinedDetail -> -2.7f * (.62f - extent).coerceAtLeast(0f) -
+                1.7f * (extent - .80f).coerceAtLeast(0f)
             CompositionStyle.WIDE -> -.55f * (extent - .43f).coerceAtLeast(0f)
             CompositionStyle.NEGATIVE_SPACE -> -.95f * abs(extent - .38f)
             else -> -1.80f * (.57f - extent).coerceAtLeast(0f) - 1.38f * (extent - .76f).coerceAtLeast(0f)

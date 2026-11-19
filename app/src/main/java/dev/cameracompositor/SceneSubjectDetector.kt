@@ -63,7 +63,7 @@ object SubjectDetection {
         return weight / total
     }
 
-    fun mainSubject(detections: List<DetectedSubject>, point: ScenePoint? = null): DetectedSubject? {
+    fun distinctSubjects(detections: List<DetectedSubject>): List<DetectedSubject> {
         val distinct = mutableListOf<DetectedSubject>()
         for (candidate in detections.sortedByDescending { it.confidence }) {
             val size = area(candidate.box)
@@ -73,6 +73,11 @@ object SubjectDetection {
                 }) distinct.add(candidate)
             if (distinct.size == 12) break
         }
+        return distinct
+    }
+
+    fun mainSubject(detections: List<DetectedSubject>, point: ScenePoint? = null): DetectedSubject? {
+        val distinct = distinctSubjects(detections)
         if (point != null) {
             return distinct.filter { it.confidence >= .46f && point.x in it.box.left..it.box.right && point.y in it.box.top..it.box.bottom }
                 .maxByOrNull { it.confidence - .30f * area(it.box) }
@@ -112,8 +117,11 @@ class SceneSubjectDetector(private val context: Context) : AutoCloseable {
     private var session: OrtSession? = null
     private var unavailable = false
 
-    fun detect(image: Bitmap, point: ScenePoint? = null): DetectedSubject? {
-        if (unavailable) return null
+    fun detect(image: Bitmap, point: ScenePoint? = null): DetectedSubject? =
+        SubjectDetection.mainSubject(detectAll(image), point)
+
+    fun detectAll(image: Bitmap): List<DetectedSubject> {
+        if (unavailable) return emptyList()
         return try {
             val model = session ?: open().also { session = it }
             val size = SubjectDetection.SIZE
@@ -146,16 +154,16 @@ class SceneSubjectDetector(private val context: Context) : AutoCloseable {
                         val boxes = (output.get(boxIds[index]).get() as OnnxTensor).floatBuffer
                         SubjectDetection.decode(scores, boxes, stride, width, height)
                     }
-                    SubjectDetection.mainSubject(found, point)
+                    SubjectDetection.distinctSubjects(found)
                 }
             }
         } catch (_: Exception) {
             unavailable = true
             runCatching { close() }
-            null
+            emptyList()
         } catch (_: LinkageError) {
             unavailable = true
-            null
+            emptyList()
         }
     }
 

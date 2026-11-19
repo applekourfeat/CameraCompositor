@@ -77,6 +77,57 @@ class AdaptiveFramingTest {
         assertTrue(ShotGeometry.aimReady(before.map { it.copy(x = it.x - .035f) }, tolerance))
     }
 
+    @Test fun distinctObjectsCompeteEvenWhenAFurnitureDetectionDominates() {
+        val room = layout { x, y -> when {
+            x < .26f -> 0x353535
+            ((x * 45).toInt() + (y * 51).toInt()) % 2 == 0 -> 0xC1AE97
+            else -> 0x514941
+        } }
+        val chair = DetectedSubject(SubjectBox(.05f, .08f, .91f, .88f), 56, .82f)
+        val smaller = DetectedSubject(SubjectBox(.56f, .31f, .74f, .53f), 75, .58f)
+        val subjects = ContextShots.observedSubjects(room, null, listOf(chair, smaller, smaller))
+        assertEquals(1, subjects.count { it.bounds == smaller.box })
+        val options = candidates(room, subjects)
+        val close = options.filter { it.subject?.bounds == smaller.box && it.crop.right - it.crop.left < .5f }
+        assertTrue(close.isNotEmpty())
+        assertTrue(close.all { ContextShots.containsSubject(it.crop, smaller.box) })
+        val ranked = AdaptiveFraming.choose(options, FloatArray(options.size) { 4f })
+        assertEquals(smaller.box, ranked?.shot?.subject?.bounds)
+    }
+
+    @Test fun higherZoomNeedsLightAndNeverExceedsTheCameraLimit() {
+        val room = layout { x, y -> when {
+            x < .3f -> 0x030303
+            ((x * 45).toInt() + (y * 51).toInt()) % 2 == 0 -> 0x404040
+            else -> 0x090909
+        } }
+        val subject = SceneSubject(SceneKind.OBJECTS, SubjectBox(.45f, .32f, .62f, .54f),
+            ScenePoint(.53f, .43f), .34f, detected = true)
+        assertTrue(candidates(room, listOf(subject)).all { 1 / (it.crop.right - it.crop.left) <= 1.851f })
+        val view = EnvironmentView(0, 1, 1f, 1.35f, null)
+        val map = EnvironmentMap(1).apply { add(view) }
+        val options = AdaptiveFraming.candidates(map, ShotEvidence(view, room, listOf(subject)), 3.2f)
+        assertTrue(options.all { 1 / (it.crop.right - it.crop.left) <= 1.351f })
+    }
+
+    @Test fun framedDetailNeedsAnEnclosedSubject() {
+        val framed = layout { x, y -> if (x in .26f.. .57f && y in .32f.. .59f) 0x373737 else 0xBABABA }
+        val stripes = layout { x, _ -> if (x in .26f.. .57f) 0x373737 else 0xBABABA }
+        val box = framed.framedDetail!!
+        assertTrue(box.left in .20f.. .28f && box.right in .55f.. .62f)
+        assertTrue(box.top in .28f.. .33f && box.bottom in .58f.. .65f)
+        assertNull(stripes.framedDetail)
+        assertTrue(ContextShots.observedSubjects(framed, null, emptyList()).single().outlinedDetail)
+    }
+
+    @Test fun weakClippedAnimalDetectionCannotVetoTheEntireScene() {
+        val room = layout { x, y -> if (x in .26f.. .57f && y in .32f.. .59f) 0x373737 else 0xBABABA }
+        val uncertain = DetectedSubject(SubjectBox(.34f, 0f, 1f, .65f), 15, .475f)
+        val subjects = ContextShots.observedSubjects(room, null, listOf(uncertain))
+        assertTrue(subjects.none { it.detected })
+        assertTrue(candidates(room, subjects).size > 1)
+    }
+
     private fun candidates(layout: SceneLayout, subjects: List<SceneSubject> = emptyList(),
                            required: SceneSubject? = null, zoom: Float = 1f): List<ContextShot> {
         val view = EnvironmentView(0, 1L, zoom, 3.2f, null)

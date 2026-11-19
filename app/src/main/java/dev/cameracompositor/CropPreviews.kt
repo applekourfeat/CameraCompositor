@@ -4,6 +4,20 @@ import android.graphics.*
 
 /** Manual fallback lets the tracking/zoom guide work without a network request. */
 object CropPreviews {
+    fun thumbnail(frame: Bitmap, corners: List<ScenePoint>): Bitmap {
+        val output = Bitmap.createBitmap(180, 240, Bitmap.Config.ARGB_8888)
+        val source = FloatArray(6)
+        for (i in 0..2) {
+            source[2*i] = corners[i].x * frame.width
+            source[2*i+1] = corners[i].y * frame.height
+        }
+        val transform = Matrix().apply {
+            setPolyToPoly(source, 0, floatArrayOf(0f, 0f, 180f, 0f, 180f, 240f), 0, 3)
+        }
+        Canvas(output).drawBitmap(frame, transform, Paint(Paint.FILTER_BITMAP_FLAG))
+        return output
+    }
+
     fun contactSheet(frame: Bitmap): Bitmap {
         val output = Bitmap.createBitmap(576, 768, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)

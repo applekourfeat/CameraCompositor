@@ -1,6 +1,6 @@
 # Camera Compositor
 
-The private [Vivo V30 adaptive build](docs/V0110_ADAPTIVE_COMPOSITION.md) chooses a framing automatically as you aim. It compares whole-scene layouts with subject-focused shots.
+The private [Vivo V30 build](docs/V0120_LEVEL_AND_SUBJECTS.md) chooses a framing automatically as you aim. A gravity level shows how to straighten the shot. The planner compares the room with closer views of individual subjects.
 
 Native Android camera research for live composition guidance. It can suggest a new angle when a subject is visibly cut off. The owner leads final UI/UX.
 
@@ -8,10 +8,10 @@ The main camera and automatic composition run offline on the regular Android cam
 
 ## Try the research build
 
-Install `artifacts/CameraCompositor-0.11.0-adaptive-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype.
+Install `artifacts/CameraCompositor-0.12.0-level-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype.
 
 1. Aim at the scene and line up the outline when it appears. The camera chooses the framing. Tap a subject if you want to choose what to keep in the frame. **Find shot** checks the view again.
-2. When the outlined frame is aligned and steady, **Auto shutter** starts a three-second countdown. Tap **Auto shutter on** to turn automatic photos off while keeping guidance. **Take photo** works at any time, and **Skip shot** dismisses the current proposal.
+2. Line up the two short level marks with the moving line. For a straight-down shot, center the dot. On eligible shots, **Auto shutter** starts its three-second countdown when the framing is verified, level and steady. **Take photo** works at any angle.
 3. **Options > Photo processing** defaults to **Camera JPEG**. Compatible cameras also offer manufacturer HDR, Night, Auto, and scene-aware selection. The photo status shows what actually saved the image. **Developer tools** contains camera capabilities, sweep export, optional ARCore testing and the personal-key online experiment.
 
 The guide tries to recover from brief interruptions and reevaluates if it loses its target. Saved photographs use quality-priority high-resolution capture, with manufacturer processing when exposed. Photo quality compared with Vivo's stock camera remains unmeasured.

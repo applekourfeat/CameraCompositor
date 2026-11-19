@@ -20,8 +20,9 @@ class ContextComposition(private val recognition: SceneRecognition, private val 
                 else "Include an edge, object, or doorway.", recheck = true)
         }
         if (!isActive()) return observe("Checking the view again…")
-        val detection = detector.detect(image, picked)
-        val subjects = ContextShots.subjects(layout, recognition.scores(image), detection)
+        val detections = detector.detectAll(image)
+        val detection = SubjectDetection.mainSubject(detections, picked)
+        val subjects = ContextShots.observedSubjects(layout, recognition.scores(image), detections)
         val target = when {
             picked != null -> selectedSubject(picked, layout, subjects, detection)
                 ?: return observe("Tap an area with a visible edge or detail.")
@@ -43,7 +44,8 @@ class ContextComposition(private val recognition: SceneRecognition, private val 
         val choice = AdaptiveFraming.choose(shots, scores?.getOrNull())
         if (choice != null) {
             val selected = choice.shot.subject?.kind
-            val label = choice.shot.cue?.title ?: selected?.description ?: "Selected subject"
+            val label = if (choice.shot.subject?.outlinedDetail == true) "outlined detail"
+                else choice.shot.cue?.title ?: selected?.description ?: "Selected subject"
             val reason = choice.shot.cue?.instruction ?: "Follow the outline to frame the $label."
             val guide = EnvironmentDecision.Guide(view.id, choice.shot.crop, label, reason)
             return LocalComposition.Result(guide, emptyMap(), choice.canAutoCapture, selected, shots.size, report)

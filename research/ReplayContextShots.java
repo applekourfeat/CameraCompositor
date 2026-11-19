@@ -46,7 +46,8 @@ class ReplayContextShots {
                 var view = new EnvironmentView(0, 1, zoom, 3.2f, null, null, null);
                 var map = new EnvironmentMap(1);
                 map.add(view);
-                var subjects = ContextShots.INSTANCE.subjects(layout, patches, SubjectDetection.INSTANCE.mainSubject(detections, null));
+                var subjects = adaptive ? ContextShots.INSTANCE.observedSubjects(layout, patches, detections) :
+                    ContextShots.INSTANCE.subjects(layout, patches, SubjectDetection.INSTANCE.mainSubject(detections, null));
                 var evidence = new ShotEvidence(view, layout, subjects);
                 var shots = adaptive ? AdaptiveFraming.INSTANCE.candidates(map, evidence, 3.2f, null) :
                     ContextShots.INSTANCE.candidates(map, List.of(evidence), CompositionStyle.THIRDS, 3.2f, null, null);

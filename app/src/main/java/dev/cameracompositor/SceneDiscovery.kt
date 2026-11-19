@@ -11,7 +11,8 @@ enum class SceneKind(val description: String, val subjectWeight: Float) {
 }
 
 data class SceneSubject(val kind: SceneKind, val bounds: SubjectBox, val point: ScenePoint, val strength: Float,
-                        val skyline: Boolean = false, val framingBounds: SubjectBox = bounds, val detected: Boolean = false)
+                        val skyline: Boolean = false, val framingBounds: SubjectBox = bounds, val detected: Boolean = false,
+                        val outlinedDetail: Boolean = false)
 
 data class SubjectHint(val kind: SceneKind, val point: ScenePoint)
 
