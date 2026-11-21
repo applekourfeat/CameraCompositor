@@ -48,7 +48,7 @@ class ReplayContextShots {
                 map.add(view);
                 var subjects = adaptive ? ContextShots.INSTANCE.observedSubjects(layout, patches, detections) :
                     ContextShots.INSTANCE.subjects(layout, patches, SubjectDetection.INSTANCE.mainSubject(detections, null));
-                var evidence = new ShotEvidence(view, layout, subjects);
+                var evidence = new ShotEvidence(view, layout, subjects, detections);
                 var shots = adaptive ? AdaptiveFraming.INSTANCE.candidates(map, evidence, 3.2f, null) :
                     ContextShots.INSTANCE.candidates(map, List.of(evidence), CompositionStyle.THIRDS, 3.2f, null, null);
                 System.out.println(shots.size());
@@ -56,7 +56,8 @@ class ReplayContextShots {
                     var box = shot.getComparisonBox();
                     System.out.println(box.getLeft() + " " + box.getTop() + " " + box.getRight() + " " + box.getBottom() +
                         " " + (shot.getCue() != null ? shot.getCue().name() :
-                        shot.getSubject() == null ? "wide" : shot.getSubject().getKind().name()));
+                        shot.getSubject() == null ? "wide" : shot.getSubject().getKind().name() +
+                        (shot.getSubject().getPaired() ? "_PAIR" : "")));
                 }
                 System.out.flush();
                 var scores = new float[shots.size()];

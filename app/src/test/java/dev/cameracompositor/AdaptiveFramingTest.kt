@@ -128,6 +128,41 @@ class AdaptiveFramingTest {
         assertTrue(candidates(room, subjects).size > 1)
     }
 
+    @Test fun secondPersonCanSupportAFrameWithoutQualifyingAsASoloSubject() {
+        val room = texturedScene()
+        val lead = DetectedSubject(SubjectBox(.20f, .48f, .32f, .73f), 0, .79f)
+        val other = DetectedSubject(SubjectBox(.55f, .47f, .65f, .70f), 0, .52f)
+        val subject = ContextShots.detectedSubject(lead)
+        val view = EnvironmentView(0, 1L, 1f, 3.2f, null)
+        val map = EnvironmentMap(1L).apply { add(view) }
+        val evidence = ShotEvidence(view, room, listOf(subject), listOf(lead, other))
+        val choices = AdaptiveFraming.candidates(map, evidence, 3.2f)
+        assertTrue(choices.any { it.subject?.paired == true })
+        val winner = AdaptiveFraming.choose(choices, FloatArray(choices.size) { 4f })!!
+        assertTrue(ContextShots.containsSubject(winner.shot.crop, lead.box))
+        assertTrue(ContextShots.containsSubject(winner.shot.crop, other.box))
+        val selected = AdaptiveFraming.candidates(map, evidence, 3.2f, subject)
+        assertTrue(selected.none { it.subject?.paired == true })
+        assertTrue(selected.any { !ContextShots.containsSubject(it.crop, other.box) })
+    }
+
+    @Test fun oneBirdAndDuplicateBoxesKeepTheirSoloFraming() {
+        val room = texturedScene()
+        val bird = DetectedSubject(SubjectBox(.4f, .35f, .59f, .60f), 14, .80f)
+        val view = EnvironmentView(0, 1L, 1f, 3.2f, null)
+        val map = EnvironmentMap(1L).apply { add(view) }
+        val evidence = ShotEvidence(view, room, listOf(ContextShots.detectedSubject(bird)))
+        val solo = AdaptiveFraming.candidates(map, evidence, 3.2f)
+        assertTrue(solo.any { it.subject != null })
+        assertEquals(solo, AdaptiveFraming.candidates(map, evidence.copy(detections = listOf(bird, bird)), 3.2f))
+    }
+
+    private fun texturedScene() = layout { x, y -> when {
+        y < .24f -> 0x555555
+        ((x * 45).toInt() + (y * 51).toInt()) % 2 == 0 -> 0xC7C7A9
+        else -> 0x484858
+    } }
+
     private fun candidates(layout: SceneLayout, subjects: List<SceneSubject> = emptyList(),
                            required: SceneSubject? = null, zoom: Float = 1f): List<ContextShot> {
         val view = EnvironmentView(0, 1L, zoom, 3.2f, null)

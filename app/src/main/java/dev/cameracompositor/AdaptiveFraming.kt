@@ -32,20 +32,73 @@ object AdaptiveFraming {
             it.skyline && it.strength >= .27f ||
                 it.kind == SceneKind.FOLIAGE && it.framingBounds != it.bounds && it.strength >= .24f
         }
-        val anchored = ContextShots.candidates(map, listOf(evidence), null, maxRelativeZoom,
+        val pair = if (required == null) subjectPair(evidence, protected) else null
+        val singles = ContextShots.candidates(map, listOf(evidence), null, maxRelativeZoom,
             requiredSubject = required).drop(1).filter { frame ->
             protected == null || ContextShots.containsSubject(frame.crop, protected.framingBounds)
         }
+        // A partner can add context even when its detection is too weak to lead a shot.
+        val paired = pair?.let {
+            ContextShots.candidates(map, listOf(evidence.copy(subjects = listOf(it.subject))), null, maxRelativeZoom).drop(1)
+        }.orEmpty()
+        val anchored = (singles + paired).map { pair?.accountForPartner(it) ?: it }.sortedByDescending { it.framingGain }
         // Reserve a place for each observed subject before filling the remaining scoring slots.
         val diverse = (anchored.distinctBy { it.subject } + anchored).distinct().take(22)
         val context = sceneCandidates(evidence, maxRelativeZoom, protected, strongSubject)
         val result = mutableListOf(original)
-        for (frame in (diverse + context).sortedByDescending { it.framingGain }) {
+        val adjustedContext = context.map { pair?.accountForPartner(it) ?: it }
+        for (frame in (diverse + adjustedContext).sortedByDescending { it.framingGain }) {
             if (result.none { ContextShots.overlap(it.comparisonBox, frame.comparisonBox) > .93f }) {
                 result.add(frame)
             }
         }
         return result
+    }
+
+    private data class PairFraming(val subject: SceneSubject, val first: SubjectBox, val second: SubjectBox,
+                                   val weight: Float) {
+        fun accountForPartner(frame: ContextShot): ContextShot {
+            // Compare with the opening photo, where both subjects are fully visible.
+            val retained = minOf(ContextShots.coverage(frame.crop, first), ContextShots.coverage(frame.crop, second))
+            return frame.copy(framingGain = frame.framingGain - weight * (1f - retained.coerceIn(0f, 1f)))
+        }
+    }
+
+    private fun subjectPair(evidence: ShotEvidence, protected: SceneSubject?): PairFraming? {
+        val primary = protected ?: evidence.subjects.firstOrNull { it.skyline } ?: return null
+        val first = primary.framingBounds
+        val partners = mutableListOf<Pair<SceneSubject, Float>>()
+        if (primary.detected) {
+            val detections = SubjectDetection.distinctSubjects(evidence.detections)
+            val anchor = detections.maxByOrNull { ContextShots.overlap(it.box, first) }
+            if (anchor != null && ContextShots.overlap(anchor.box, first) > .75f) {
+                for (other in detections) {
+                    if (other.category == anchor.category && other.confidence >= .45f && other !== anchor) {
+                        partners.add(ContextShots.detectedSubject(other) to 1.25f)
+                    }
+                }
+            }
+        }
+        for (other in evidence.subjects) {
+            if (primary.skyline && other.skyline || primary.kind == SceneKind.PERSON &&
+                (other.outlinedDetail || other.skyline || other.kind == SceneKind.FOLIAGE)) {
+                partners.add(other to .85f)
+            }
+        }
+        val firstSize = maxOf(first.right - first.left, first.bottom - first.top)
+        val partner = partners.filter { (other, _) ->
+            val b = other.framingBounds
+            val size = maxOf(b.right - b.left, b.bottom - b.top)
+            val separation = kotlin.math.hypot(other.point.x - primary.point.x, other.point.y - primary.point.y)
+            size / firstSize in .4f..2.5f && separation in .14f.. .60f &&
+                ContextShots.overlap(first, b) < .15f && ContextShots.containsSubject(full, b)
+        }.maxByOrNull { (other, weight) -> weight * other.strength } ?: return null
+        val second = partner.first.framingBounds
+        val box = SubjectBox(minOf(first.left, second.left), minOf(first.top, second.top),
+            maxOf(first.right, second.right), maxOf(first.bottom, second.bottom))
+        val center = ScenePoint((box.left + box.right) / 2, (box.top + box.bottom) / 2)
+        return PairFraming(primary.copy(bounds = box, framingBounds = box, point = center, paired = true),
+            first, second, partner.second)
     }
 
     fun choose(frames: List<ContextShot>, scores: FloatArray?): AdaptiveShot? {

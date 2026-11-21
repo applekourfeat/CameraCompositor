@@ -1,0 +1,262 @@
+{
+  "scope": "Desktop still-image replay with private Vivo ranker. The 60 evaluation scenes include previously inspected diagnostic examples. A changed crop measures behavior, not preference.",
+  "summary": {
+    "development": {
+      "scenes": 20,
+      "changedCrops": 0
+    },
+    "evaluation": {
+      "scenes": 60,
+      "changedCrops": 4
+    },
+    "rooms": {
+      "scenes": 16,
+      "changedCrops": 0
+    },
+    "references": {
+      "scenes": 5,
+      "changedCrops": 0
+    }
+  },
+  "changes": [
+    {
+      "scene": "gaic-test-475676",
+      "set": "evaluation",
+      "before": {
+        "decision": "Guide",
+        "subject": "PERSON",
+        "frame": [
+          0.39073646,
+          0.26267213,
+          0.8107364,
+          0.68267214
+        ],
+        "chosenZoom": 2.381,
+        "autoShutterEligible": true
+      },
+      "after": {
+        "decision": "Guide",
+        "subject": "PERSON_PAIR",
+        "frame": [
+          0.06088546,
+          0.0,
+          0.91088545,
+          0.85
+        ],
+        "chosenZoom": 1.176,
+        "autoShutterEligible": true
+      }
+    },
+    {
+      "scene": "gaic-test-223721",
+      "set": "evaluation",
+      "before": {
+        "decision": "Guide",
+        "subject": "PERSON",
+        "frame": [
+          0.059364438,
+          0.51123345,
+          0.41936445,
+          0.87123346
+        ],
+        "chosenZoom": 2.778,
+        "autoShutterEligible": true
+      },
+      "after": {
+        "decision": "Guide",
+        "subject": "PERSON",
+        "frame": [
+          0.08396445,
+          0.49683344,
+          0.5039644,
+          0.9168334
+        ],
+        "chosenZoom": 2.381,
+        "autoShutterEligible": true
+      }
+    },
+    {
+      "scene": "gaic-test-442424",
+      "set": "evaluation",
+      "before": {
+        "decision": "Keep",
+        "subject": "wide",
+        "frame": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "chosenZoom": 1.0,
+        "autoShutterEligible": false
+      },
+      "after": {
+        "decision": "Guide",
+        "subject": "PERSON_PAIR",
+        "frame": [
+          0.09011045,
+          0.054923713,
+          0.94011045,
+          0.90492374
+        ],
+        "chosenZoom": 1.176,
+        "autoShutterEligible": false
+      }
+    },
+    {
+      "scene": "gaic-test-309808",
+      "set": "evaluation",
+      "before": {
+        "decision": "Guide",
+        "subject": "PERSON",
+        "frame": [
+          0.0,
+          0.5001676,
+          0.42,
+          0.92016757
+        ],
+        "chosenZoom": 2.381,
+        "autoShutterEligible": true
+      },
+      "after": {
+        "decision": "Guide",
+        "subject": "PERSON_PAIR",
+        "frame": [
+          0.0,
+          0.22000003,
+          0.78,
+          1.0
+        ],
+        "chosenZoom": 1.282,
+        "autoShutterEligible": true
+      }
+    }
+  ],
+  "referenceChecks": [
+    {
+      "scene": "base.jpg",
+      "before": 1.613,
+      "after": 1.613,
+      "decision": "Guide"
+    },
+    {
+      "scene": "framed.jpg",
+      "before": 1.61,
+      "after": 1.61,
+      "decision": "Keep"
+    },
+    {
+      "scene": "scene-clean.jpg",
+      "before": 0.909,
+      "after": 0.909,
+      "decision": "Guide"
+    },
+    {
+      "scene": "after-6.05.jpg",
+      "before": 0.5,
+      "after": 0.5,
+      "decision": "Keep"
+    },
+    {
+      "scene": "flat-control.png",
+      "before": 1.0,
+      "after": 1.0,
+      "decision": "Keep"
+    }
+  ],
+  "smallChangeCheck": {
+    "method": "For each source, remove a 2% margin on every edge and resize to the source size. Shift that crop center by 1% left, right, up or down, or adjust the centered image brightness by factors 0.96 and 1.04. Run independent selections at 1x. This measures repeated still selection, not live tracking.",
+    "scenes": {
+      "gaic-test-475676": {
+        "center": {
+          "zoom": 2.381,
+          "subject": "PERSON"
+        },
+        "left": {
+          "zoom": 1.176,
+          "subject": "PERSON_PAIR"
+        },
+        "right": {
+          "zoom": 1.176,
+          "subject": "PERSON_PAIR"
+        },
+        "up": {
+          "zoom": 1.282,
+          "subject": "PERSON_PAIR"
+        },
+        "down": {
+          "zoom": 2.778,
+          "subject": "PERSON"
+        },
+        "dim": {
+          "zoom": 2.381,
+          "subject": "PERSON"
+        },
+        "bright": {
+          "zoom": 2.381,
+          "subject": "PERSON"
+        }
+      },
+      "gaic-test-309808": {
+        "center": {
+          "zoom": 1.282,
+          "subject": "PERSON"
+        },
+        "left": {
+          "zoom": 1.282,
+          "subject": "PERSON"
+        },
+        "right": {
+          "zoom": 1.429,
+          "subject": "PERSON"
+        },
+        "up": {
+          "zoom": 1.282,
+          "subject": "PERSON"
+        },
+        "down": {
+          "zoom": 1.282,
+          "subject": "PERSON"
+        },
+        "dim": {
+          "zoom": 1.282,
+          "subject": "PERSON"
+        },
+        "bright": {
+          "zoom": 1.282,
+          "subject": "PERSON"
+        }
+      },
+      "gaic-test-396968": {
+        "center": {
+          "zoom": 2.083,
+          "subject": "ANIMAL"
+        },
+        "left": {
+          "zoom": 2.381,
+          "subject": "ANIMAL"
+        },
+        "right": {
+          "zoom": 2.083,
+          "subject": "ANIMAL"
+        },
+        "up": {
+          "zoom": 2.083,
+          "subject": "ANIMAL"
+        },
+        "down": {
+          "zoom": 2.083,
+          "subject": "ANIMAL"
+        },
+        "dim": {
+          "zoom": 2.083,
+          "subject": "ANIMAL"
+        },
+        "bright": {
+          "zoom": 2.083,
+          "subject": "ANIMAL"
+        }
+      }
+    }
+  }
+}

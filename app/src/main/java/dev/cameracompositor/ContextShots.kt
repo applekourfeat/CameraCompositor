@@ -4,7 +4,8 @@ import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.ln
 
-data class ShotEvidence(val view: EnvironmentView, val layout: SceneLayout, val subjects: List<SceneSubject>)
+data class ShotEvidence @JvmOverloads constructor(val view: EnvironmentView, val layout: SceneLayout, val subjects: List<SceneSubject>,
+                        val detections: List<DetectedSubject> = emptyList())
 data class ContextShot(val viewId: Int, val crop: SubjectBox, val comparisonBox: SubjectBox,
                        val subject: SceneSubject?, val framingGain: Float, val cue: LayoutCue? = null)
 data class RankedShot(val shot: ContextShot, val gain: Float, val photoScore: Float)
@@ -93,7 +94,7 @@ object ContextShots {
                 val baselineQuality = framing(current.layout, full, baseline,
                     if (style == null && view.id == context && (subject.detected || subject.outlinedDetail))
                         distinctSubjects else current.subjects, style, placements)
-                val allowedSizes = if (style == null && zoomLimit < 1.40f) listOf(.91f, .85f) + sizes else sizes
+                val allowedSizes = if (style == null && (zoomLimit < 1.40f || subject.paired)) listOf(.91f, .85f) + sizes else sizes
                 val proposals = allowedSizes.filter { 1 / it <= zoomLimit + .001f }.flatMap { size ->
                     placements.map { position -> boxAt(subject.point, position, size) }
                 }.distinct()
@@ -215,7 +216,7 @@ object ContextShots {
     private fun intersection(a: SubjectBox, b: SubjectBox) =
         (minOf(a.right, b.right) - maxOf(a.left, b.left)).coerceAtLeast(0f) *
             (minOf(a.bottom, b.bottom) - maxOf(a.top, b.top)).coerceAtLeast(0f)
-    private fun coverage(frame: SubjectBox, subject: SubjectBox) = intersection(frame, subject) / area(subject)
+    internal fun coverage(frame: SubjectBox, subject: SubjectBox) = intersection(frame, subject) / area(subject)
     internal fun overlap(a: SubjectBox, b: SubjectBox): Float {
         val shared = intersection(a, b)
         return shared / (area(a) + area(b) - shared)

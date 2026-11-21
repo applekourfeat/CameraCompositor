@@ -32,7 +32,7 @@ class ContextComposition(private val recognition: SceneRecognition, private val 
                 ?: return observe("Bring the subject back into view.")
             else -> null
         }
-        val evidence = ShotEvidence(view, layout, if (target == null) subjects else listOf(target) + subjects.filterNot { it == target })
+        val evidence = ShotEvidence(view, layout, if (target == null) subjects else listOf(target) + subjects.filterNot { it == target }, detections)
         val shots = AdaptiveFraming.candidates(batch.map, evidence, maxRelativeZoom, target)
         if (!isActive()) return observe("Checking the view again…")
         val scores = scorer?.takeIf { shots.size > 1 }?.let { model ->
@@ -44,7 +44,8 @@ class ContextComposition(private val recognition: SceneRecognition, private val 
         val choice = AdaptiveFraming.choose(shots, scores?.getOrNull())
         if (choice != null) {
             val selected = choice.shot.subject?.kind
-            val label = if (choice.shot.subject?.outlinedDetail == true) "outlined detail"
+            val label = if (choice.shot.subject?.paired == true) "pair"
+                else if (choice.shot.subject?.outlinedDetail == true) "outlined detail"
                 else choice.shot.cue?.title ?: selected?.description ?: "Selected subject"
             val reason = choice.shot.cue?.instruction ?: "Follow the outline to frame the $label."
             val guide = EnvironmentDecision.Guide(view.id, choice.shot.crop, label, reason)
