@@ -70,6 +70,18 @@ After preparing the same benchmark images and NanoDet model and building the app
 
 After building the app and preparing the frozen benchmark and NanoDet asset, run `research/evaluate_composition_styles.py` with `--java` set to the local JDK executable and `--classpath` pointing to `app/build/tmp/kotlin-classes/debug` and the Kotlin stdlib JAR. Use the platform's classpath separator. The Java driver runs the same Kotlin framing policy as the app. `--reference` and `--tap X Y` can test a local photo separately. The replay records composition choices and subject coverage. It does not measure blind preference or device performance.
 
+### Reviewing the Vivo planner's framing
+
+`review_live_planner.py` uses the frozen benchmark photos, the committed 0.11/0.12 paired replay, and the historical Thirds output in `.local/composition-style-replays.json`. The latter is produced by `evaluate_composition_styles.py --java <java> --classpath <compiled classes and Kotlin stdlib>`. Run these commands with the research Python environment:
+
+```powershell
+& $ResearchPython research/review_live_planner.py
+# After exporting votes from the generated review.html
+& $ResearchPython research/review_live_planner.py --answers 'path/to/composition-review-answers.json'
+```
+
+Open `artifacts/composition-research/v012-review/review.html` and label the starting photographs first. The page shows the distinct pairs in shuffled order and saves progress in the browser. Keep the answer key separate from the reviewer. The scorer counts identical crops as ties and reports how often the planner kept already-good views. The 70% threshold uses every labeled improvable scene, including ties and unsure votes. It requires complete starting labels, all distinct votes on improvable scenes for that comparison, and at least 20 improvable scenes. Thirds uses its recorded still-image framing. Camera motion and physical leveling need a separate phone test.
+
 ### Camera-only software depth
 
 Run `research/fetch_subject_model.py` to download and verify the pinned Apache-licensed NanoDet checkpoint. The script writes the processed ONNX to `.local/subject-assets` for Android builds. The app can still plan from image cues when the subject model is absent or finds no subject.

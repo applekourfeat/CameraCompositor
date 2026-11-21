@@ -26,13 +26,18 @@ button,select{font:inherit;margin:4px;padding:8px}button:focus-visible{outline:3
 <section id="labeling" hidden><img id="starting" alt="Starting view"><p>Does this starting view already have a good composition?</p><button data-label="good">Already good</button><button data-label="needs_work">Needs improvement</button><button data-label="unsure">Unsure</button></section>
 <label>Notes <textarea id="notes" placeholder="Optional: cut subject, distracting edge, lost context..."></textarea></label>
 <button id="previous">Previous</button><button id="next">Next / skip</button><button id="download">Download answers</button>
-<p id="storage"></p><p>Only the separate analysis script can determine a result. The fixed crop control is a limited static comparison; it does not reproduce the old phone detector and pan guidance.</p>
+<p id="storage"></p><p id="scope">Only the separate analysis script can determine a result. The fixed crop control is a limited static comparison; it does not reproduce the old phone detector and pan guidance.</p>
 <script>
 const dataset=__DATA__;
 const key='camera-composition-review-'+dataset.manifestHash;
 let state={schema:1,manifestHash:dataset.manifestHash,answers:{},startingViews:{}},index=0;
 try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved&&saved.manifestHash===dataset.manifestHash)state=saved;}catch(e){}
 const el=id=>document.getElementById(id);
+if(dataset.tasks){
+ el('split').replaceChildren(new Option('Evaluation','evaluation'));
+ el('task').replaceChildren(...dataset.tasks.map(([value,label])=>new Option(label,value)));
+ el('scope').textContent=dataset.scope;
+}
 function items(){const split=el('split').value,task=el('task').value;return task==='labels'?dataset.starts.filter(x=>x.split===split):dataset.trials.filter(x=>x.split===split&&x.type===task)}
 function save(){try{localStorage.setItem(key,JSON.stringify(state));el('storage').textContent='Progress saved in this browser. Download answers to keep a portable copy.'}catch(e){el('storage').textContent='Browser storage is unavailable. Download answers before closing this page.'}}
 function render(){const list=items();index=Math.min(Math.max(index,0),list.length-1);const item=list[index],labels=el('task').value==='labels';el('labeling').hidden=!labels;el('comparison').hidden=labels;
