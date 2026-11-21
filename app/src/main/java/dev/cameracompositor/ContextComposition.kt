@@ -33,7 +33,14 @@ class ContextComposition(private val recognition: SceneRecognition, private val 
             else -> null
         }
         val evidence = ShotEvidence(view, layout, if (target == null) subjects else listOf(target) + subjects.filterNot { it == target }, detections)
-        val shots = AdaptiveFraming.candidates(batch.map, evidence, maxRelativeZoom, target)
+        val previousLandmark = if (target == null && subjects.any { it.detected && it.kind == SceneKind.PERSON }) {
+            batch.frames.dropLast(1).asReversed().firstNotNullOfOrNull { earlier ->
+                if (isActive() && batch.map.project(earlier.view.id, view.id, SubjectBox(0f, 0f, 1f, 1f)) != null)
+                    RegisteredLandmark.recover(sceneLayout(earlier.frame.image), layout, batch.map, earlier.view, view)
+                else null
+            }
+        } else null
+        val shots = AdaptiveFraming.candidates(batch.map, evidence, maxRelativeZoom, target, previousLandmark)
         if (!isActive()) return observe("Checking the view again…")
         val scores = scorer?.takeIf { shots.size > 1 }?.let { model ->
             runCatching {

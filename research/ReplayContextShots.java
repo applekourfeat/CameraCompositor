@@ -25,6 +25,7 @@ class ReplayContextShots {
     public static void main(String[] args) throws Exception {
         boolean adaptive = List.of(args).contains("--adaptive");
         boolean useRanker = !List.of(args).contains("--geometry-only");
+        boolean window = List.of(args).contains("--window");
         try (var in = new DataInputStream(new BufferedInputStream(System.in))) {
             int length;
             while ((length = in.readInt()) > 0) {
@@ -43,13 +44,38 @@ class ReplayContextShots {
                 var patches = new float[count];
                 for (int i = 0; i < count; i++) patches[i] = in.readFloat();
                 var layout = layout(path);
-                var view = new EnvironmentView(0, 1, zoom, 3.2f, null, null, null);
                 var map = new EnvironmentMap(1);
+                int history = window ? in.readInt() : 0;
+                if (history < 0 || history > 2) throw new IOException("Invalid observation count");
+                var previousLayouts = new ArrayList<SceneLayout>();
+                var previousViews = new ArrayList<EnvironmentView>();
+                ViewRegistration link = null;
+                for (int i = 0; i < history; i++) {
+                    var earlier = new EnvironmentView(i, 1 + 120L * i, zoom, 3.2f, link, i == 0 ? null : i-1, null);
+                    map.add(earlier);
+                    previousViews.add(earlier);
+                    previousLayouts.add(layout(new String(in.readNBytes(in.readInt()), StandardCharsets.UTF_8)));
+                    link = null;
+                    if (in.readBoolean()) {
+                        int inliers = in.readInt(), tracks = in.readInt();
+                        float motion = in.readFloat(), error = in.readFloat(), coverage = in.readFloat();
+                        var matrix = new ArrayList<Float>();
+                        for (int j = 0; j < 9; j++) matrix.add(in.readFloat());
+                        link = new ViewRegistration(inliers, tracks, motion, error, coverage, new ImageProjection(matrix), null);
+                    }
+                }
+                var view = new EnvironmentView(history, 1 + 120L * history, zoom, 3.2f, link, history == 0 ? null : history-1, null);
                 map.add(view);
                 var subjects = adaptive ? ContextShots.INSTANCE.observedSubjects(layout, patches, detections) :
                     ContextShots.INSTANCE.subjects(layout, patches, SubjectDetection.INSTANCE.mainSubject(detections, null));
                 var evidence = new ShotEvidence(view, layout, subjects, detections);
-                var shots = adaptive ? AdaptiveFraming.INSTANCE.candidates(map, evidence, 3.2f, null) :
+                SubjectBox landmark = null;
+                if (subjects.stream().anyMatch(s -> s.getDetected() && s.getKind() == SceneKind.PERSON)) {
+                    for (int i = history-1; i >= 0 && landmark == null; i--) {
+                        landmark = RegisteredLandmark.INSTANCE.recover(previousLayouts.get(i), layout, map, previousViews.get(i), view);
+                    }
+                }
+                var shots = adaptive ? AdaptiveFraming.INSTANCE.candidates(map, evidence, 3.2f, null, landmark) :
                     ContextShots.INSTANCE.candidates(map, List.of(evidence), CompositionStyle.THIRDS, 3.2f, null, null);
                 System.out.println(shots.size());
                 for (var shot : shots) {

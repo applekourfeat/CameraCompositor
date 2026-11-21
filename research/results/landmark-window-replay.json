@@ -1,0 +1,741 @@
+{
+  "method": "Three diagnostic photos use a sliding window over seven synthetic variations after the original. Other photos compare the third observation (original, centered crop, left crop). Both policies see identical current pixels. Links use desktop optical flow. Four palm clip excerpts are evaluated separately. No phone timings or preference votes.",
+  "scenes": 80,
+  "evaluatedVariations": 98,
+  "changedVariantsByScene": {
+    "gaic-val-451437": 0,
+    "gaic-val-318776": 0,
+    "gaic-val-238737": 0,
+    "gaic-val-420461": 0,
+    "gaic-val-251975": 0,
+    "gaic-val-296311": 0,
+    "gaic-val-343850": 0,
+    "gaic-val-398441": 0,
+    "gaic-val-253798": 0,
+    "gaic-val-269830": 0,
+    "gaic-val-292556": 0,
+    "gaic-val-216030": 0,
+    "gaic-val-255005": 0,
+    "gaic-val-481808": 0,
+    "gaic-val-217729": 0,
+    "gaic-val-409964": 0,
+    "gaic-val-323970": 0,
+    "gaic-val-254884": 0,
+    "gaic-val-212042": 0,
+    "gaic-val-455503": 0,
+    "gaic-test-417815": 0,
+    "gaic-test-414429": 0,
+    "gaic-test-405358": 1,
+    "gaic-test-472295": 0,
+    "gaic-test-475676": 3,
+    "gaic-test-422879": 0,
+    "gaic-test-223721": 0,
+    "gaic-test-269979": 0,
+    "gaic-test-451263": 0,
+    "gaic-test-442424": 0,
+    "gaic-test-490393": 0,
+    "gaic-test-313667": 0,
+    "gaic-test-264035": 0,
+    "gaic-test-225087": 0,
+    "gaic-test-408054": 0,
+    "gaic-test-430541": 0,
+    "gaic-test-224003": 0,
+    "gaic-test-236160": 0,
+    "gaic-test-307903": 0,
+    "gaic-test-396172": 0,
+    "gaic-test-231629": 0,
+    "gaic-test-233781": 0,
+    "gaic-test-392985": 0,
+    "gaic-test-309808": 0,
+    "gaic-test-294427": 0,
+    "gaic-test-472330": 0,
+    "gaic-test-220827": 0,
+    "gaic-test-344258": 0,
+    "gaic-test-243796": 0,
+    "gaic-test-263479": 0,
+    "gaic-test-490217": 0,
+    "gaic-test-326329": 0,
+    "gaic-test-321720": 0,
+    "gaic-test-271146": 0,
+    "gaic-test-290240": 0,
+    "gaic-test-236854": 0,
+    "gaic-test-281995": 0,
+    "gaic-test-221520": 0,
+    "gaic-test-294272": 0,
+    "gaic-test-243460": 0,
+    "gaic-test-255010": 0,
+    "gaic-test-238563": 0,
+    "gaic-test-274076": 0,
+    "gaic-test-254375": 0,
+    "gaic-test-220921": 0,
+    "gaic-test-260596": 0,
+    "gaic-test-425907": 0,
+    "gaic-test-483387": 0,
+    "gaic-test-396968": 0,
+    "gaic-test-234404": 0,
+    "gaic-test-302180": 0,
+    "gaic-test-215046": 0,
+    "gaic-test-211144": 0,
+    "gaic-test-286151": 0,
+    "gaic-test-222619": 0,
+    "gaic-test-400943": 0,
+    "gaic-test-255509": 0,
+    "gaic-test-492029": 0,
+    "gaic-test-401710": 0,
+    "gaic-test-475757": 0
+  },
+  "examples": {
+    "gaic-test-475676": [
+      {
+        "frame": "475676",
+        "single": {
+          "zoom": 1.176,
+          "box": [
+            0.06088546,
+            0.0,
+            0.91088545,
+            0.85
+          ],
+          "subject": "PERSON_PAIR"
+        },
+        "window": {
+          "zoom": 1.176,
+          "box": [
+            0.06088546,
+            0.0,
+            0.91088545,
+            0.85
+          ],
+          "subject": "PERSON_PAIR"
+        }
+      },
+      {
+        "frame": "center",
+        "single": {
+          "zoom": 2.381,
+          "box": [
+            0.3901127,
+            0.25355056,
+            0.8101127,
+            0.67355055
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 1.176,
+          "box": [
+            0.055768162,
+            0.0,
+            0.90576816,
+            0.85
+          ],
+          "subject": "PERSON_PAIR"
+        }
+      },
+      {
+        "frame": "left",
+        "single": {
+          "zoom": 1.176,
+          "box": [
+            0.04735318,
+            0.0,
+            0.8973532,
+            0.85
+          ],
+          "subject": "PERSON_PAIR"
+        },
+        "window": {
+          "zoom": 1.176,
+          "box": [
+            0.04735318,
+            0.0,
+            0.8973532,
+            0.85
+          ],
+          "subject": "PERSON_PAIR"
+        }
+      },
+      {
+        "frame": "right",
+        "single": {
+          "zoom": 1.176,
+          "box": [
+            0.037963122,
+            0.0,
+            0.8879632,
+            0.85
+          ],
+          "subject": "PERSON_PAIR"
+        },
+        "window": {
+          "zoom": 1.176,
+          "box": [
+            0.037963122,
+            0.0,
+            0.8879632,
+            0.85
+          ],
+          "subject": "PERSON_PAIR"
+        }
+      },
+      {
+        "frame": "up",
+        "single": {
+          "zoom": 1.282,
+          "box": [
+            0.04519075,
+            0.0,
+            0.8251907,
+            0.78
+          ],
+          "subject": "PERSON_PAIR"
+        },
+        "window": {
+          "zoom": 1.282,
+          "box": [
+            0.04519075,
+            0.0,
+            0.8251907,
+            0.78
+          ],
+          "subject": "PERSON_PAIR"
+        }
+      },
+      {
+        "frame": "down",
+        "single": {
+          "zoom": 2.778,
+          "box": [
+            0.4093781,
+            0.28013992,
+            0.7693781,
+            0.64013994
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 2.778,
+          "box": [
+            0.4093781,
+            0.28013992,
+            0.7693781,
+            0.64013994
+          ],
+          "subject": "PERSON"
+        }
+      },
+      {
+        "frame": "dim",
+        "single": {
+          "zoom": 2.381,
+          "box": [
+            0.3898986,
+            0.25340584,
+            0.8098986,
+            0.6734058
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 1.0,
+          "box": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ],
+          "subject": "wide"
+        }
+      },
+      {
+        "frame": "bright",
+        "single": {
+          "zoom": 2.381,
+          "box": [
+            0.38995028,
+            0.2536118,
+            0.80995023,
+            0.67361176
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 1.176,
+          "box": [
+            0.020826787,
+            0.0,
+            0.87082684,
+            0.85
+          ],
+          "subject": "PERSON_PAIR"
+        }
+      }
+    ],
+    "gaic-test-309808": [
+      {
+        "frame": "309808",
+        "single": {
+          "zoom": 1.282,
+          "box": [
+            0.0,
+            0.22000003,
+            0.78,
+            1.0
+          ],
+          "subject": "PERSON_PAIR"
+        },
+        "window": {
+          "zoom": 1.282,
+          "box": [
+            0.0,
+            0.22000003,
+            0.78,
+            1.0
+          ],
+          "subject": "PERSON_PAIR"
+        }
+      },
+      {
+        "frame": "center",
+        "single": {
+          "zoom": 1.282,
+          "box": [
+            0.037551284,
+            0.22000003,
+            0.81755126,
+            1.0
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 1.282,
+          "box": [
+            0.037551284,
+            0.22000003,
+            0.81755126,
+            1.0
+          ],
+          "subject": "PERSON"
+        }
+      },
+      {
+        "frame": "left",
+        "single": {
+          "zoom": 1.282,
+          "box": [
+            0.0,
+            0.21971425,
+            0.78,
+            0.99971426
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 1.282,
+          "box": [
+            0.0,
+            0.21971425,
+            0.78,
+            0.99971426
+          ],
+          "subject": "PERSON"
+        }
+      },
+      {
+        "frame": "right",
+        "single": {
+          "zoom": 1.429,
+          "box": [
+            0.0,
+            0.3,
+            0.7,
+            1.0
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 1.429,
+          "box": [
+            0.0,
+            0.3,
+            0.7,
+            1.0
+          ],
+          "subject": "PERSON"
+        }
+      },
+      {
+        "frame": "up",
+        "single": {
+          "zoom": 1.282,
+          "box": [
+            0.0,
+            0.22000003,
+            0.78,
+            1.0
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 1.282,
+          "box": [
+            0.0,
+            0.22000003,
+            0.78,
+            1.0
+          ],
+          "subject": "PERSON"
+        }
+      },
+      {
+        "frame": "down",
+        "single": {
+          "zoom": 1.282,
+          "box": [
+            0.0,
+            0.2138435,
+            0.78,
+            0.99384344
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 1.282,
+          "box": [
+            0.0,
+            0.2138435,
+            0.78,
+            0.99384344
+          ],
+          "subject": "PERSON"
+        }
+      },
+      {
+        "frame": "dim",
+        "single": {
+          "zoom": 1.282,
+          "box": [
+            0.0,
+            0.22000003,
+            0.78,
+            1.0
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 1.282,
+          "box": [
+            0.0,
+            0.22000003,
+            0.78,
+            1.0
+          ],
+          "subject": "PERSON"
+        }
+      },
+      {
+        "frame": "bright",
+        "single": {
+          "zoom": 1.282,
+          "box": [
+            0.037471652,
+            0.22000003,
+            0.8174716,
+            1.0
+          ],
+          "subject": "PERSON"
+        },
+        "window": {
+          "zoom": 1.282,
+          "box": [
+            0.037471652,
+            0.22000003,
+            0.8174716,
+            1.0
+          ],
+          "subject": "PERSON"
+        }
+      }
+    ],
+    "gaic-test-396968": [
+      {
+        "frame": "396968",
+        "single": {
+          "zoom": 2.083,
+          "box": [
+            0.31700546,
+            0.3312751,
+            0.7970054,
+            0.8112751
+          ],
+          "subject": "ANIMAL"
+        },
+        "window": {
+          "zoom": 2.083,
+          "box": [
+            0.31700546,
+            0.3312751,
+            0.7970054,
+            0.8112751
+          ],
+          "subject": "ANIMAL"
+        }
+      },
+      {
+        "frame": "center",
+        "single": {
+          "zoom": 2.083,
+          "box": [
+            0.32207417,
+            0.33396238,
+            0.8020742,
+            0.81396234
+          ],
+          "subject": "ANIMAL"
+        },
+        "window": {
+          "zoom": 2.083,
+          "box": [
+            0.32207417,
+            0.33396238,
+            0.8020742,
+            0.81396234
+          ],
+          "subject": "ANIMAL"
+        }
+      },
+      {
+        "frame": "left",
+        "single": {
+          "zoom": 2.381,
+          "box": [
+            0.36402947,
+            0.3629065,
+            0.7840295,
+            0.7829065
+          ],
+          "subject": "ANIMAL"
+        },
+        "window": {
+          "zoom": 2.381,
+          "box": [
+            0.36402947,
+            0.3629065,
+            0.7840295,
+            0.7829065
+          ],
+          "subject": "ANIMAL"
+        }
+      },
+      {
+        "frame": "right",
+        "single": {
+          "zoom": 2.083,
+          "box": [
+            0.31494808,
+            0.33802223,
+            0.7949481,
+            0.81802225
+          ],
+          "subject": "ANIMAL"
+        },
+        "window": {
+          "zoom": 2.083,
+          "box": [
+            0.31494808,
+            0.33802223,
+            0.7949481,
+            0.81802225
+          ],
+          "subject": "ANIMAL"
+        }
+      },
+      {
+        "frame": "up",
+        "single": {
+          "zoom": 2.083,
+          "box": [
+            0.32322544,
+            0.34367418,
+            0.8032254,
+            0.8236742
+          ],
+          "subject": "ANIMAL"
+        },
+        "window": {
+          "zoom": 2.083,
+          "box": [
+            0.32322544,
+            0.34367418,
+            0.8032254,
+            0.8236742
+          ],
+          "subject": "ANIMAL"
+        }
+      },
+      {
+        "frame": "down",
+        "single": {
+          "zoom": 2.083,
+          "box": [
+            0.26170135,
+            0.2679167,
+            0.74170136,
+            0.7479167
+          ],
+          "subject": "ANIMAL"
+        },
+        "window": {
+          "zoom": 2.083,
+          "box": [
+            0.26170135,
+            0.2679167,
+            0.74170136,
+            0.7479167
+          ],
+          "subject": "ANIMAL"
+        }
+      },
+      {
+        "frame": "dim",
+        "single": {
+          "zoom": 2.083,
+          "box": [
+            0.32063282,
+            0.33403862,
+            0.80063283,
+            0.81403863
+          ],
+          "subject": "ANIMAL"
+        },
+        "window": {
+          "zoom": 2.083,
+          "box": [
+            0.32063282,
+            0.33403862,
+            0.80063283,
+            0.81403863
+          ],
+          "subject": "ANIMAL"
+        }
+      },
+      {
+        "frame": "bright",
+        "single": {
+          "zoom": 2.083,
+          "box": [
+            0.32246572,
+            0.33385336,
+            0.8024657,
+            0.8138534
+          ],
+          "subject": "ANIMAL"
+        },
+        "window": {
+          "zoom": 2.083,
+          "box": [
+            0.32246572,
+            0.33385336,
+            0.8024657,
+            0.8138534
+          ],
+          "subject": "ANIMAL"
+        }
+      }
+    ],
+    "palm-clip": [
+      {
+        "frame": "after-5.1",
+        "single": {
+          "zoom": 0.806,
+          "box": [
+            0.38,
+            0.038347483,
+            1.0,
+            0.6583475
+          ],
+          "subject": "FOLIAGE"
+        },
+        "window": {
+          "zoom": 0.806,
+          "box": [
+            0.38,
+            0.038347483,
+            1.0,
+            0.6583475
+          ],
+          "subject": "FOLIAGE"
+        }
+      },
+      {
+        "frame": "after-5.4",
+        "single": {
+          "zoom": 0.806,
+          "box": [
+            0.3274273,
+            0.10037379,
+            0.9474273,
+            0.7203738
+          ],
+          "subject": "FOLIAGE"
+        },
+        "window": {
+          "zoom": 0.806,
+          "box": [
+            0.3274273,
+            0.10037379,
+            0.9474273,
+            0.7203738
+          ],
+          "subject": "FOLIAGE"
+        }
+      },
+      {
+        "frame": "after-5.75",
+        "single": {
+          "zoom": 0.909,
+          "box": [
+            0.37916228,
+            0.10481039,
+            0.92916226,
+            0.6548104
+          ],
+          "subject": "FOLIAGE"
+        },
+        "window": {
+          "zoom": 0.909,
+          "box": [
+            0.37916228,
+            0.10481039,
+            0.92916226,
+            0.6548104
+          ],
+          "subject": "FOLIAGE"
+        }
+      },
+      {
+        "frame": "after-6.05",
+        "single": {
+          "zoom": 0.5,
+          "box": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ],
+          "subject": "wide"
+        },
+        "window": {
+          "zoom": 0.5,
+          "box": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ],
+          "subject": "wide"
+        }
+      }
+    ]
+  }
+}

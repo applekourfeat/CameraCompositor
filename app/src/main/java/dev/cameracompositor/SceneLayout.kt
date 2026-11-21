@@ -38,6 +38,16 @@ class SceneLayout(rgb: IntArray, val depth: RelativeDepth?) {
         val center get() = (left + right) * .5f
     }
 
+    /** Interpolate cell brightness at a normalized viewfinder position. */
+    internal fun lightAt(p: ScenePoint): Float {
+        val x = (p.x * COLUMNS - .5f).coerceIn(0f, COLUMNS - 1f)
+        val y = (p.y * ROWS - .5f).coerceIn(0f, ROWS - 1f)
+        val left = x.toInt()
+        val right = minOf(left + 1, COLUMNS - 1)
+        fun row(r: Int) = light[r * COLUMNS + left] * (1 - (x - left)) + light[r * COLUMNS + right] * (x - left)
+        return row(y.toInt()) * (1 - (y - y.toInt())) + row(minOf(y.toInt() + 1, ROWS - 1)) * (y - y.toInt())
+    }
+
     init {
         require(rgb.size == WIDTH * HEIGHT)
         val luma = FloatArray(rgb.size) {

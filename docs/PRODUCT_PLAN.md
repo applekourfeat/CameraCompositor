@@ -12,6 +12,8 @@
 
 ## Current result
 
+The 0.14 Vivo prototype uses up to three nearby camera observations to preserve a visible landmark beside a person. It requires image overlap and a match inside the landmark. In desktop replay, the tree and people stayed together in six of seven variations, up from three with a single snapshot. The remaining downward shift still produced a close-up. Across 98 variations from 80 sources, the only other change shifted a portrait of a person sweeping toward the right-hand tree trunk, keeping 1.82× zoom. [Replay details](../research/results/landmark-window-replay.json).
+
 The owner reports that 0.8.0 still makes weak photographic choices. The [reference-app investigation](SHOT_SELECTION_INVESTIGATION.md) measured wide-view coverage in the palm clip and audited the one-subject planner. The next composition gate compares multiple real shots from the same scene and includes the original view. Live capture integration follows a successful selection test.
 
 Version [0.4.1-spatial](V041_SPATIAL_PLANNING.md) uses the owner's confirmed ARCore/depth capability for spatial scene capture. Recorded SDK pose, intrinsics and available view-aligned depth now reach the multi-view planning request. The photo camera is visually registered, including field of view, before planning. Runtime integrated behavior, photographic quality and the earlier service timeout remain open. Live world-pose guidance during CameraX photography and the public keyless planner are still unfinished.

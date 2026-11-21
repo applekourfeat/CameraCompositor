@@ -1,4 +1,4 @@
-"""Build and score blind still-image comparisons for the 0.12 Vivo planner."""
+"""Build and score blind still-image comparisons for the Vivo planner."""
 import argparse
 import hashlib
 import json
@@ -33,10 +33,13 @@ def bounds(box, size):
     return pixels
 
 
-def build():
+def build(landmarks=False):
     manifest = read(ROOT / "research/benchmark.json")
     scenes = [s for s in manifest["scenes"] if s["split"] == "evaluation"]
-    level_rows = read(ROOT / "research/results/level-heldout-replay.json")["scenes"]
+    tag = "v014" if landmarks else "v012"
+    directory = OUT / (tag + "-review")
+    replay = "landmark-review-originals.json" if landmarks else "level-heldout-replay.json"
+    level_rows = read(ROOT / "research/results" / replay)["scenes"]
     style_rows = read(ROOT / ".local/composition-style-replays.json")["evaluation"]
     levels = {r["scene"]: r for r in level_rows}
     styles = {r["id"]: r for r in style_rows}
@@ -45,11 +48,13 @@ def build():
         raise ValueError("Expected exactly 60 unique scenes per replay.")
     if ids != levels.keys() or ids != styles.keys():
         raise ValueError("Replay inputs must cover the same 60 evaluation scenes.")
-    images = DIRECTORY / "images"
+    images = directory / "images"
     images.mkdir(parents=True, exist_ok=True)
     starts, keys, trials = [], [], []
     for scene in scenes:
         sid = scene["id"]
+        if landmarks and levels[sid]["sha256"] != scene["sha256"]:
+            raise ValueError(f"Review source differs from the replay for {sid}")
         image = verify(scene)
         files = {}
 
@@ -68,7 +73,7 @@ def build():
         framed = save(selected)
         starts.append(dict(id=sid, split="evaluation", image=save(original)))
         for kind, ref in references.items():
-            tid = digest(f"v012/{sid}/{kind}/{selected}/{ref}".encode())[:20]
+            tid = digest(f"{tag}/{sid}/{kind}/{selected}/{ref}".encode())[:20]
             entry = dict(id=tid, sceneId=sid, type=kind, identical=selected == ref, kept=selected == original)
             keys.append(entry)
             if selected != ref:
@@ -78,6 +83,8 @@ def build():
     rng.shuffle(trials)
     tasks = [["labels", "Label starting views"]]
     for kind, name in BASELINES.items():
+        if landmarks and kind == "previous":
+            name = "0.13"
         pairs = [pair for pair in trials if pair["type"] == kind]
         if pairs:
             tasks.append([kind, f"Compare with {name}"])
@@ -93,10 +100,10 @@ def build():
     rng.shuffle(starts)
     data = dict(manifestHash=identity, trials=trials, starts=starts, tasks=tasks,
                 scope="Start by labeling the original views. In each comparison, pick the framing you prefer. Identical frame pairs count as ties automatically.")
-    (DIRECTORY / "review.html").write_text(PAGE.replace("__DATA__", json.dumps(data)), encoding="utf-8")
-    (DIRECTORY / "key.json").write_text(json.dumps(dict(manifestHash=identity, trials=keys)), encoding="utf-8")
+    (directory / "review.html").write_text(PAGE.replace("__DATA__", json.dumps(data)), encoding="utf-8")
+    (directory / "key.json").write_text(json.dumps(dict(manifestHash=identity, trials=keys)), encoding="utf-8")
     print(f"{len(starts)} starting views. Distinct pairs: {dict(Counter(t['type'] for t in trials))}")
-    print(DIRECTORY / "review.html")
+    print(directory / "review.html")
 
 
 def summarize(answers, key):
@@ -140,8 +147,10 @@ def summarize(answers, key):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--answers", type=Path)
+    parser.add_argument("--landmarks", action="store_true", help="Use the 0.14 landmark window replay")
     args = parser.parse_args()
     if args.answers:
-        print(json.dumps(summarize(read(args.answers), read(DIRECTORY / "key.json")), indent=2))
+        directory = OUT / "v014-review" if args.landmarks else DIRECTORY
+        print(json.dumps(summarize(read(args.answers), read(directory / "key.json")), indent=2))
     else:
-        build()
+        build(args.landmarks)

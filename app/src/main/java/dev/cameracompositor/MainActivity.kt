@@ -396,9 +396,12 @@ class MainActivity : ComponentActivity() {
         if (autoScan) scanReference = analyzer.liveScene
         scanning = true
         guidance.setText(if (autoScan) R.string.checking_composition else R.string.sweep_instruction)
+        val temporalScan = autoScan && tap == null && completedTurn == null
+        val scanStartedAt = SystemClock.elapsedRealtime()
         environmentSweep = EnvironmentSweep(analyzer,
             { controller?.zoomState?.value?.zoomRatio ?: 1f }, { controller?.zoomState?.value?.maxZoomRatio ?: 1f },
-            frameLimit = if (autoScan) 1 else 6) { batch ->
+            intervalMs = if (temporalScan) 120 else 470,
+            frameLimit = if (temporalScan) 3 else if (autoScan) 1 else 6) { batch ->
                 environmentSweep = null
                 when {
                     generation != token || isDestroyed -> batch?.close()
@@ -408,15 +411,17 @@ class MainActivity : ComponentActivity() {
                         modelReason = "The camera did not return a complete analysis frame."
                         if (autoScan) retryAutomatic() else guidance.setText(R.string.sweep_no_frame)
                     }
-                    else -> runEnvironmentPlanner(batch, token, requestId, autoScan, completedTurn, tap)
+                    else -> {
+                        if (temporalScan) analyzer.endEnvironment()
+                        runEnvironmentPlanner(batch, token, requestId, autoScan, completedTurn, tap, scanStartedAt)
+                    }
                 }
             }
         environmentSweep!!.start()
     }
     private fun runEnvironmentPlanner(batch: EnvironmentBatch, token: Int, requestId: Long?, autoScan: Boolean,
-                                      completedTurn: EnvironmentDecision.Explore?, tap: SubjectTap?) {
+                                      completedTurn: EnvironmentDecision.Explore?, tap: SubjectTap?, started: Long) {
         guidance.setText(if (autoScan) R.string.checking_composition else R.string.sweep_assessing)
-        val started = SystemClock.elapsedRealtime()
         val availableZoom = ((controller?.zoomState?.value?.maxZoomRatio ?: baselineZoom) / baselineZoom).coerceIn(1f, 3.2f)
         modelExecutor.execute {
             val result = runCatching {

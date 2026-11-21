@@ -18,8 +18,9 @@ object AdaptiveFraming {
     private val sceneSizes = floatArrayOf(.91f, .84f, .77f)
     private val stops = floatArrayOf(0f, .25f, .5f, .75f, 1f)
 
+    @JvmOverloads
     fun candidates(map: EnvironmentMap, evidence: ShotEvidence, maxRelativeZoom: Float,
-                   required: SceneSubject? = null): List<ContextShot> {
+                   required: SceneSubject? = null, previousLandmark: SubjectBox? = null): List<ContextShot> {
         val (view, layout, subjects) = evidence
         val original = ContextShot(view.id, full, full, null, 0f)
         if (!layout.hasSceneDetail && required == null) {
@@ -32,7 +33,7 @@ object AdaptiveFraming {
             it.skyline && it.strength >= .27f ||
                 it.kind == SceneKind.FOLIAGE && it.framingBounds != it.bounds && it.strength >= .24f
         }
-        val pair = if (required == null) subjectPair(evidence, protected) else null
+        val pair = if (required == null) subjectPair(evidence, protected, previousLandmark) else null
         val singles = ContextShots.candidates(map, listOf(evidence), null, maxRelativeZoom,
             requiredSubject = required).drop(1).filter { frame ->
             protected == null || ContextShots.containsSubject(frame.crop, protected.framingBounds)
@@ -64,7 +65,7 @@ object AdaptiveFraming {
         }
     }
 
-    private fun subjectPair(evidence: ShotEvidence, protected: SceneSubject?): PairFraming? {
+    private fun subjectPair(evidence: ShotEvidence, protected: SceneSubject?, previousLandmark: SubjectBox?): PairFraming? {
         val primary = protected ?: evidence.subjects.firstOrNull { it.skyline } ?: return null
         val first = primary.framingBounds
         val partners = mutableListOf<Pair<SceneSubject, Float>>()
@@ -84,6 +85,11 @@ object AdaptiveFraming {
                 (other.outlinedDetail || other.skyline || other.kind == SceneKind.FOLIAGE)) {
                 partners.add(other to .85f)
             }
+        }
+        if (primary.kind == SceneKind.PERSON && previousLandmark != null) {
+            val b = previousLandmark
+            val center = ScenePoint((b.left + b.right) * .5f, (b.top + b.bottom) * .5f)
+            partners.add(SceneSubject(SceneKind.OBJECTS, b, center, .25f, outlinedDetail = true) to .85f)
         }
         val firstSize = maxOf(first.right - first.left, first.bottom - first.top)
         val partner = partners.filter { (other, _) ->

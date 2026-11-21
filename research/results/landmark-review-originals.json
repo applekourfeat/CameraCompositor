@@ -1,0 +1,1445 @@
+{
+  "method": "Each window ends on the verified original photo after centered and left-shifted observations. Before uses the single-frame policy; after can use verified outlines from the earlier views.",
+  "scenes": [
+    {
+      "scene": "gaic-test-417815",
+      "sha256": "e730bbf0eb2a32e2fee720e48a1e978e884f028d9264e934ac65f22abd9da8d3",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.0,
+          0.95500004,
+          0.91
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.0,
+          0.95500004,
+          0.91
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-414429",
+      "sha256": "54ca5d1467499614d68156c2546bcb9670419405cc8915edb2e1743bc73d7050",
+      "before": {
+        "zoom": 2.778,
+        "box": [
+          0.49075645,
+          0.42166847,
+          0.85075647,
+          0.7816685
+        ],
+        "subject": "PERSON"
+      },
+      "after": {
+        "zoom": 2.778,
+        "box": [
+          0.49075645,
+          0.42166847,
+          0.85075647,
+          0.7816685
+        ],
+        "subject": "PERSON"
+      }
+    },
+    {
+      "scene": "gaic-test-405358",
+      "sha256": "174031bcf43336dfecba905eba2a2f4d62f86ef7efdd6f1d1c68e5069a644219",
+      "before": {
+        "zoom": 1.818,
+        "box": [
+          0.2283403,
+          0.093263865,
+          0.77834034,
+          0.6432639
+        ],
+        "subject": "PERSON"
+      },
+      "after": {
+        "zoom": 1.818,
+        "box": [
+          0.2283403,
+          0.093263865,
+          0.77834034,
+          0.6432639
+        ],
+        "subject": "PERSON"
+      }
+    },
+    {
+      "scene": "gaic-test-472295",
+      "sha256": "dddcc6c2739aae74d6a83967a1babc284ab8f36fd70217b728426e3bc6d86617",
+      "before": {
+        "zoom": 2.083,
+        "box": [
+          0.20096046,
+          0.3515222,
+          0.6809604,
+          0.8315222
+        ],
+        "subject": "PERSON"
+      },
+      "after": {
+        "zoom": 2.083,
+        "box": [
+          0.20096046,
+          0.3515222,
+          0.6809604,
+          0.8315222
+        ],
+        "subject": "PERSON"
+      }
+    },
+    {
+      "scene": "gaic-test-475676",
+      "sha256": "96671b3713742de11058f40da351b46ac41038b493fe000422a2c22665f951e7",
+      "before": {
+        "zoom": 1.176,
+        "box": [
+          0.06088546,
+          0.0,
+          0.91088545,
+          0.85
+        ],
+        "subject": "PERSON_PAIR"
+      },
+      "after": {
+        "zoom": 1.176,
+        "box": [
+          0.06088546,
+          0.0,
+          0.91088545,
+          0.85
+        ],
+        "subject": "PERSON_PAIR"
+      }
+    },
+    {
+      "scene": "gaic-test-422879",
+      "sha256": "2f77e6659e967a32da610791d01c9cd5cc75abbe2e3eae4c76baa01ed4f99582",
+      "before": {
+        "zoom": 2.381,
+        "box": [
+          0.43372422,
+          0.051395386,
+          0.85372424,
+          0.47139537
+        ],
+        "subject": "PERSON"
+      },
+      "after": {
+        "zoom": 2.381,
+        "box": [
+          0.43372422,
+          0.051395386,
+          0.85372424,
+          0.47139537
+        ],
+        "subject": "PERSON"
+      }
+    },
+    {
+      "scene": "gaic-test-223721",
+      "sha256": "8241f9486d7a907f23a30156c5bf81b9696ee792337bdb3721aaa41165560b3f",
+      "before": {
+        "zoom": 2.381,
+        "box": [
+          0.08396445,
+          0.49683344,
+          0.5039644,
+          0.9168334
+        ],
+        "subject": "PERSON"
+      },
+      "after": {
+        "zoom": 2.381,
+        "box": [
+          0.08396445,
+          0.49683344,
+          0.5039644,
+          0.9168334
+        ],
+        "subject": "PERSON"
+      }
+    },
+    {
+      "scene": "gaic-test-269979",
+      "sha256": "750db0cb5a48db1362f275b22084c2a141565fcbc90e0d68dbf2da757168831d",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-451263",
+      "sha256": "de0045c21272349259679d9bb47dfd3ed73823edca5ce5c85b35ef76b1c404ef",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-442424",
+      "sha256": "8f3e6fdca3fd8ea41cb75bb11f7d00517547b2468c97bf2ebbb6d1888b38212a",
+      "before": {
+        "zoom": 1.176,
+        "box": [
+          0.09011045,
+          0.054923713,
+          0.94011045,
+          0.90492374
+        ],
+        "subject": "PERSON_PAIR"
+      },
+      "after": {
+        "zoom": 1.176,
+        "box": [
+          0.09011045,
+          0.054923713,
+          0.94011045,
+          0.90492374
+        ],
+        "subject": "PERSON_PAIR"
+      }
+    },
+    {
+      "scene": "gaic-test-490393",
+      "sha256": "60b9e8a1fccad7df7fcc76f328912e4727cd5c0c2b8761bcf5fc13fac2514ba2",
+      "before": {
+        "zoom": 1.282,
+        "box": [
+          0.015182614,
+          0.22000003,
+          0.7951826,
+          1.0
+        ],
+        "subject": "FOLIAGE"
+      },
+      "after": {
+        "zoom": 1.282,
+        "box": [
+          0.015182614,
+          0.22000003,
+          0.7951826,
+          1.0
+        ],
+        "subject": "FOLIAGE"
+      }
+    },
+    {
+      "scene": "gaic-test-313667",
+      "sha256": "86bdccc94455174bec5284f291206de615b6b8728e0d5b63b2d02fa27ae9091b",
+      "before": {
+        "zoom": 2.778,
+        "box": [
+          0.4729132,
+          0.40756494,
+          0.8329132,
+          0.76756495
+        ],
+        "subject": "ANIMAL"
+      },
+      "after": {
+        "zoom": 2.778,
+        "box": [
+          0.4729132,
+          0.40756494,
+          0.8329132,
+          0.76756495
+        ],
+        "subject": "ANIMAL"
+      }
+    },
+    {
+      "scene": "gaic-test-264035",
+      "sha256": "5ade968c71cb1ac47019ad9ea1ef66cfdba06f850bc0a346f42c140b86090a15",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-225087",
+      "sha256": "878498ab062233bf15984ca5c160a6fc91d43328b7cef305f03e88fd2747f810",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.089999974,
+          0.95500004,
+          1.0
+        ],
+        "subject": "BALANCE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.089999974,
+          0.95500004,
+          1.0
+        ],
+        "subject": "BALANCE"
+      }
+    },
+    {
+      "scene": "gaic-test-408054",
+      "sha256": "c3744839c52dd7cc22cd91fecae87acc946860ca617c09c15a20c961b15aedf9",
+      "before": {
+        "zoom": 1.818,
+        "box": [
+          0.13641986,
+          0.27619264,
+          0.68641984,
+          0.8261926
+        ],
+        "subject": "ANIMAL"
+      },
+      "after": {
+        "zoom": 1.818,
+        "box": [
+          0.13641986,
+          0.27619264,
+          0.68641984,
+          0.8261926
+        ],
+        "subject": "ANIMAL"
+      }
+    },
+    {
+      "scene": "gaic-test-430541",
+      "sha256": "3dbfc297da78d2f267ec42ecf1a63a816b6dda7bb552d3080fcff3ead905b86c",
+      "before": {
+        "zoom": 2.778,
+        "box": [
+          0.64,
+          0.6024192,
+          1.0,
+          0.9624192
+        ],
+        "subject": "PERSON"
+      },
+      "after": {
+        "zoom": 2.778,
+        "box": [
+          0.64,
+          0.6024192,
+          1.0,
+          0.9624192
+        ],
+        "subject": "PERSON"
+      }
+    },
+    {
+      "scene": "gaic-test-224003",
+      "sha256": "74ec60c957c6008ebc6518822aca6c9884035e21c223a09e9bf24dec6dba0ab1",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-236160",
+      "sha256": "2ecd182452bcf4528b6aa72c9ced6e2b5098c472073991ab24866926f15be8f2",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-307903",
+      "sha256": "f8809dd6d9d1102f8e034aa654e7eb18bddd351ab23a89fb9610833c248c3702",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-396172",
+      "sha256": "98d55d1e073161b8cb7b83fa823c5369684da07a0c4bd6c61556552f5afd59ba",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.089999974,
+          0.95500004,
+          1.0
+        ],
+        "subject": "BALANCE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.089999974,
+          0.95500004,
+          1.0
+        ],
+        "subject": "BALANCE"
+      }
+    },
+    {
+      "scene": "gaic-test-231629",
+      "sha256": "7cfd660df2d8428de874ae74b8e107c044bd5c7b75d2eee737b3b68040d93ec4",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-233781",
+      "sha256": "bfa9b3ba463825601d303471927cde9a3de310f5b34eede05da7bc183fd12153",
+      "before": {
+        "zoom": 1.299,
+        "box": [
+          0.17250001,
+          0.23000002,
+          0.9425,
+          1.0
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.299,
+        "box": [
+          0.17250001,
+          0.23000002,
+          0.9425,
+          1.0
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-392985",
+      "sha256": "40dfd2107081aab6450357b92eb7352dd94bb811a554c715d48da9bfd4f4ffe9",
+      "before": {
+        "zoom": 1.19,
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES"
+      },
+      "after": {
+        "zoom": 1.19,
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES"
+      }
+    },
+    {
+      "scene": "gaic-test-309808",
+      "sha256": "b759cec2f3fad02fe425b46fc19238dcf679aa00a44e6984e694669690417ef5",
+      "before": {
+        "zoom": 1.282,
+        "box": [
+          0.0,
+          0.22000003,
+          0.78,
+          1.0
+        ],
+        "subject": "PERSON_PAIR"
+      },
+      "after": {
+        "zoom": 1.282,
+        "box": [
+          0.0,
+          0.22000003,
+          0.78,
+          1.0
+        ],
+        "subject": "PERSON_PAIR"
+      }
+    },
+    {
+      "scene": "gaic-test-294427",
+      "sha256": "535568e7c9f3025909f12dd964964618cb47a80f79c840b5a213fa2fba294848",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-472330",
+      "sha256": "8349b7d3bf895eee31b1444141410d54b4ae463b1f93222137d3e7e5d644897c",
+      "before": {
+        "zoom": 2.381,
+        "box": [
+          0.24043332,
+          0.333175,
+          0.6604333,
+          0.753175
+        ],
+        "subject": "OBJECTS"
+      },
+      "after": {
+        "zoom": 2.381,
+        "box": [
+          0.24043332,
+          0.333175,
+          0.6604333,
+          0.753175
+        ],
+        "subject": "OBJECTS"
+      }
+    },
+    {
+      "scene": "gaic-test-220827",
+      "sha256": "71c200c020c696437234be4e5107c7b2abcf0b3fea8943fed9102ab46f2d3d71",
+      "before": {
+        "zoom": 1.818,
+        "box": [
+          0.26327616,
+          0.20841016,
+          0.8132762,
+          0.75841016
+        ],
+        "subject": "PERSON"
+      },
+      "after": {
+        "zoom": 1.818,
+        "box": [
+          0.26327616,
+          0.20841016,
+          0.8132762,
+          0.75841016
+        ],
+        "subject": "PERSON"
+      }
+    },
+    {
+      "scene": "gaic-test-344258",
+      "sha256": "2a87997fd279dce95ccdd816455ad7612585c638c4fd2d6c574e5f53dbb49152",
+      "before": {
+        "zoom": 1.299,
+        "box": [
+          0.17250001,
+          0.23000002,
+          0.9425,
+          1.0
+        ],
+        "subject": "EDGES"
+      },
+      "after": {
+        "zoom": 1.299,
+        "box": [
+          0.17250001,
+          0.23000002,
+          0.9425,
+          1.0
+        ],
+        "subject": "EDGES"
+      }
+    },
+    {
+      "scene": "gaic-test-243796",
+      "sha256": "d9bcd494102d576be8bc6cde9e7c77a7897ccd96e29d855d8d361008dc582ade",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "BALANCE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "BALANCE"
+      }
+    },
+    {
+      "scene": "gaic-test-263479",
+      "sha256": "dd173043da119e67c78c5d5b34f170801f61878615d8b7b33133cbdf0380a645",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-490217",
+      "sha256": "662f5208b1a5664d18e40fcb0af8aebfe431ff1f1a3bbd37ad4ecdec8582f168",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "BALANCE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "BALANCE"
+      }
+    },
+    {
+      "scene": "gaic-test-326329",
+      "sha256": "f54cb81af4dcabd698e725e7ce2af560fa209eba2af19e01004173d1d07ebc5d",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-321720",
+      "sha256": "e74598f20a01facb57d6d2ac336f7462fa539afe75ffcf2cff2c93519afd83d8",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-271146",
+      "sha256": "34046c3f15fd0c9c988caf0246f7e103950ac813527a22699665469c548dc213",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-290240",
+      "sha256": "d0727f540db44148400fa3dc5cff205e146f2fbfe42bd7ae7dc97675d567cb68",
+      "before": {
+        "zoom": 1.19,
+        "box": [
+          0.0,
+          0.08000001,
+          0.84,
+          0.91999996
+        ],
+        "subject": "EDGES"
+      },
+      "after": {
+        "zoom": 1.19,
+        "box": [
+          0.0,
+          0.08000001,
+          0.84,
+          0.91999996
+        ],
+        "subject": "EDGES"
+      }
+    },
+    {
+      "scene": "gaic-test-236854",
+      "sha256": "7103afece9806f0168d987ff2e94fa85dd789cc93aa7f467d16097140dd6455f",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-281995",
+      "sha256": "8fa49a82b36ba5fc9f6aba6b17e492a1de2abbc51c5c7cb01f0ca188a0c2fd3a",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.044999987,
+          0.044999987,
+          0.95500004,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-221520",
+      "sha256": "8ffe57654f42a060f9cb95da42316c2ca8d7bb507465958b775b0c7411fd619b",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-294272",
+      "sha256": "20dea288356c8249a71ddb2cbd019ec8f7c48fc6d438bc8aec11af55cd17ada8",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-243460",
+      "sha256": "a0072c1495b5c1856538fd127b2da47178968a2f459a55ccd696d0e6fcc01a46",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-255010",
+      "sha256": "27ea8e6d4d792abbf8b80a388e854993b5bd925cca18e07121a655ec611be6c3",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-238563",
+      "sha256": "b919ec4475224bcfabeb11839ff0c8819a6cde5daaa5a941b42d228a47b4ce58",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.086666614,
+          0.044999987,
+          0.99666667,
+          0.95500004
+        ],
+        "subject": "UPRIGHTS"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.086666614,
+          0.044999987,
+          0.99666667,
+          0.95500004
+        ],
+        "subject": "UPRIGHTS"
+      }
+    },
+    {
+      "scene": "gaic-test-274076",
+      "sha256": "fe8b9f06b24155deded64b94ccb1f52d9ddaa38c6205309aab4fbc519f914cf3",
+      "before": {
+        "zoom": 1.19,
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES"
+      },
+      "after": {
+        "zoom": 1.19,
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES"
+      }
+    },
+    {
+      "scene": "gaic-test-254375",
+      "sha256": "82c75612cd7c4179897e8ffd90ab98f95c4ae672c1f27f8d90d9a2bd60fc7f92",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-220921",
+      "sha256": "7d457791781dc537f626c69cb0d638c99ca7c1caabad693f837b145b28e25d43",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-260596",
+      "sha256": "becbbe359503c950366e66f227a98327f920fcd9f9029115a663bc3c130f8292",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-425907",
+      "sha256": "d598db69f71a51baa09b5b0c0bbe191764d8856761d4744168a13ab55e2e792a",
+      "before": {
+        "zoom": 1.613,
+        "box": [
+          0.0,
+          0.27109268,
+          0.62,
+          0.89109266
+        ],
+        "subject": "ANIMAL"
+      },
+      "after": {
+        "zoom": 1.613,
+        "box": [
+          0.0,
+          0.27109268,
+          0.62,
+          0.89109266
+        ],
+        "subject": "ANIMAL"
+      }
+    },
+    {
+      "scene": "gaic-test-483387",
+      "sha256": "76a3f1f2d1514184ebef520d3a67c4713bea0853a74e0af27c27126ec40fba42",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.044999987,
+          1.0,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-396968",
+      "sha256": "c00e45ef2d91acc7e1db6645f5de22d1e326b45362b9a1557652dddcf8203048",
+      "before": {
+        "zoom": 2.083,
+        "box": [
+          0.31700546,
+          0.3312751,
+          0.7970054,
+          0.8112751
+        ],
+        "subject": "ANIMAL"
+      },
+      "after": {
+        "zoom": 2.083,
+        "box": [
+          0.31700546,
+          0.3312751,
+          0.7970054,
+          0.8112751
+        ],
+        "subject": "ANIMAL"
+      }
+    },
+    {
+      "scene": "gaic-test-234404",
+      "sha256": "98c94754f972220b3c8a9cb5e2122ae6aed4d7a2972dc507b6a12d2dc96abbbe",
+      "before": {
+        "zoom": 1.19,
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES"
+      },
+      "after": {
+        "zoom": 1.19,
+        "box": [
+          0.040000007,
+          0.16000003,
+          0.88,
+          1.0
+        ],
+        "subject": "EDGES"
+      }
+    },
+    {
+      "scene": "gaic-test-302180",
+      "sha256": "418089966e6b47d98414e21de6e6035a82b55946a64ac2993657964843a68b21",
+      "before": {
+        "zoom": 2.083,
+        "box": [
+          0.22840898,
+          0.3553995,
+          0.70840895,
+          0.8353995
+        ],
+        "subject": "ANIMAL"
+      },
+      "after": {
+        "zoom": 2.083,
+        "box": [
+          0.22840898,
+          0.3553995,
+          0.70840895,
+          0.8353995
+        ],
+        "subject": "ANIMAL"
+      }
+    },
+    {
+      "scene": "gaic-test-215046",
+      "sha256": "7f15b19dd94561a22b2f17ed7c0406848568717e231c9f86fbec401c0cc67a13",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.089999974,
+          0.089999974,
+          1.0,
+          1.0
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-211144",
+      "sha256": "64e508bfc7603c0c2be83622656f03cae857aad98bb7529b10a8a24cd3ef41d6",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-286151",
+      "sha256": "8e1ef6880497fcb09d316fffa8cbf1dd20d9e38f27ccaada15ae431c6fc04c08",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-222619",
+      "sha256": "f528a1a767dd41c700a0075d5315f4e3e4534327fa2467d7bbe237b6f470ecca",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-400943",
+      "sha256": "61d09d089bfeaec45b8540d87317991d26fee8ef3580901f584fb479d9b3592c",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-255509",
+      "sha256": "e698cd9fe1989e2f9a663188fc72c44db314d89c6ebe6b8038b3812ee80a9dd5",
+      "before": {
+        "zoom": 1.099,
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      },
+      "after": {
+        "zoom": 1.099,
+        "box": [
+          0.0,
+          0.044999987,
+          0.91,
+          0.95500004
+        ],
+        "subject": "SCENE"
+      }
+    },
+    {
+      "scene": "gaic-test-492029",
+      "sha256": "76db4226ac8d36b870d2547b0ee928c6ad038e53959d9baad8e9cab0c7fb0fbb",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    },
+    {
+      "scene": "gaic-test-401710",
+      "sha256": "a4c6a58de60dfac006fbee8c55b4ce428fc6e7c01d169579ca399b1585a0f42b",
+      "before": {
+        "zoom": 1.429,
+        "box": [
+          0.07798278,
+          0.124074906,
+          0.7779828,
+          0.82407486
+        ],
+        "subject": "MOUNTAIN"
+      },
+      "after": {
+        "zoom": 1.429,
+        "box": [
+          0.07798278,
+          0.124074906,
+          0.7779828,
+          0.82407486
+        ],
+        "subject": "MOUNTAIN"
+      }
+    },
+    {
+      "scene": "gaic-test-475757",
+      "sha256": "970723d53561803f3f1042133f99d582c43dcedce109f1479c83ac5f285e3040",
+      "before": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      },
+      "after": {
+        "zoom": 1.0,
+        "box": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "subject": "wide"
+      }
+    }
+  ]
+}

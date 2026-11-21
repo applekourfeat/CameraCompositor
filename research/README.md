@@ -82,6 +82,10 @@ After building the app and preparing the frozen benchmark and NanoDet asset, run
 
 Open `artifacts/composition-research/v012-review/review.html` and label the starting photographs first. The page shows the distinct pairs in shuffled order and saves progress in the browser. Keep the answer key separate from the reviewer. The scorer counts identical crops as ties and reports how often the planner kept already-good views. The 70% threshold uses every labeled improvable scene, including ties and unsure votes. It requires complete starting labels, all distinct votes on improvable scenes for that comparison, and at least 20 improvable scenes. Thirds uses its recorded still-image framing. Camera motion and physical leveling need a separate phone test.
 
+For 0.14, run `replay_landmark_window.py` with the same Java executable and current compiled debug classpath used by the replay tools. Pass `--all-scenes --output research/results/landmark-window-replay.json` to compare the window and single-view policies on 98 variants across 80 source photographs. Add the local palm clip excerpts at `.local/reference-frames/after-{5.1,5.4,5.75,6.05}.jpg` for the clip portion. Those excerpts are available only in the owner's workspace.
+
+For blind review, run the script with `--review-originals --output research/results/landmark-review-originals.json`. This sequence ends on the verified original so both candidate policies and the historical Thirds framing can be judged on the same pixels. Run `review_live_planner.py --landmarks` to generate `artifacts/composition-research/v014-review/review.html`. The two policies chose identical framings on those 60 original end frames, so the review presents 43 distinct pairs against the starting view and 46 against Thirds. Pass `--landmarks --answers <exported JSON>` to score votes.
+
 ### Camera-only software depth
 
 Run `research/fetch_subject_model.py` to download and verify the pinned Apache-licensed NanoDet checkpoint. The script writes the processed ONNX to `.local/subject-assets` for Android builds. The app can still plan from image cues when the subject model is absent or finds no subject.

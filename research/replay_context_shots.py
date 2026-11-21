@@ -17,11 +17,11 @@ from evaluate_isolated_views import gaic_scores, gaic_session
 from export_scene_semantics import ASSETS, ROOT, pixels, session
 
 
-def compare(driver, path, zoom, detector, patch_model, ranker):
+def compare(driver, path, zoom, detector, patch_model, ranker, history=b""):
     image = Image.open(path).convert("RGB")
     start = perf_counter()
     patches = patch_model.run(None, {"image": pixels(path)})[0]
-    write_inputs(driver, {"path": path}, image, detector, tap=(zoom, 0), suffix=patches.astype(">f4").tobytes())
+    write_inputs(driver, {"path": path}, image, detector, tap=(zoom, 0), suffix=patches.astype(">f4").tobytes() + history)
     count = int(driver.stdout.readline())
     rows = [driver.stdout.readline().decode().split() for _ in range(count)]
     boxes = [list(map(float, row[:4])) for row in rows]

@@ -1,6 +1,6 @@
 # Camera Compositor
 
-The private Vivo V30 build chooses a framing automatically as you aim. It compares a close-up with wider views that can keep two people or a person and a nearby landmark together. A gravity level helps you straighten the shot. [Framing comparison](research/results/pair-framing-replay.json) and [level guide](docs/V0120_LEVEL_AND_SUBJECTS.md).
+The private Vivo V30 build chooses a framing automatically as you aim. It checks overlapping views taken a fraction of a second apart, so a useful landmark can stay in the composition when its outline briefly drops out. A gravity level helps you straighten the shot. [Landmark replay](research/results/landmark-window-replay.json) and [level guide](docs/V0120_LEVEL_AND_SUBJECTS.md).
 
 Native Android camera research for live composition guidance. It can suggest a new angle when a subject is visibly cut off. UI/UX is yet to be worked on.
 
@@ -8,7 +8,7 @@ The main camera and automatic composition run offline on the regular Android cam
 
 ## Try the research build
 
-Install `artifacts/CameraCompositor-0.13.0-pairs-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype.
+Install `artifacts/CameraCompositor-0.14.0-landmarks-debug.apk` on the Vivo V30. It uses this computer's existing debug signing key and can update the earlier prototype.
 
 1. Aim at the scene and line up the outline when it appears. The camera chooses the framing. Tap a subject if you want to choose what to keep in the frame. **Find shot** checks the view again.
 2. Line up the two short level marks with the moving line. For a straight-down shot, center the dot. On eligible shots, **Auto shutter** starts its three-second countdown when the framing is verified, level and steady. **Take photo** works at any angle.

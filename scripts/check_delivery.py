@@ -22,7 +22,8 @@ LIVE_VERSION = "0.10.0-live"
 ADAPTIVE_VERSION = "0.11.0-adaptive"
 LEVEL_VERSION = "0.12.0-level"
 PAIR_VERSION = "0.13.0-pairs"
-VIVO_BUILDS = {VIVO_VERSION, LIVE_VERSION, ADAPTIVE_VERSION, LEVEL_VERSION, PAIR_VERSION}
+LANDMARK_VERSION = "0.14.0-landmarks"
+VIVO_BUILDS = {VIVO_VERSION, LIVE_VERSION, ADAPTIVE_VERSION, LEVEL_VERSION, PAIR_VERSION, LANDMARK_VERSION}
 SEMANTICS_BUILDS = {DISCOVERY_VERSION} | VIVO_BUILDS
 SUBJECT_BUILDS = {AUTO_VERSION, STYLES_VERSION} | SEMANTICS_BUILDS
 DEPTH_BUILDS = {CAMERA_VERSION} | SUBJECT_BUILDS
@@ -109,7 +110,7 @@ def main():
         suite = ET.parse(path).getroot()
         count += int(suite.get("tests", "0"))
         failures += int(suite.get("failures", "0")) + int(suite.get("errors", "0"))
-    minimum = {PAIR_VERSION: 114, LEVEL_VERSION: 112, ADAPTIVE_VERSION: 104, LIVE_VERSION: 95, VIVO_VERSION: 91, DISCOVERY_VERSION: 88,
+    minimum = {LANDMARK_VERSION: 117, PAIR_VERSION: 114, LEVEL_VERSION: 112, ADAPTIVE_VERSION: 104, LIVE_VERSION: 95, VIVO_VERSION: 91, DISCOVERY_VERSION: 88,
                STYLES_VERSION: 79, AUTO_VERSION: 71, CAMERA_VERSION: 63,
                "0.4.1-spatial": 55, "0.4.0-environment": 47}.get(version, 35)
     assert count >= minimum and failures == 0, "Unit checks are missing or failed"
@@ -182,6 +183,8 @@ def main():
         result["physicalVivoTests"] = "v0.12.0 pending. Owner reports tilted photos and mild zoom in v0.11.0."
     if version == PAIR_VERSION:
         result["physicalVivoTests"] = "v0.13.0 pair framing, live speed, and capture on the Vivo V30 pending."
+    if version == LANDMARK_VERSION:
+        result["physicalVivoTests"] = "v0.14.0 burst acquisition, live registration and shutter timing on the Vivo V30 pending."
     tag=version.replace(".","").replace("-","_")
     path = ROOT / f"research/results/delivery-verification-v{tag}.json"
     path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
